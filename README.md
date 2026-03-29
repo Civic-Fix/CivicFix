@@ -4,6 +4,16 @@ CivicFix is a centralized platform designed to streamline the process of reporti
 
 ---
 
+## How to run app locally
+
+- Install expo go app in phone/tablet
+- ```
+  cd frontend/CivicFixApp
+  npm install
+  npx expo start
+  ```
+- Scan the QR code from Expo Go app and see
+
 ## 🚀 Features
 
 ### 👤 Citizen
