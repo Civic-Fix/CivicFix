@@ -9,98 +9,77 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-console.log('[Login] API_BASE_URL', API_BASE_URL); 
+console.log('[Signup] API_BASE_URL', API_BASE_URL);
 
-const Login = ({ onSignupPress }) => {
+const Signup = ({ onLoginPress }) => {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const handleLogin = async () => {
+  const handleSignup = async () => {
     setError('');
     setSuccess('');
 
-    if (!email || !password) {
-      setError('Please enter both email and password.');
+    if (!email || !password || !name) {
+      setError('Name, email, and password are required.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, phone, password }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.error || 'Login failed');
+        throw new Error(result.error || 'Signup failed');
       }
 
-      const accessToken = result.session?.accessToken;
-      const refreshToken = result.session?.refreshToken;
-      const userInfo = result.user ? JSON.stringify(result.user) : null;
-
-      const storageItems = [];
-      if (accessToken) {
-        storageItems.push(['authToken', accessToken]);
-      }
-      if (refreshToken) {
-        storageItems.push(['refreshToken', refreshToken]);
-      }
-      if (userInfo) {
-        storageItems.push(['userInfo', userInfo]);
-      }
-
-      if (storageItems.length) {
-        await AsyncStorage.multiSet(storageItems);
-        console.log('[Login] auth data saved to AsyncStorage', {
-          accessToken: !!accessToken,
-          refreshToken: !!refreshToken,
-          userInfo: !!userInfo,
-        });
-      } else {
-        console.warn('[Login] no auth data found in login response');
-      }
-
-      setSuccess('Login successful. Welcome to CivicFix!');
-      console.log('Auth token:', accessToken);
+      setSuccess('Account created! Please check your email to verify your account.');
     } catch (err) {
-      setError(err.message || 'Unable to log in.');
+      setError(err.message || 'Unable to sign up.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
       <View style={styles.innerContainer}>
-        {/* Header Section */}
         <View style={styles.header}>
-          <Text style={styles.title}>CivicFix Login</Text>
-          <Text style={styles.subtitle}>Secure access to your civic workflow</Text>
+          <Text style={styles.title}>Create CivicFix Account</Text>
+          <Text style={styles.subtitle}>Join to report issues and track civic work</Text>
         </View>
 
-        {/* Input Section */}
         <View style={styles.inputGroup}>
           <TextInput
             style={styles.input}
+            placeholder="Full Name"
+            placeholderTextColor="#7C8DB0"
+            autoCapitalize="words"
+            value={name}
+            onChangeText={setName}
+          />
+          <TextInput
+            style={styles.input}
             placeholder="Email Address"
-            placeholderTextColor="#999"
+            placeholderTextColor="#7C8DB0"
             keyboardType="email-address"
             autoCapitalize="none"
             value={email}
@@ -108,47 +87,41 @@ const Login = ({ onSignupPress }) => {
           />
           <TextInput
             style={styles.input}
+            placeholder="Phone Number"
+            placeholderTextColor="#7C8DB0"
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
+          />
+          <TextInput
+            style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#999"
+            placeholderTextColor="#7C8DB0"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
           />
-          <TouchableOpacity style={styles.forgotPass}>
-            <Text style={styles.forgotPassText}>Forgot Password?</Text>
-          </TouchableOpacity>
         </View>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
         {success ? <Text style={styles.successText}>{success}</Text> : null}
 
-        {/* Action Buttons */}
         <TouchableOpacity
           style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-          onPress={handleLogin}
+          onPress={handleSignup}
           disabled={loading}
         >
           {loading ? (
             <ActivityIndicator color="#EFF6FF" />
           ) : (
-            <Text style={styles.loginButtonText}>Log In</Text>
+            <Text style={styles.loginButtonText}>Sign Up</Text>
           )}
         </TouchableOpacity>
 
-        <View style={styles.dividerContainer}>
-          <View style={styles.line} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.line} />
-        </View>
-
-        <TouchableOpacity style={styles.socialButton}>
-          <Text style={styles.socialButtonText}>Continue with Google</Text>
-        </TouchableOpacity>
-
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={onSignupPress}>
-            <Text style={styles.signUpText}>Sign Up</Text>
+          <Text style={styles.footerText}>Already have an account? </Text>
+          <TouchableOpacity onPress={onLoginPress}>
+            <Text style={styles.signUpText}>Log In</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -193,13 +166,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#243B5A',
   },
-  forgotPass: {
-    alignSelf: 'flex-end',
-  },
-  forgotPassText: {
-    color: '#60A5FA',
-    fontWeight: '600',
-  },
   errorText: {
     color: '#F87171',
     marginBottom: 14,
@@ -222,38 +188,13 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 5,
   },
+  loginButtonDisabled: {
+    opacity: 0.7,
+  },
   loginButtonText: {
     color: '#EFF6FF',
     fontSize: 18,
     fontWeight: '700',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 30,
-  },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#334155',
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: '#94A3B8',
-  },
-  socialButton: {
-    borderWidth: 1,
-    borderColor: '#334155',
-    backgroundColor: '#15233C',
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  socialButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#EFF6FF',
   },
   footer: {
     flexDirection: 'row',
@@ -271,4 +212,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Login;
+export default Signup;
