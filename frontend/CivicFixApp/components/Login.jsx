@@ -12,10 +12,11 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+// const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+const API_BASE_URL = "http://localhost:5000/api"
 console.log('[Login] API_BASE_URL', API_BASE_URL); 
 
-const Login = ({ onSignupPress }) => {
+const Login = ({ onSignupPress, onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -74,8 +75,12 @@ const Login = ({ onSignupPress }) => {
         console.warn('[Login] no auth data found in login response');
       }
 
+      const userData = result.user || (userInfo ? JSON.parse(userInfo) : null);
       setSuccess('Login successful. Welcome to CivicFix!');
       console.log('Auth token:', accessToken);
+      if (onLoginSuccess) {
+        onLoginSuccess(userData);
+      }
     } catch (err) {
       setError(err.message || 'Unable to log in.');
     } finally {
