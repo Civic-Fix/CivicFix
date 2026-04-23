@@ -1,7 +1,7 @@
 import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
-// import issueRoutes from "./routes/issueRoutes.js";
+import issueRoutes from "./routes/issueRoutes.js";
 
 dotenv.config();
 
@@ -23,7 +23,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/auth", authRoutes);
-// app.use("/api/issues", issueRoutes);
+app.use("/api/issues", issueRoutes);
 
 app.get("/", (req, res) => {
   res.send("CivicFix API running");
