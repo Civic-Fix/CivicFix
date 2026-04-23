@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import assistantRoutes from "./routes/assistantRoutes.js";
-// import issueRoutes from "./routes/issueRoutes.js";
+import issueRoutes from "./routes/issueRoutes.js";
 
 dotenv.config();
 
@@ -24,7 +24,6 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.use("/api/assistant", assistantRoutes);
 // app.use("/api/issues", issueRoutes);
 
 app.get("/", (req, res) => {

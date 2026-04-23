@@ -11,7 +11,14 @@
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
-    
+    },
+    "extra": {
+      "eas": {
+        "projectId": "106573a1-d435-4c86-9ae8-df9c31deca35"
+      }
+    },
+    "android": {
+      "package": "com.khcoder.CivicFixApp"
     }
   },
   "ios": {
@@ -26,6 +33,5 @@
   },
   "web": {
     "favicon": "./assets/favicon.png"
-  
   }
 }
