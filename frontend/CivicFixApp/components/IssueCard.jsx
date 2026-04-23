@@ -1,45 +1,59 @@
 import React from 'react';
 import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import Feather from '@expo/vector-icons/Feather';
 
-const IssueCard = ({ issue, onVote }) => {
+const ActionItem = ({ icon, count, onPress, subtle = false }) => (
+  <TouchableOpacity activeOpacity={0.75} onPress={onPress} style={styles.actionItem}>
+    <Feather
+      name={icon}
+      size={17}
+      color={subtle ? '#71717A' : '#D4D4D8'}
+      style={styles.actionIcon}
+    />
+    {typeof count === 'number' ? (
+      <Text style={[styles.actionCount, subtle && styles.subtleActionText]}>{count}</Text>
+    ) : null}
+  </TouchableOpacity>
+);
+
+const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
+  const isOwner = issue.handle === currentHandle;
+
   return (
     <View style={styles.card}>
-      <Image source={{ uri: issue.image }} style={styles.issueImage} />
+      {issue.image ? <Image source={{ uri: issue.image }} style={styles.issueImage} /> : null}
+
       <View style={styles.cardBody}>
         <View style={styles.headerRow}>
-          <View>
+          <View style={styles.headerIdentity}>
             <Text style={styles.titleText}>{issue.author}</Text>
             <Text style={styles.handleText}>{issue.handle}</Text>
           </View>
           <Text style={styles.timeText}>{issue.time}</Text>
         </View>
 
-        <Text style={styles.locationText}>{issue.location}</Text>
         <Text style={styles.issueText}>{issue.brief}</Text>
 
         <View style={styles.metaRow}>
-          <View style={styles.statusChip}>
-            <Text style={styles.statusText}>{issue.status}</Text>
-          </View>
-          <Text style={styles.metaAction}>Share</Text>
-          <Text style={styles.metaAction}>Comment</Text>
+          {issue.location ? <Text style={styles.locationText}>{issue.location}</Text> : null}
+          {issue.status ? (
+            <View style={styles.statusChip}>
+              <Text style={styles.statusText}>{issue.status}</Text>
+            </View>
+          ) : null}
         </View>
 
-        <View style={styles.voteRow}>
-          <TouchableOpacity
-            onPress={() => onVote(issue.id, 'upvote')}
-            style={styles.voteButton}
-          >
-            <Text style={styles.voteIcon}>⬆️</Text>
-            <Text style={styles.voteCount}>{issue.upvotes}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
+        <View style={styles.actionBar}>
+          <ActionItem icon="message-circle" count={0} />
+          <ActionItem icon="arrow-up" count={issue.upvotes} onPress={() => onVote(issue.id, 'upvote')} />
+          <ActionItem icon="share" count={0} />
+          <ActionItem
+            icon="arrow-down"
+            count={issue.downvotes}
             onPress={() => onVote(issue.id, 'downvote')}
-            style={styles.voteButton}
-          >
-            <Text style={styles.voteIcon}>⬇️</Text>
-            <Text style={styles.voteCount}>{issue.downvotes}</Text>
-          </TouchableOpacity>
+            subtle
+          />
+          {isOwner ? <ActionItem icon="trash-2" onPress={() => onDelete?.(issue.id)} subtle /> : null}
         </View>
       </View>
     </View>
@@ -48,19 +62,20 @@ const IssueCard = ({ issue, onVote }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#0F172A',
-    borderRadius: 24,
+    backgroundColor: '#000000',
+    borderRadius: 18,
     overflow: 'hidden',
-    marginBottom: 14,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#1E293B',
+    borderColor: '#27272A',
   },
   issueImage: {
     width: '100%',
     height: 160,
+    backgroundColor: '#111111',
   },
   cardBody: {
-    padding: 16,
+    padding: 14,
   },
   headerRow: {
     flexDirection: 'row',
@@ -68,78 +83,82 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  headerIdentity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    paddingRight: 12,
+  },
   titleText: {
-    color: '#F8FAFC',
+    color: '#FFFFFF',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: 15,
+    marginRight: 6,
   },
   handleText: {
-    color: '#94A3B8',
-    marginTop: 2,
+    color: '#A3A3A3',
     fontSize: 13,
   },
   timeText: {
-    color: '#94A3B8',
+    color: '#A3A3A3',
     fontSize: 12,
   },
-  locationText: {
-    color: '#60A5FA',
-    fontSize: 13,
-    marginBottom: 10,
-  },
   issueText: {
-    color: '#E2E8F0',
+    color: '#FFFFFF',
     fontSize: 15,
-    lineHeight: 22,
-    marginBottom: 14,
+    lineHeight: 21,
+    marginBottom: 10,
   },
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    marginBottom: 14,
+    marginBottom: 10,
+  },
+  locationText: {
+    color: '#A3A3A3',
+    fontSize: 12,
+    marginRight: 8,
+    marginBottom: 6,
   },
   statusChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#2563EB',
-    marginRight: 10,
+    borderColor: '#3F3F46',
     marginBottom: 6,
+    backgroundColor: '#090909',
   },
   statusText: {
-    color: '#60A5FA',
-    fontWeight: '700',
-    fontSize: 12,
+    color: '#D4D4D8',
+    fontWeight: '600',
+    fontSize: 11,
   },
-  metaAction: {
-    color: '#94A3B8',
-    fontSize: 13,
-    marginRight: 14,
-    marginBottom: 6,
-  },
-  voteRow: {
+  actionBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#18181B',
+    paddingTop: 10,
   },
-  voteButton: {
+  actionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#15233C',
-    borderRadius: 16,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginRight: 12,
+    minHeight: 28,
+    minWidth: 40,
   },
-  voteIcon: {
-    fontSize: 16,
-    marginRight: 8,
+  actionIcon: {
+    marginRight: 4,
   },
-  voteCount: {
-    color: '#EFF6FF',
-    fontWeight: '700',
-    fontSize: 15,
+  actionCount: {
+    color: '#D4D4D8',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  subtleActionText: {
+    color: '#71717A',
   },
 });
 
