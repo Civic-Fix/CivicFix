@@ -65,6 +65,9 @@ CivicFix/
 | Method | Path | Description |
 |---|---|---|
 | POST | `/api/auth/signup` | Register (name, email, phone, password) |
+| POST | `/api/issues` | Create an issue with mandatory image proof and coordinates |
+| GET | `/api/issues/nearby?lat=<lat>&lng=<lng>&radius=<meters>&limit=<count>` | Fetch nearby issues sorted by distance |
+| GET | `/api/issues/map?limit=<count>` | Fetch geo points for future map, clustering, and heatmap views |
 | POST | `/api/auth/login` | Login with email/password → returns JWT |
 
 ---
@@ -98,7 +101,14 @@ cp .env.example .env
 ```
 SUPABASE_URL=https://<your-project>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
+DEFAULT_ORGANIZATION_ID=<existing-organization-uuid>
 PORT=5000
+```
+
+Run the PostGIS migration in your Supabase SQL editor before creating location-aware issues:
+
+```sql
+-- file: backend/db/migrations/001_issue_geospatial_setup.sql
 ```
 
 Start the server:
