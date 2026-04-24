@@ -24,7 +24,7 @@ app.use((req, res, next) => {
 });
 
 app.use("/api/auth", authRoutes);
-// app.use("/api/issues", issueRoutes);
+app.use("/api/issues", issueRoutes);
 
 app.get("/", (req, res) => {
   res.send("CivicFix API running");
