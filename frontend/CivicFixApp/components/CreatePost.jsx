@@ -15,7 +15,8 @@ import * as ImagePicker from 'expo-image-picker';
 import Feather from '@expo/vector-icons/Feather';
 import styles from './FeedsStyles';
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+// const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL ='http://localhost:5000/api';
 const MAX_IMAGES = 6;
 
 const formatCoordinates = ({ lat, lng }) => `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -27,6 +28,12 @@ const formatStatus = (status) =>
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(' ')
     : 'Reported';
+
+const buildAttachmentPayload = (images = []) =>
+  images.map((image) => ({
+    file_url: image.uri,
+    file_type: image.file_type || image.mimeType || 'image/jpeg',
+  }));
 
 const getCurrentLocation = () =>
   new Promise((resolve, reject) => {
@@ -76,6 +83,8 @@ const normalizeAssets = (assets = []) =>
     width: asset.width,
     height: asset.height,
     fileName: asset.fileName || asset.uri.split('/').pop() || 'issue-proof.jpg',
+    mimeType: asset.mimeType || 'image/jpeg',
+    base64: asset.base64 || '',
   }));
 
 const CreatePost = ({ user, onPostCreated, onCancel }) => {
@@ -84,11 +93,10 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
   const [infoMessage, setInfoMessage] = useState('');
   const [locationError, setLocationError] = useState('');
   const [imageError, setImageError] = useState('');
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isPreparingReport, setIsPreparingReport] = useState(false);
   const [isRefreshingLocation, setIsRefreshingLocation] = useState(false);
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
-  const [step, setStep] = useState('permissionGate');
   const [coordinates, setCoordinates] = useState(null);
   const [resolvedAddress, setResolvedAddress] = useState('');
   const [addressWarning, setAddressWarning] = useState('');
@@ -103,6 +111,49 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
       setDisplayName(user.email.split('@')[0]);
     }
   }, [user]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const initializeReporting = async () => {
+      setIsBootstrapping(true);
+      setInfoMessage('');
+      setImageError('');
+      setLocationError('');
+
+      try {
+        const [mediaPermission, cameraPermission] = await Promise.all([
+          ImagePicker.requestMediaLibraryPermissionsAsync(),
+          ImagePicker.requestCameraPermissionsAsync(),
+        ]);
+
+        if (!isActive) {
+          return;
+        }
+
+        const hasImageAccess = mediaPermission.granted || cameraPermission.granted;
+
+        setMediaPermissionGranted(mediaPermission.granted);
+        setCameraPermissionGranted(cameraPermission.granted);
+
+        if (!hasImageAccess) {
+          setImageError('Camera or photo library access is required to upload proof.');
+        }
+
+        await requestLocationAccess();
+      } finally {
+        if (isActive) {
+          setIsBootstrapping(false);
+        }
+      }
+    };
+
+    initializeReporting();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!coordinates) {
@@ -179,36 +230,6 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
     }
   };
 
-  const handleContinueToReporting = async () => {
-    setIsPreparingReport(true);
-    setInfoMessage('');
-    setImageError('');
-
-    try {
-      const [mediaPermission, cameraPermission] = await Promise.all([
-        ImagePicker.requestMediaLibraryPermissionsAsync(),
-        ImagePicker.requestCameraPermissionsAsync(),
-      ]);
-
-      const hasImageAccess = mediaPermission.granted || cameraPermission.granted;
-
-      setMediaPermissionGranted(mediaPermission.granted);
-      setCameraPermissionGranted(cameraPermission.granted);
-
-      if (!hasImageAccess) {
-        setImageError('Camera or photo library access is required to upload proof.');
-      }
-
-      const nextCoordinates = await requestLocationAccess();
-
-      if (nextCoordinates && hasImageAccess) {
-        setStep('compose');
-      }
-    } finally {
-      setIsPreparingReport(false);
-    }
-  };
-
   const handlePickFromGallery = async () => {
     if (!mediaPermissionGranted) {
       setImageError('Photo library access is required to upload proof.');
@@ -218,6 +239,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
+      base64: true,
       quality: 0.8,
       selectionLimit: MAX_IMAGES,
     });
@@ -237,6 +259,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      base64: true,
       quality: 0.8,
     });
 
@@ -257,11 +280,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
   };
 
   const handleRefreshLocation = async () => {
-    const nextCoordinates = await requestLocationAccess({ isRetry: true });
-
-    if (nextCoordinates) {
-      setStep('compose');
-    }
+    await requestLocationAccess({ isRetry: true });
   };
 
   const handlePostIssue = async () => {
@@ -306,6 +325,31 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
       let syncedPost = localPost;
 
       if (authToken) {
+        const uploadResponses = await Promise.all(
+          selectedImages.map(async (image) => {
+            const uploadResponse = await fetch(`${API_BASE_URL}/issues/attachments/upload`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${authToken}`,
+              },
+              body: JSON.stringify({
+                file_name: image.fileName || 'issue-proof.jpg',
+                mime_type: image.mimeType || 'image/jpeg',
+                file_data_base64: image.base64,
+              }),
+            });
+
+            const uploadResult = await uploadResponse.json();
+
+            if (!uploadResponse.ok) {
+              throw new Error(uploadResult.error || 'Unable to upload proof image');
+            }
+
+            return uploadResult.asset;
+          })
+        );
+
         const response = await fetch(`${API_BASE_URL}/issues`, {
           method: 'POST',
           headers: {
@@ -317,9 +361,13 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
             description: issueText.trim(),
             lat: coordinates.lat,
             lng: coordinates.lng,
-            address: resolvedAddress || formatCoordinates(coordinates),
             status: 'reported',
-            images: selectedImages.map((image) => image.uri),
+            attachments: buildAttachmentPayload(
+              uploadResponses.map((asset) => ({
+                uri: asset.file_url,
+                file_type: asset.file_type,
+              }))
+            ),
           }),
         });
 
@@ -330,17 +378,27 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
         }
 
         const createdIssue = result.issue;
-        const primaryImage = createdIssue?.image_urls?.[0] || selectedImages[0]?.uri;
+        const primaryImage = createdIssue?.attachments?.[0]?.file_url || selectedImages[0]?.uri;
         const displayLocation =
-          createdIssue?.address || resolvedAddress || formatCoordinates(coordinates);
+          resolvedAddress ||
+          formatCoordinates({
+            lat: createdIssue?.lat ?? coordinates.lat,
+            lng: createdIssue?.lng ?? coordinates.lng,
+          });
 
         syncedPost = {
           ...localPost,
           id: createdIssue?.id || localPost.id,
-          brief: createdIssue?.title || localPost.brief,
+          brief: createdIssue?.description || createdIssue?.title || localPost.brief,
           location: displayLocation,
           status: formatStatus(createdIssue?.status),
           image: primaryImage,
+          images:
+            createdIssue?.attachments?.map((attachment) => ({
+              uri: attachment.file_url,
+              fileName: attachment.file_url?.split('/').pop() || 'issue-proof.jpg',
+            })) || localPost.images,
+          upvotes: createdIssue?.vote_count ?? localPost.upvotes,
           lat: createdIssue?.lat ?? localPost.lat,
           lng: createdIssue?.lng ?? localPost.lng,
         };
@@ -361,7 +419,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
     }
   };
 
-  if (step === 'permissionGate') {
+  if (isBootstrapping) {
     return (
       <View style={styles.container}>
         <View style={styles.topBar}>
@@ -373,27 +431,12 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
         </View>
 
         <View style={styles.permissionGateCard}>
-          <Text style={styles.permissionGateEyebrow}>Before you report</Text>
-          <Text style={styles.permissionGateTitle}>We only ask for access when you choose to file an issue.</Text>
+          <Text style={styles.permissionGateEyebrow}>Preparing report</Text>
+          <Text style={styles.permissionGateTitle}>Getting your current location and media access ready.</Text>
           <Text style={styles.permissionGateBody}>
-            Your location pinpoints the issue on the map, and a photo is required as proof for verification.
+            Your location is being attached automatically, and uploaded images will appear below with a remove option before you submit.
           </Text>
-
-          <View style={styles.permissionChecklist}>
-            <View style={styles.permissionChecklistItem}>
-              <Text style={styles.permissionChecklistLabel}>Location</Text>
-              <Text style={styles.permissionChecklistText}>
-                Required to attach accurate latitude and longitude to the report.
-              </Text>
-            </View>
-
-            <View style={styles.permissionChecklistItem}>
-              <Text style={styles.permissionChecklistLabel}>Image proof</Text>
-              <Text style={styles.permissionChecklistText}>
-                Required so authorities can verify what was reported.
-              </Text>
-            </View>
-          </View>
+          <ActivityIndicator color="#FFFFFF" size="large" style={{ marginBottom: 18 }} />
 
           {locationError ? <Text style={styles.permissionErrorText}>{locationError}</Text> : null}
           {imageError ? <Text style={styles.permissionErrorText}>{imageError}</Text> : null}
@@ -403,15 +446,10 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
               <Text style={styles.secondaryButtonText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.postButton, isPreparingReport && styles.postButtonDisabled]}
-              onPress={handleContinueToReporting}
-              disabled={isPreparingReport}
+              style={styles.postButton}
+              onPress={() => setIsBootstrapping(false)}
             >
-              {isPreparingReport ? (
-                <ActivityIndicator color="#000000" />
-              ) : (
-                <Text style={styles.postButtonText}>Continue</Text>
-              )}
+              <Text style={styles.postButtonText}>Open form</Text>
             </TouchableOpacity>
           </View>
         </View>

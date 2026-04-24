@@ -17,7 +17,7 @@ const ActionItem = ({ icon, count, onPress, subtle = false }) => (
 );
 
 const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
-  const isOwner = issue.handle === currentHandle;
+  const isOwner = typeof issue.isOwner === 'boolean' ? issue.isOwner : issue.handle === currentHandle;
 
   return (
     <View style={styles.card}>
@@ -45,13 +45,18 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
 
         <View style={styles.actionBar}>
           <ActionItem icon="message-circle" count={0} />
-          <ActionItem icon="arrow-up" count={issue.upvotes} onPress={() => onVote(issue.id, 'upvote')} />
+          <ActionItem 
+            icon="arrow-up" 
+            count={issue.upvotes} 
+            onPress={() => !isOwner && onVote(issue.id, 'upvote')}
+            subtle={isOwner}
+          />
           <ActionItem icon="share" count={0} />
           <ActionItem
             icon="arrow-down"
             count={issue.downvotes}
-            onPress={() => onVote(issue.id, 'downvote')}
-            subtle
+            onPress={() => !isOwner && onVote(issue.id, 'downvote')}
+            subtle={isOwner}
           />
           {isOwner ? <ActionItem icon="trash-2" onPress={() => onDelete?.(issue.id)} subtle /> : null}
         </View>
