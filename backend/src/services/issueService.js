@@ -38,20 +38,46 @@ const parseRequiredNumber = (value, fieldName) => {
   return parsedValue;
 };
 
+const parseOptionalPositiveInteger = (value, defaultValue) => {
+  if (value === undefined || value === null || value === "") {
+    return defaultValue;
+  }
+
+  const parsedValue = Number.parseInt(value, 10);
+
+  if (Number.isNaN(parsedValue) || parsedValue <= 0) {
+    throw new IssueServiceError("Value must be a positive integer");
+  }
+
+  return parsedValue;
+};
+
+const validateImages = (images) => {
+  if (!Array.isArray(images) || images.length < 1) {
+    throw new IssueServiceError("At least one image is required");
+  }
+
+  const normalizedImages = images
+    .map((image) => (typeof image === "string" ? image.trim() : ""))
+    .filter(Boolean);
+
+  if (!normalizedImages.length) {
+    throw new IssueServiceError("At least one image is required");
+  }
+
+  return normalizedImages;
+};
+
 const validateCreateIssuePayload = ({
   title,
   lat,
   lng,
-  organization_id,
   status,
   verification_status,
+  images,
 }) => {
   if (!title || !title.trim()) {
     throw new IssueServiceError("Title is required");
-  }
-
-  if (!organization_id) {
-    throw new IssueServiceError("organization_id is required");
   }
 
   if (status && !allowedStatuses.includes(status)) {
@@ -69,7 +95,22 @@ const validateCreateIssuePayload = ({
     title: title.trim(),
     lat: parseRequiredNumber(lat, "lat"),
     lng: parseRequiredNumber(lng, "lng"),
+    images: validateImages(images),
   };
+};
+
+const resolveOrganizationId = (organizationId) => {
+  const resolvedOrganizationId =
+    organizationId || process.env.DEFAULT_ORGANIZATION_ID;
+
+  if (!resolvedOrganizationId) {
+    throw new IssueServiceError(
+      "organization_id is required or DEFAULT_ORGANIZATION_ID must be configured",
+      500
+    );
+  }
+
+  return resolvedOrganizationId;
 };
 
 const ensureOrganizationExists = async (organizationId) => {
@@ -95,18 +136,22 @@ export const createIssue = async (issueData, userId) => {
     assigned_to,
     status,
     verification_status,
+    address,
+    images,
   } = issueData;
+
+  const resolvedOrganizationId = resolveOrganizationId(organization_id);
 
   const validatedFields = validateCreateIssuePayload({
     title,
     lat,
     lng,
-    organization_id,
     status,
     verification_status,
+    images,
   });
 
-  await ensureOrganizationExists(organization_id);
+  await ensureOrganizationExists(resolvedOrganizationId);
 
   const issuePayload = {
     title: validatedFields.title,
@@ -114,8 +159,10 @@ export const createIssue = async (issueData, userId) => {
     category: category?.trim() || null,
     lat: validatedFields.lat,
     lng: validatedFields.lng,
+    address: address?.trim() || null,
+    image_urls: validatedFields.images,
     created_by: userId,
-    organization_id,
+    organization_id: resolvedOrganizationId,
     assigned_to: assigned_to || null,
     status: status || "reported",
     verification_status: verification_status || "pending",
@@ -139,6 +186,68 @@ export const createIssue = async (issueData, userId) => {
   }
 
   return data;
+};
+
+export const getNearbyIssues = async ({
+  lat,
+  lng,
+  radius,
+  limit,
+}) => {
+  const queryLat = parseRequiredNumber(lat, "lat");
+  const queryLng = parseRequiredNumber(lng, "lng");
+  const radiusMeters = parseOptionalPositiveInteger(radius, 5000);
+  const resultLimit = parseOptionalPositiveInteger(limit, 50);
+
+  const { data, error } = await supabase.rpc("get_nearby_issues", {
+    query_lat: queryLat,
+    query_lng: queryLng,
+    radius_meters: radiusMeters,
+    result_limit: resultLimit,
+  });
+
+  if (error) {
+    console.error("[IssueService] getNearbyIssues failed", {
+      queryLat,
+      queryLng,
+      radiusMeters,
+      resultLimit,
+      error,
+    });
+    throw new IssueServiceError(
+      error.message || "Unable to fetch nearby issues",
+      500
+    );
+  }
+
+  return data || [];
+};
+
+export const getIssueMapPoints = async (limit) => {
+  const resultLimit = parseOptionalPositiveInteger(limit, 250);
+
+  const { data, error } = await supabase
+    .from("issues")
+    .select(
+      "id, title, status, verification_status, lat, lng, address, created_at"
+    )
+    .not("lat", "is", null)
+    .not("lng", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(resultLimit);
+
+  if (error) {
+    console.error("[IssueService] getIssueMapPoints failed", {
+      resultLimit,
+      error,
+    });
+    throw new IssueServiceError(
+      error.message || "Unable to fetch issue map points",
+      500
+    );
+  }
+
+  return data || [];
 };
 
 export { IssueServiceError };
