@@ -12,8 +12,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-// const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-const API_BASE_URL = "http://localhost:5000/api"
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+// const API_BASE_URL = "http://localhost:5000/api"
 console.log('[Login] API_BASE_URL', API_BASE_URL); 
 
 const Login = ({ onSignupPress, onLoginSuccess }) => {
@@ -164,7 +164,7 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#F8F9FA',
   },
   innerContainer: {
     flex: 1,
@@ -176,56 +176,56 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: '#27272A',
-    backgroundColor: '#050505',
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
   },
   title: {
     fontSize: 30,
     fontWeight: '800',
-    color: '#FFFFFF',
+    color: '#1A1A1A',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 14,
     lineHeight: 20,
-    color: '#A3A3A3',
+    color: '#666666',
   },
   inputGroup: {
     marginBottom: 18,
   },
   input: {
-    backgroundColor: '#090909',
+    backgroundColor: '#F5F5F5',
     height: 52,
     borderRadius: 16,
     paddingHorizontal: 16,
     fontSize: 15,
     marginBottom: 12,
-    color: '#FFFFFF',
+    color: '#1A1A1A',
     borderWidth: 1,
-    borderColor: '#27272A',
+    borderColor: '#E0E0E0',
   },
   forgotPass: {
     alignSelf: 'flex-end',
   },
   forgotPassText: {
-    color: '#D4D4D8',
+    color: '#3B82F6',
     fontWeight: '600',
     fontSize: 13,
   },
   errorText: {
-    color: '#F87171',
+    color: '#EF4444',
     marginBottom: 12,
     textAlign: 'center',
     fontSize: 13,
   },
   successText: {
-    color: '#86EFAC',
+    color: '#10B981',
     marginBottom: 12,
     textAlign: 'center',
     fontSize: 13,
   },
   loginButton: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#3B82F6',
     height: 54,
     borderRadius: 16,
     justifyContent: 'center',
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   loginButtonText: {
-    color: '#000000',
+    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
   },
@@ -247,17 +247,17 @@ const styles = StyleSheet.create({
   line: {
     flex: 1,
     height: 1,
-    backgroundColor: '#27272A',
+    backgroundColor: '#E0E0E0',
   },
   dividerText: {
     marginHorizontal: 10,
-    color: '#71717A',
+    color: '#999999',
     fontSize: 12,
   },
   socialButton: {
     borderWidth: 1,
-    borderColor: '#27272A',
-    backgroundColor: '#090909',
+    borderColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
     height: 54,
     borderRadius: 16,
     justifyContent: 'center',
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
   socialButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: '#1A1A1A',
   },
   footer: {
     flexDirection: 'row',
@@ -274,11 +274,11 @@ const styles = StyleSheet.create({
     marginTop: 22,
   },
   footerText: {
-    color: '#A3A3A3',
+    color: '#666666',
     fontSize: 14,
   },
   signUpText: {
-    color: '#FFFFFF',
+    color: '#3B82F6',
     fontWeight: '700',
     fontSize: 14,
   },
