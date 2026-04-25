@@ -7,7 +7,7 @@ const ActionItem = ({ icon, count, onPress, subtle = false }) => (
     <Feather
       name={icon}
       size={17}
-      color={subtle ? '#71717A' : '#D4D4D8'}
+      color={subtle ? '#D1D5DB' : '#6B7280'}
       style={styles.actionIcon}
     />
     {typeof count === 'number' ? (
@@ -67,17 +67,17 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#000000',
+    backgroundColor: '#FFFFFF',
     borderRadius: 18,
     overflow: 'hidden',
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#27272A',
+    borderColor: '#E8E8E8',
   },
   issueImage: {
     width: '100%',
     height: 160,
-    backgroundColor: '#111111',
+    backgroundColor: '#F0F0F0',
   },
   cardBody: {
     padding: 14,
@@ -95,21 +95,21 @@ const styles = StyleSheet.create({
     paddingRight: 12,
   },
   titleText: {
-    color: '#FFFFFF',
+    color: '#1A1A1A',
     fontWeight: '700',
     fontSize: 15,
     marginRight: 6,
   },
   handleText: {
-    color: '#A3A3A3',
+    color: '#999999',
     fontSize: 13,
   },
   timeText: {
-    color: '#A3A3A3',
+    color: '#999999',
     fontSize: 12,
   },
   issueText: {
-    color: '#FFFFFF',
+    color: '#333333',
     fontSize: 15,
     lineHeight: 21,
     marginBottom: 10,
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   locationText: {
-    color: '#A3A3A3',
+    color: '#666666',
     fontSize: 12,
     marginRight: 8,
     marginBottom: 6,
@@ -131,12 +131,12 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#3F3F46',
+    borderColor: '#86EFAC',
     marginBottom: 6,
-    backgroundColor: '#090909',
+    backgroundColor: '#F0FDF4',
   },
   statusText: {
-    color: '#D4D4D8',
+    color: '#16A34A',
     fontWeight: '600',
     fontSize: 11,
   },
@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: '#18181B',
+    borderTopColor: '#E8E8E8',
     paddingTop: 10,
   },
   actionItem: {
@@ -158,12 +158,12 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   actionCount: {
-    color: '#D4D4D8',
+    color: '#555555',
     fontSize: 11,
     fontWeight: '600',
   },
   subtleActionText: {
-    color: '#71717A',
+    color: '#999999',
   },
 });
 
