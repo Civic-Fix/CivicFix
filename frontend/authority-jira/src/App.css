@@ -1,0 +1,128 @@
+.ambient-grid {
+  background:
+    linear-gradient(rgba(22, 101, 52, 0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(22, 101, 52, 0.028) 1px, transparent 1px),
+    radial-gradient(circle at 12% 22%, rgba(52, 211, 153, 0.16), transparent 30rem),
+    radial-gradient(circle at 88% 12%, rgba(132, 204, 22, 0.1), transparent 28rem),
+    linear-gradient(135deg, #fbfaf7 0%, #eefbf4 48%, #f8f4ed 100%);
+  background-size:
+    44px 44px,
+    44px 44px,
+    auto,
+    auto;
+}
+
+.animate-rise {
+  animation: rise-in 700ms ease both;
+}
+
+.issue-card {
+  animation: card-rise 800ms 120ms ease both;
+}
+
+.civic-app,
+.theme-nav,
+.ambient-grid {
+  transition:
+    background 300ms ease,
+    color 300ms ease,
+    border-color 300ms ease,
+    box-shadow 300ms ease;
+}
+
+.civic-dark .civic-app {
+  background: #07140f;
+  color: #f8fafc;
+}
+
+.civic-dark .theme-nav {
+  border-color: rgba(16, 185, 129, 0.24);
+  background: rgba(8, 20, 15, 0.9);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.35);
+}
+
+.civic-dark .theme-brand-text,
+.civic-dark .theme-nav a {
+  color: #f8fafc;
+}
+
+.civic-dark .theme-nav-links {
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+}
+
+.civic-dark .theme-toggle {
+  border-color: rgba(16, 185, 129, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: #d1fae5;
+}
+
+.theme-bubble {
+  width: 3.75rem;
+  height: 3.75rem;
+  min-width: 3.75rem;
+  min-height: 3.75rem;
+  padding: 0;
+  border-radius: 9999px;
+  aspect-ratio: 1 / 1;
+  backdrop-filter: blur(18px);
+  overflow: hidden;
+}
+
+.theme-bubble-icon {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  place-items: center;
+  border-radius: 9999px;
+  background: rgba(6, 78, 59, 0.08);
+  line-height: 1;
+}
+
+.civic-dark .theme-toggle span:first-child {
+  filter: drop-shadow(0 6px 14px rgba(16, 185, 129, 0.2));
+}
+
+.civic-dark .theme-bubble-icon {
+  background: rgba(209, 250, 229, 0.12);
+}
+
+.civic-dark .ambient-grid {
+  background:
+    linear-gradient(rgba(16, 185, 129, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 12% 22%, rgba(16, 185, 129, 0.18), transparent 30rem),
+    radial-gradient(circle at 88% 12%, rgba(34, 197, 94, 0.1), transparent 28rem),
+    linear-gradient(135deg, #07140f 0%, #0b1f18 52%, #111827 100%);
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-rise,
+  .issue-card {
+    animation: none;
+  }
+}
