@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -245,7 +246,7 @@ export default function App() {
     if (isLoadingIssues) {
       return (
         <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color="#FFFFFF" />
+          <ActivityIndicator size="large" color="#16A34A" />
           <Text style={styles.loadingStateText}>Loading civic reports...</Text>
         </View>
       );
@@ -264,91 +265,93 @@ export default function App() {
   };
 
   return (
-    <View style={styles.container}>
-      <StatusBar style="light" />
-      {screen === 'login' ? (
-        <Login
-          onSignupPress={() => setScreen('signup')}
-          onLoginSuccess={handleLoginSuccess}
-        />
-      ) : screen === 'signup' ? (
-        <Signup onLoginPress={() => setScreen('login')} />
-      ) : screen === 'createPost' ? (
-        <CreatePost
-          user={user}
-          onPostCreated={handleCreatePost}
-          onCancel={() => setScreen('feeds')}
-        />
-      ) : (
-        <View style={styles.appShell}>
-          <View style={styles.mainContent}>{renderMainScreen()}</View>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <StatusBar style="dark" />
+        {screen === 'login' ? (
+          <Login
+            onSignupPress={() => setScreen('signup')}
+            onLoginSuccess={handleLoginSuccess}
+          />
+        ) : screen === 'signup' ? (
+          <Signup onLoginPress={() => setScreen('login')} />
+        ) : screen === 'createPost' ? (
+          <CreatePost
+            user={user}
+            onPostCreated={handleCreatePost}
+            onCancel={() => setScreen('feeds')}
+          />
+        ) : (
+          <View style={styles.appShell}>
+            <View style={styles.mainContent}>{renderMainScreen()}</View>
 
-          <View style={styles.bottomBar}>
-            <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('home')}>
-              <Feather
-                name="home"
-                size={22}
-                color={activeTab === 'home' ? '#FFFFFF' : '#6B7280'}
-              />
-              <Text style={[styles.bottomLabel, activeTab === 'home' && styles.bottomLabelActive]}>
-                Home
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.bottomCenterItem}
-              onPress={() => setActiveTab('assistant')}
-            >
-              <View style={styles.bottomCenterButton}>
-                <MaterialCommunityIcons
-                  name="robot-outline"
-                  size={28}
-                  color={activeTab === 'assistant' ? '#000000' : '#111111'}
+            <View style={styles.bottomBar}>
+              <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('home')}>
+                <Feather
+                  name="home"
+                  size={22}
+                  color={activeTab === 'home' ? '#16A34A' : '#9CA3AF'}
                 />
-              </View>
-              <Text
-                style={[
-                  styles.bottomLabel,
-                  activeTab === 'assistant' && styles.bottomLabelActive,
-                ]}
-              >
-                CivicBot
-              </Text>
-            </TouchableOpacity>
+                <Text style={[styles.bottomLabel, activeTab === 'home' && styles.bottomLabelActive]}>
+                  Home
+                </Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.bottomItem}
-              onPress={() => setActiveTab('notifications')}
-            >
-              <Feather
-                name="bell"
-                size={22}
-                color={activeTab === 'notifications' ? '#FFFFFF' : '#6B7280'}
-              />
-              <Text
-                style={[
-                  styles.bottomLabel,
-                  activeTab === 'notifications' && styles.bottomLabelActive,
-                ]}
+              <TouchableOpacity
+                style={styles.bottomCenterItem}
+                onPress={() => setActiveTab('assistant')}
               >
-                Alerts
-              </Text>
-            </TouchableOpacity>
+                <View style={[styles.bottomCenterButton, activeTab === 'assistant' && styles.bottomCenterButtonActive]}>
+                  <MaterialCommunityIcons
+                    name="robot-outline"
+                    size={28}
+                    color={activeTab === 'assistant' ? '#FFFFFF' : '#16A34A'}
+                  />
+                </View>
+                <Text
+                  style={[
+                    styles.bottomLabel,
+                    activeTab === 'assistant' && styles.bottomLabelActive,
+                  ]}
+                >
+                  CivicBot
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.bottomItem}
+                onPress={() => setActiveTab('notifications')}
+              >
+                <Feather
+                  name="bell"
+                  size={22}
+                  color={activeTab === 'notifications' ? '#16A34A' : '#9CA3AF'}
+                />
+                <Text
+                  style={[
+                    styles.bottomLabel,
+                    activeTab === 'notifications' && styles.bottomLabelActive,
+                  ]}
+                >
+                  Alerts
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
-    </View>
+        )}
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#F9FAFB',
   },
   appShell: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: '#F9FAFB',
   },
   mainContent: {
     flex: 1,
@@ -357,25 +360,25 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#000000',
+    backgroundColor: '#F9FAFB',
     paddingHorizontal: 24,
   },
   loadingStateText: {
     marginTop: 14,
-    color: '#D4D4D8',
+    color: '#6B7280',
     fontSize: 14,
     textAlign: 'center',
   },
   bottomBar: {
-    height: 68,
+    height: 64,
     paddingHorizontal: 24,
-    paddingBottom: 10,
-    paddingTop: 6,
-    backgroundColor: '#000000',
+    paddingBottom: 8,
+    paddingTop: 8,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#18181B',
+    borderTopColor: '#E5E7EB',
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
   bottomItem: {
@@ -385,26 +388,30 @@ const styles = StyleSheet.create({
   },
   bottomCenterItem: {
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: -16,
+    justifyContent: 'center',
+    marginTop: -20,
   },
   bottomCenterButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFFFFF',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#F0FDF4',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 4,
-    borderColor: '#000000',
+    borderWidth: 2,
+    borderColor: '#86EFAC',
+  },
+  bottomCenterButtonActive: {
+    backgroundColor: '#16A34A',
+    borderColor: '#16A34A',
   },
   bottomLabel: {
     marginTop: 3,
     fontSize: 10,
-    color: '#6B7280',
+    color: '#9CA3AF',
     fontWeight: '600',
   },
   bottomLabelActive: {
-    color: '#FFFFFF',
+    color: '#16A34A',
   },
 });

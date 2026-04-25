@@ -38,30 +38,30 @@ const Notifications = ({ issues }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
-    paddingTop: 24,
-    paddingHorizontal: 16,
+    backgroundColor: '#F8F9FA',
   },
   title: {
-    color: '#FFFFFF',
+    color: '#1A1A1A',
     fontSize: 22,
     fontWeight: '800',
   },
   subtitle: {
-    color: '#A3A3A3',
+    color: '#666666',
     marginTop: 3,
     marginBottom: 14,
     fontSize: 12,
+    paddingHorizontal: 16,
   },
   list: {
     gap: 12,
+    paddingHorizontal: 16,
   },
   card: {
     borderWidth: 1,
-    borderColor: '#27272A',
+    borderColor: '#E0E0E0',
     borderRadius: 20,
     padding: 14,
-    backgroundColor: '#050505',
+    backgroundColor: '#FFFFFF',
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: '#111111',
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -79,18 +79,18 @@ const styles = StyleSheet.create({
     paddingRight: 10,
   },
   cardTitle: {
-    color: '#FFFFFF',
+    color: '#1A1A1A',
     fontSize: 14,
     fontWeight: '700',
     marginBottom: 4,
   },
   cardBody: {
-    color: '#A3A3A3',
+    color: '#666666',
     fontSize: 13,
     lineHeight: 18,
   },
   time: {
-    color: '#71717A',
+    color: '#999999',
     fontSize: 12,
   },
 });
