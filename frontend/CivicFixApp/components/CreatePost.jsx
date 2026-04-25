@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import Feather from '@expo/vector-icons/Feather';
 import styles from './FeedsStyles';
 
@@ -35,32 +36,30 @@ const buildAttachmentPayload = (images = []) =>
     file_type: image.file_type || image.mimeType || 'image/jpeg',
   }));
 
-const getCurrentLocation = () =>
-  new Promise((resolve, reject) => {
-    const geolocation = globalThis?.navigator?.geolocation;
-
-    if (!geolocation) {
-      reject(new Error('Geolocation is not supported on this device.'));
-      return;
+const getCurrentLocation = async () => {
+  try {
+    // Request location permission
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    
+    if (status !== 'granted') {
+      throw new Error('Location permission denied. Please enable location services in settings.');
     }
 
-    geolocation.getCurrentPosition(
-      (position) => {
-        resolve({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-      },
-      (error) => {
-        reject(error);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 0,
-      }
-    );
-  });
+    // Get current location with high accuracy
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High,
+      timeInterval: 1000,
+      distanceInterval: 0,
+    });
+
+    return {
+      lat: location.coords.latitude,
+      lng: location.coords.longitude,
+    };
+  } catch (error) {
+    throw new Error(error.message || 'Unable to retrieve location. Please try again.');
+  }
+};
 
 const reverseGeocode = async ({ lat, lng }) => {
   const response = await fetch(
@@ -436,7 +435,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           <Text style={styles.permissionGateBody}>
             Your location is being attached automatically, and uploaded images will appear below with a remove option before you submit.
           </Text>
-          <ActivityIndicator color="#FFFFFF" size="large" style={{ marginBottom: 18 }} />
+          <ActivityIndicator color="#16A34A" size="large" style={{ marginBottom: 18 }} />
 
           {locationError ? <Text style={styles.permissionErrorText}>{locationError}</Text> : null}
           {imageError ? <Text style={styles.permissionErrorText}>{imageError}</Text> : null}
@@ -509,7 +508,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
                 <View>
                   <Text style={styles.locationCardTitle}>Detected location</Text>
                   <Text style={styles.locationCardText}>
-                    {resolvedAddress || formatCoordinates(coordinates)}
+                    {resolvedAddress || (coordinates ? formatCoordinates(coordinates) : 'Detecting location...')}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -518,9 +517,9 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
                   disabled={isRefreshingLocation}
                 >
                   {isRefreshingLocation ? (
-                    <ActivityIndicator size="small" color="#FFFFFF" />
+                    <ActivityIndicator size="small" color="#16A34A" />
                   ) : (
-                    <Feather name="map-pin" size={16} color="#FFFFFF" />
+                    <Feather name="map-pin" size={16} color="#16A34A" />
                   )}
                 </TouchableOpacity>
               </View>
@@ -583,7 +582,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
               )}
               <Text style={styles.previewLocationLabel}>Location</Text>
               <Text style={styles.previewLocationText}>
-                {resolvedAddress || formatCoordinates(coordinates)}
+                {resolvedAddress || (coordinates ? formatCoordinates(coordinates) : 'Location pending...')}
               </Text>
             </View>
 
