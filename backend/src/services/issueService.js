@@ -254,7 +254,7 @@ const fetchVotesByIssueIds = async (issueIds) => {
 
   const { data, error } = await supabase
     .from("votes")
-    .select("id, issue_id, user_id, created_at")
+    .select("id, issue_id, user_id, vote_type, created_at")
     .in("issue_id", issueIds);
 
   if (error) {
@@ -283,37 +283,43 @@ const attachRelatedData = async (issues, currentUserId = null) => {
 
   for (const issueId of issueIds) {
     voteSummaryMap.set(issueId, {
-      vote_count: 0,
-      current_user_has_voted: false,
-      current_user_vote_id: null,
+      upvote_count: 0,
+      downvote_count: 0,
+      current_user_upvote_id: null,
+      current_user_downvote_id: null,
     });
   }
 
   for (const vote of votes) {
-    const currentSummary = voteSummaryMap.get(vote.issue_id) || {
-      vote_count: 0,
-      current_user_has_voted: false,
-      current_user_vote_id: null,
+    const s = voteSummaryMap.get(vote.issue_id) || {
+      upvote_count: 0,
+      downvote_count: 0,
+      current_user_upvote_id: null,
+      current_user_downvote_id: null,
     };
 
-    currentSummary.vote_count += 1;
+    if (vote.vote_type === 'upvote') s.upvote_count += 1;
+    else s.downvote_count += 1;
 
     if (currentUserId && vote.user_id === currentUserId) {
-      currentSummary.current_user_has_voted = true;
-      currentSummary.current_user_vote_id = vote.id;
+      if (vote.vote_type === 'upvote') s.current_user_upvote_id = vote.id;
+      else s.current_user_downvote_id = vote.id;
     }
 
-    voteSummaryMap.set(vote.issue_id, currentSummary);
+    voteSummaryMap.set(vote.issue_id, s);
   }
 
-  return issues.map((issue) => ({
-    ...issue,
-    attachments: attachmentsMap.get(issue.id) || [],
-    vote_count: voteSummaryMap.get(issue.id)?.vote_count || 0,
-    current_user_has_voted:
-      voteSummaryMap.get(issue.id)?.current_user_has_voted || false,
-    current_user_vote_id: voteSummaryMap.get(issue.id)?.current_user_vote_id || null,
-  }));
+  return issues.map((issue) => {
+    const s = voteSummaryMap.get(issue.id);
+    return {
+      ...issue,
+      attachments: attachmentsMap.get(issue.id) || [],
+      upvote_count: s?.upvote_count || 0,
+      downvote_count: s?.downvote_count || 0,
+      current_user_upvote_id: s?.current_user_upvote_id || null,
+      current_user_downvote_id: s?.current_user_downvote_id || null,
+    };
+  });
 };
 
 const getIssueRecordById = async (issueId) => {
@@ -556,7 +562,11 @@ export const getIssueById = async (issueId, currentUserId = null) => {
   return enrichedIssue;
 };
 
-export const addIssueVote = async (issueId, userId) => {
+export const addIssueVote = async (issueId, userId, voteType = "upvote") => {
+  if (!["upvote", "downvote"].includes(voteType)) {
+    throw new IssueServiceError("vote_type must be 'upvote' or 'downvote'", 400);
+  }
+
   await getIssueRecordById(issueId);
 
   const { data: existingVote, error: existingVoteError } = await supabase
@@ -564,42 +574,31 @@ export const addIssueVote = async (issueId, userId) => {
     .select("id")
     .eq("issue_id", issueId)
     .eq("user_id", userId)
+    .eq("vote_type", voteType)
     .maybeSingle();
 
   if (existingVoteError) {
     console.error("[IssueService] addIssueVote check failed", {
-      issueId,
-      userId,
-      error: existingVoteError,
+      issueId, userId, error: existingVoteError,
     });
-    throw new IssueServiceError(
-      existingVoteError.message || "Unable to create vote",
-      500
-    );
+    throw new IssueServiceError(existingVoteError.message || "Unable to create vote", 500);
   }
 
   if (existingVote) {
-    throw new IssueServiceError("You have already voted for this issue", 409);
+    throw new IssueServiceError("You have already cast this vote", 409);
   }
 
   const { data, error } = await supabase
     .from("votes")
-    .insert({
-      issue_id: issueId,
-      user_id: userId,
-    })
+    .insert({ issue_id: issueId, user_id: userId, vote_type: voteType })
     .select()
     .single();
 
   if (error || !data) {
     console.error("[IssueService] addIssueVote insert failed", {
-      issueId,
-      userId,
-      error,
+      issueId, userId, error,
     });
-    // Return 400 for business logic errors (like "can't vote on own post"), 500 for others
-    const statusCode = error?.code === 'P0001' ? 400 : 500;
-    throw new IssueServiceError(error?.message || "Unable to create vote", statusCode);
+    throw new IssueServiceError(error?.message || "Unable to create vote", 500);
   }
 
   return {
@@ -608,7 +607,7 @@ export const addIssueVote = async (issueId, userId) => {
   };
 };
 
-export const removeIssueVote = async (issueId, userId) => {
+export const removeIssueVote = async (issueId, userId, voteType = "upvote") => {
   await getIssueRecordById(issueId);
 
   const { data, error } = await supabase
@@ -616,6 +615,7 @@ export const removeIssueVote = async (issueId, userId) => {
     .delete()
     .eq("issue_id", issueId)
     .eq("user_id", userId)
+    .eq("vote_type", voteType)
     .select()
     .maybeSingle();
 

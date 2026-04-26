@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { Text, View, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import IssueCard from './IssueCard';
 import styles from './FeedsStyles';
 
-const Feeds = ({ user, onLogout, issues, onVote, onDeletePost, onOpenCreatePost }) => {
+const Feeds = ({ user, onLogout, issues, onVote, onDeletePost, onOpenCreatePost, isLoading, onRefresh }) => {
   const [displayName, setDisplayName] = useState('CivicFix User');
   const [currentHandle, setCurrentHandle] = useState('@civicfixuser');
   const [feedTab, setFeedTab] = useState('forYou');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (user?.name) {
@@ -19,9 +20,18 @@ const Feeds = ({ user, onLogout, issues, onVote, onDeletePost, onOpenCreatePost 
     }
   }, [user]);
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await onRefresh?.();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const visibleIssues =
     feedTab === 'myPosts'
-      ? issues.filter((issue) => issue.handle === currentHandle)
+      ? issues.filter((issue) => issue.isOwner)
       : issues;
 
   return (
@@ -54,25 +64,42 @@ const Feeds = ({ user, onLogout, issues, onVote, onDeletePost, onOpenCreatePost 
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.feedList} showsVerticalScrollIndicator={false}>
-        {visibleIssues.map((item) => (
-          <IssueCard
-            key={item.id}
-            issue={item}
-            onVote={onVote}
-            onDelete={onDeletePost}
-            currentHandle={currentHandle}
+      <ScrollView 
+        contentContainerStyle={styles.feedList} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl 
+            refreshing={isRefreshing} 
+            onRefresh={handleRefresh}
+            tintColor="#16A34A"
           />
-        ))}
-
-        {!visibleIssues.length ? (
+        }
+      >
+        {isLoading && !issues.length ? (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="large" color="#16A34A" style={{ marginBottom: 16 }} />
+            <Text style={styles.emptyStateTitle}>Loading civic reports...</Text>
+          </View>
+        ) : visibleIssues.length > 0 ? (
+          visibleIssues.map((item) => (
+            <IssueCard
+              key={item.id}
+              issue={item}
+              onVote={onVote}
+              onDelete={onDeletePost}
+              currentHandle={currentHandle}
+            />
+          ))
+        ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyStateTitle}>No posts here yet</Text>
             <Text style={styles.emptyStateText}>
-              Your own reports will appear in My Posts once you publish them.
+              {feedTab === 'myPosts' 
+                ? 'Your own reports will appear here once you publish them.'
+                : 'Be the first to report a civic issue in your area.'}
             </Text>
           </View>
-        ) : null}
+        )}
       </ScrollView>
 
       <TouchableOpacity
