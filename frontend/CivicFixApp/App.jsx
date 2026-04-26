@@ -12,7 +12,8 @@ import CreatePost from './components/CreatePost';
 import Notifications from './components/Notifications';
 import CivicAssistant from './components/CivicAssistant';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 const formatStatus = (status) =>
   status
@@ -57,18 +58,19 @@ const formatCoordinates = (lat, lng) => {
 };
 
 const mapIssueToFeedItem = (issue, currentUserId = null) => {
-  const authorName =
-    issue?.created_by_user?.name ||
-    issue?.created_by_user?.phone ||
-    'CivicFix User';
-  const handleBase = authorName.replace(/\s+/g, '').toLowerCase() || 'civicfixuser';
+  const issueUser = issue?.created_by_user;
+  const authorName = issueUser?.name || issueUser?.phone || 'CivicFix User';
+  // If name still looks like an email (migration not yet run), split at @ for the handle
+  const isEmail = authorName.includes('@');
+  const displayName = isEmail ? authorName.split('@')[0] : authorName;
+  const handle = `@${displayName.replace(/\s+/g, '').toLowerCase()}`;
   const primaryImage = issue?.attachments?.[0]?.file_url || null;
   const isOwner = currentUserId ? issue?.created_by === currentUserId : false;
 
   return {
     id: issue.id,
-    author: authorName,
-    handle: `@${handleBase}`,
+    author: displayName,
+    handle,
     time: formatRelativeTime(issue.created_at),
     brief: issue.description || issue.title || 'No description provided.',
     location: formatCoordinates(issue.lat, issue.lng),
@@ -78,14 +80,15 @@ const mapIssueToFeedItem = (issue, currentUserId = null) => {
       uri: attachment.file_url,
       fileName: attachment.file_url?.split('/').pop() || 'issue-proof.jpg',
     })),
-    upvotes: issue.vote_count || 0,
-    downvotes: 0,
+    upvotes: issue.upvote_count || 0,
+    downvotes: issue.downvote_count || 0,
     lat: issue.lat,
     lng: issue.lng,
     createdBy: issue.created_by,
-    hasVoted: Boolean(issue.current_user_has_voted),
-    currentUserVoteId: issue.current_user_vote_id || null,
+    currentUserUpvoteId: issue.current_user_upvote_id || null,
+    currentUserDownvoteId: issue.current_user_downvote_id || null,
     isOwner,
+    verification_status: issue.verification_status || 'pending',
   };
 };
 
@@ -103,8 +106,12 @@ export default function App() {
       const authToken = await AsyncStorage.getItem('authToken');
       const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
 
+      console.log('[App] Loading issues from:', `${API_BASE_URL}/issues`);
       const response = await fetch(`${API_BASE_URL}/issues`, { headers });
       const result = await response.json();
+
+      console.log('[App] Response status:', response.status);
+      console.log('[App] Response data:', result);
 
       if (!response.ok) {
         throw new Error(result.error || 'Unable to fetch issues');
@@ -114,9 +121,14 @@ export default function App() {
         ? result.issues.map((issue) => mapIssueToFeedItem(issue, activeUser?.id || null))
         : [];
 
+      console.log('[App] Mapped issues:', mappedIssues);
       setIssues(mappedIssues);
     } catch (error) {
-      console.warn('[App] loadIssues failed', error.message);
+      console.error('[App] loadIssues failed', {
+        message: error.message,
+        stack: error.stack,
+        apiUrl: API_BASE_URL,
+      });
     } finally {
       setIsLoadingIssues(false);
     }
@@ -148,89 +160,105 @@ export default function App() {
     await loadIssues(user);
   };
 
-  const handleVote = async (id, type) => {
+  const handleVote = async (id, voteType) => {
     const authToken = await AsyncStorage.getItem('authToken');
-
-    if (!authToken) {
-      return;
-    }
+    if (!authToken) return;
 
     const targetIssue = issues.find((issue) => issue.id === id);
+    if (!targetIssue) return;
 
-    if (!targetIssue) {
-      return;
-    }
+    const oppositeType = voteType === 'upvote' ? 'downvote' : 'upvote';
+    const sameVoteId = voteType === 'upvote' ? targetIssue.currentUserUpvoteId : targetIssue.currentUserDownvoteId;
+    const oppositeVoteId = voteType === 'upvote' ? targetIssue.currentUserDownvoteId : targetIssue.currentUserUpvoteId;
+    const isRemoving = Boolean(sameVoteId);
+    const removingOpposite = Boolean(oppositeVoteId);
 
-    const shouldRemoveVote =
-      (type === 'upvote' && targetIssue.hasVoted) ||
-      (type === 'downvote' && targetIssue.hasVoted);
-
-    if (type === 'downvote' && !targetIssue.hasVoted) {
-      return;
-    }
-
-    const method = shouldRemoveVote ? 'DELETE' : 'POST';
+    // Optimistic update — handle same-vote toggle and opposite-vote swap
+    setIssues((prev) =>
+      prev.map((issue) => {
+        if (issue.id !== id) return issue;
+        return {
+          ...issue,
+          upvotes: issue.upvotes
+            + (voteType === 'upvote' ? (isRemoving ? -1 : 1) : 0)
+            + (oppositeType === 'upvote' && removingOpposite ? -1 : 0),
+          downvotes: issue.downvotes
+            + (voteType === 'downvote' ? (isRemoving ? -1 : 1) : 0)
+            + (oppositeType === 'downvote' && removingOpposite ? -1 : 0),
+          currentUserUpvoteId: voteType === 'upvote'
+            ? (isRemoving ? null : 'optimistic')
+            : null,
+          currentUserDownvoteId: voteType === 'downvote'
+            ? (isRemoving ? null : 'optimistic')
+            : null,
+        };
+      })
+    );
 
     try {
-      const response = await fetch(`${API_BASE_URL}/issues/${id}/votes`, {
-        method,
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Unable to update vote');
+      // Remove opposite vote first if it exists
+      if (removingOpposite) {
+        const res = await fetch(`${API_BASE_URL}/issues/${id}/votes?vote_type=${oppositeType}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (!res.ok) {
+          const r = await res.json();
+          throw new Error(r.error || 'Unable to remove opposite vote');
+        }
       }
 
-      const updatedIssue = result.issue;
-
-      if (!updatedIssue) {
-        throw new Error('Vote updated but no issue payload returned');
+      // Toggle the requested vote
+      if (isRemoving) {
+        const res = await fetch(`${API_BASE_URL}/issues/${id}/votes?vote_type=${voteType}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${authToken}` },
+        });
+        if (!res.ok) {
+          const r = await res.json();
+          throw new Error(r.error || 'Unable to remove vote');
+        }
+        const r = await res.json();
+        if (r.issue) setIssues((prev) => prev.map((issue) => issue.id === id ? mapIssueToFeedItem(r.issue, user?.id || null) : issue));
+      } else {
+        const res = await fetch(`${API_BASE_URL}/issues/${id}/votes`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vote_type: voteType }),
+        });
+        const r = await res.json();
+        if (!res.ok) throw new Error(r.error || 'Unable to add vote');
+        if (r.issue) setIssues((prev) => prev.map((issue) => issue.id === id ? mapIssueToFeedItem(r.issue, user?.id || null) : issue));
       }
-
-      setIssues((prevIssues) =>
-        prevIssues.map((issue) =>
-          issue.id === id ? mapIssueToFeedItem(updatedIssue, user?.id || null) : issue
-        )
-      );
     } catch (error) {
       console.warn('[App] handleVote failed', error.message);
-      // Show user-friendly error messages
-      if (error.message.includes('cannot act on their own')) {
-        alert('You cannot vote on your own posts');
-      } else if (error.message) {
-        alert(`Vote failed: ${error.message}`);
-      }
+      setIssues((prev) => prev.map((issue) => (issue.id === id ? targetIssue : issue)));
     }
   };
 
   const handleDeletePost = async (id) => {
     const authToken = await AsyncStorage.getItem('authToken');
+    if (!authToken) return;
 
-    if (!authToken) {
-      return;
-    }
+    const targetIssue = issues.find((issue) => issue.id === id);
+
+    // Optimistic update
+    setIssues((prev) => prev.filter((issue) => issue.id !== id));
 
     try {
       const response = await fetch(`${API_BASE_URL}/issues/${id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
+        headers: { Authorization: `Bearer ${authToken}` },
       });
 
       const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Unable to delete issue');
-      }
-
-      setIssues((prevIssues) => prevIssues.filter((issue) => issue.id !== id));
+      if (!response.ok) throw new Error(result.error || 'Unable to delete issue');
     } catch (error) {
       console.warn('[App] handleDeletePost failed', error.message);
+      // Revert optimistic update
+      if (targetIssue) {
+        setIssues((prev) => [targetIssue, ...prev]);
+      }
     }
   };
 
@@ -256,10 +284,12 @@ export default function App() {
       <Feeds
         user={user}
         issues={issues}
+        isLoading={isLoadingIssues}
         onVote={handleVote}
         onDeletePost={handleDeletePost}
         onLogout={handleLogout}
         onOpenCreatePost={() => setScreen('createPost')}
+        onRefresh={loadIssues}
       />
     );
   };
