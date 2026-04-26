@@ -16,8 +16,8 @@ import * as Location from 'expo-location';
 import Feather from '@expo/vector-icons/Feather';
 import styles from './FeedsStyles';
 
-// const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
-const API_BASE_URL ='http://localhost:5000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+// const API_BASE_URL ='http://localhost:5000/api';
 const MAX_IMAGES = 6;
 
 const formatCoordinates = ({ lat, lng }) => `${lat.toFixed(5)}, ${lng.toFixed(5)}`;

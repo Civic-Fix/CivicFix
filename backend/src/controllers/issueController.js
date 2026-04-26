@@ -121,7 +121,8 @@ export const getIssueMapPoints = async (req, res) => {
 
 export const addIssueVote = async (req, res) => {
   try {
-    const result = await addIssueVoteRecord(req.params.id, req.userId);
+    const voteType = req.body?.vote_type || 'upvote';
+    const result = await addIssueVoteRecord(req.params.id, req.userId, voteType);
 
     return res.status(201).json({
       message: "Vote added successfully",
@@ -144,7 +145,8 @@ export const addIssueVote = async (req, res) => {
 
 export const removeIssueVote = async (req, res) => {
   try {
-    const result = await removeIssueVoteRecord(req.params.id, req.userId);
+    const voteType = req.query?.vote_type || req.body?.vote_type || 'upvote';
+    const result = await removeIssueVoteRecord(req.params.id, req.userId, voteType);
 
     return res.status(200).json({
       message: "Vote removed successfully",
