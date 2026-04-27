@@ -8,13 +8,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-// const API_BASE_URL = "http://localhost:5000/api"
-console.log('[Login] API_BASE_URL', API_BASE_URL); 
+console.log('[Login] API_BASE_URL', API_BASE_URL);
 
 const Login = ({ onSignupPress, onLoginSuccess }) => {
   const [email, setEmail] = useState('');
@@ -22,6 +22,7 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [focusedField, setFocusedField] = useState(null);
 
   const handleLogin = async () => {
     setError('');
@@ -37,9 +38,7 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
@@ -54,33 +53,17 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
       const userInfo = result.user ? JSON.stringify(result.user) : null;
 
       const storageItems = [];
-      if (accessToken) {
-        storageItems.push(['authToken', accessToken]);
-      }
-      if (refreshToken) {
-        storageItems.push(['refreshToken', refreshToken]);
-      }
-      if (userInfo) {
-        storageItems.push(['userInfo', userInfo]);
-      }
+      if (accessToken) storageItems.push(['authToken', accessToken]);
+      if (refreshToken) storageItems.push(['refreshToken', refreshToken]);
+      if (userInfo) storageItems.push(['userInfo', userInfo]);
 
       if (storageItems.length) {
         await AsyncStorage.multiSet(storageItems);
-        console.log('[Login] auth data saved to AsyncStorage', {
-          accessToken: !!accessToken,
-          refreshToken: !!refreshToken,
-          userInfo: !!userInfo,
-        });
-      } else {
-        console.warn('[Login] no auth data found in login response');
       }
 
       const userData = result.user || (userInfo ? JSON.parse(userInfo) : null);
       setSuccess('Login successful. Welcome to CivicFix!');
-      console.log('Auth token:', accessToken);
-      if (onLoginSuccess) {
-        onLoginSuccess(userData);
-      }
+      if (onLoginSuccess) onLoginSuccess(userData);
     } catch (err) {
       setError(err.message || 'Unable to log in.');
     } finally {
@@ -89,74 +72,104 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
   };
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.innerContainer}>
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Text style={styles.title}>CivicFix Login</Text>
-          <Text style={styles.subtitle}>Secure access to your civic workflow</Text>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        {/* Hero */}
+        <View style={styles.hero}>
+          <View style={styles.logoWrap}>
+            <MaterialCommunityIcons name="city-variant-outline" size={36} color="#FFFFFF" />
+          </View>
+          <Text style={styles.heroTitle}>CivicFix</Text>
+          <Text style={styles.heroTagline}>Report · Track · Resolve</Text>
         </View>
 
-        {/* Input Section */}
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email Address"
-            placeholderTextColor="#999"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#999"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity style={styles.forgotPass}>
-            <Text style={styles.forgotPassText}>Forgot Password?</Text>
+        {/* Form Card */}
+        <View style={styles.formCard}>
+          <Text style={styles.formHeading}>Welcome back</Text>
+          <Text style={styles.formSubheading}>Sign in to your account</Text>
+
+          <View style={styles.fieldWrap}>
+            <Text style={styles.fieldLabel}>Email</Text>
+            <TextInput
+              style={[styles.input, focusedField === 'email' && styles.inputFocused]}
+              placeholder="you@example.com"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={setEmail}
+              onFocus={() => setFocusedField('email')}
+              onBlur={() => setFocusedField(null)}
+            />
+          </View>
+
+          <View style={styles.fieldWrap}>
+            <View style={styles.fieldLabelRow}>
+              <Text style={styles.fieldLabel}>Password</Text>
+              <TouchableOpacity>
+                <Text style={styles.forgotText}>Forgot?</Text>
+              </TouchableOpacity>
+            </View>
+            <TextInput
+              style={[styles.input, focusedField === 'password' && styles.inputFocused]}
+              placeholder="••••••••"
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              onFocus={() => setFocusedField('password')}
+              onBlur={() => setFocusedField(null)}
+            />
+          </View>
+
+          {error ? (
+            <View style={styles.alertError}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={15} color="#DC2626" />
+              <Text style={styles.alertErrorText}>{error}</Text>
+            </View>
+          ) : null}
+          {success ? (
+            <View style={styles.alertSuccess}>
+              <MaterialCommunityIcons name="check-circle-outline" size={15} color="#16A34A" />
+              <Text style={styles.alertSuccessText}>{success}</Text>
+            </View>
+          ) : null}
+
+          <TouchableOpacity
+            style={[styles.primaryBtn, loading && styles.btnDisabled]}
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryBtnText}>Sign In</Text>
+            )}
           </TouchableOpacity>
-        </View>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        {success ? <Text style={styles.successText}>{success}</Text> : null}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerLabel}>or</Text>
+            <View style={styles.dividerLine} />
+          </View>
 
-        {/* Action Buttons */}
-        <TouchableOpacity
-          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#EFF6FF" />
-          ) : (
-            <Text style={styles.loginButtonText}>Log In</Text>
-          )}
-        </TouchableOpacity>
-
-        <View style={styles.dividerContainer}>
-          <View style={styles.line} />
-          <Text style={styles.dividerText}>or</Text>
-          <View style={styles.line} />
-        </View>
-
-        <TouchableOpacity style={styles.socialButton}>
-          <Text style={styles.socialButtonText}>Continue with Google</Text>
-        </TouchableOpacity>
-
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={onSignupPress}>
-            <Text style={styles.signUpText}>Sign Up</Text>
+          <TouchableOpacity style={styles.socialBtn} activeOpacity={0.8}>
+            <MaterialCommunityIcons name="google" size={18} color="#4285F4" style={{ marginRight: 8 }} />
+            <Text style={styles.socialBtnText}>Continue with Google</Text>
           </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={onSignupPress}>
+              <Text style={styles.footerLink}>Sign Up</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -164,123 +177,196 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#15803D',
   },
-  innerContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
+  scroll: {
+    flexGrow: 1,
   },
-  header: {
-    marginBottom: 24,
-    padding: 24,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
+  hero: {
+    alignItems: 'center',
+    paddingTop: 60,
+    paddingBottom: 40,
+    paddingHorizontal: 24,
+    backgroundColor: '#15803D',
   },
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#666666',
-  },
-  inputGroup: {
-    marginBottom: 18,
-  },
-  input: {
-    backgroundColor: '#F5F5F5',
-    height: 52,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    marginBottom: 12,
-    color: '#1A1A1A',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  forgotPass: {
-    alignSelf: 'flex-end',
-  },
-  forgotPassText: {
-    color: '#3B82F6',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  errorText: {
-    color: '#EF4444',
-    marginBottom: 12,
-    textAlign: 'center',
-    fontSize: 13,
-  },
-  successText: {
-    color: '#10B981',
-    marginBottom: 12,
-    textAlign: 'center',
-    fontSize: 13,
-  },
-  loginButton: {
-    backgroundColor: '#3B82F6',
-    height: 54,
-    borderRadius: 16,
+  logoWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  loginButtonDisabled: {
-    opacity: 0.7,
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    marginBottom: 6,
   },
-  loginButtonText: {
+  heroTagline: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 1,
+    fontWeight: '500',
+  },
+  formCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 40,
+  },
+  formHeading: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  formSubheading: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 28,
+  },
+  fieldWrap: {
+    marginBottom: 16,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 6,
+  },
+  fieldLabelRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  forgotText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#16A34A',
+  },
+  input: {
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: '#111827',
+  },
+  inputFocused: {
+    borderColor: '#16A34A',
+    backgroundColor: '#F0FDF4',
+  },
+  alertError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  alertErrorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    flex: 1,
+  },
+  alertSuccess: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  alertSuccessText: {
+    color: '#16A34A',
+    fontSize: 13,
+    flex: 1,
+  },
+  primaryBtn: {
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#16A34A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  btnDisabled: {
+    opacity: 0.65,
+  },
+  primaryBtnText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
-  dividerContainer: {
+  divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 22,
+    marginVertical: 20,
+    gap: 12,
   },
-  line: {
+  dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#E5E7EB',
   },
-  dividerText: {
-    marginHorizontal: 10,
-    color: '#999999',
+  dividerLabel: {
     fontSize: 12,
+    color: '#9CA3AF',
+    fontWeight: '500',
   },
-  socialButton: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
+  socialBtn: {
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
     backgroundColor: '#FFFFFF',
-    height: 54,
-    borderRadius: 16,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  socialButtonText: {
+  socialBtnText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1A1A',
+    color: '#374151',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 22,
+    marginTop: 24,
   },
   footerText: {
-    color: '#666666',
+    color: '#6B7280',
     fontSize: 14,
   },
-  signUpText: {
-    color: '#3B82F6',
+  footerLink: {
+    color: '#16A34A',
     fontWeight: '700',
     fontSize: 14,
   },
 });
+
 export default Login;
