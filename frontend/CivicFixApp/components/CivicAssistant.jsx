@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Feather from '@expo/vector-icons/Feather';
 
 const starterMessages = [
   {
@@ -9,28 +10,23 @@ const starterMessages = [
     text: 'Ask about civic complaints, RTI, local authority duties, public nuisance, or your basic civic rights. I provide general guidance, not formal legal advice.',
   },
 ];
+
+const SUGGESTIONS = [
+  'How do I file an RTI?',
+  'Report a pothole',
+  'Garbage not collected',
+  'Water supply issue',
+];
+
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 const getFallbackReply = (question) => {
-  const normalized = question.toLowerCase();
-
-  if (normalized.includes('rti')) {
-    return 'You can usually use RTI to ask a public authority for records, status updates, action taken reports, and related official information.';
-  }
-
-  if (normalized.includes('garbage') || normalized.includes('waste') || normalized.includes('sanitation')) {
-    return 'For sanitation complaints, keep photos, exact location details, and dates. Report first to the local municipal body and escalate with evidence if the issue continues.';
-  }
-
-  if (normalized.includes('road') || normalized.includes('pothole')) {
-    return 'For road or pothole complaints, record the exact location, risk to the public, and any repeat incidents. Clear documentation usually helps escalation.';
-  }
-
-  if (normalized.includes('water') || normalized.includes('drainage')) {
-    return 'For water or drainage issues, document service disruption, impact on residents, and any health risk. A written complaint with evidence is usually the best first step.';
-  }
-
-  return 'I could not reach the live civic guidance service right now, but I can still offer basic general help. Try asking about RTI, sanitation, roads, drainage, or civic complaint escalation.';
+  const q = question.toLowerCase();
+  if (q.includes('rti')) return 'You can use RTI to request records, status updates, action taken reports, and official information from public authorities.';
+  if (q.includes('garbage') || q.includes('waste') || q.includes('sanitation')) return 'For sanitation complaints, keep photos, exact location, and dates. Report to the local municipal body first, then escalate with evidence.';
+  if (q.includes('road') || q.includes('pothole')) return 'For road or pothole complaints, record the exact location, risk to the public, and repeat incidents. Documentation helps escalation.';
+  if (q.includes('water') || q.includes('drainage')) return 'For water or drainage issues, document the service disruption, impact on residents, and any health risk. A written complaint with evidence is usually the best first step.';
+  return 'I could not reach the live civic guidance service right now. Try asking about RTI, sanitation, roads, drainage, or civic complaint escalation.';
 };
 
 const CivicAssistant = ({ user }) => {
@@ -38,101 +34,71 @@ const CivicAssistant = ({ user }) => {
   const [messages, setMessages] = useState(starterMessages);
   const [isLoading, setIsLoading] = useState(false);
   const [errorText, setErrorText] = useState('');
+  const scrollRef = useRef(null);
 
   const displayName = useMemo(() => {
-    if (user?.name) {
-      return user.name;
-    }
-
-    if (user?.email) {
-      return user.email.split('@')[0];
-    }
-
+    if (user?.name) return user.name;
+    if (user?.email) return user.email.split('@')[0];
     return 'Citizen';
   }, [user]);
 
-  const handleSend = async () => {
-    if (!draft.trim()) {
-      return;
-    }
+  const sendMessage = async (text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
 
-    const trimmedDraft = draft.trim();
-    const userMessage = {
-      id: `${Date.now()}-user`,
-      role: 'user',
-      text: trimmedDraft,
-    };
-
+    const userMessage = { id: `${Date.now()}-user`, role: 'user', text: trimmed };
     const nextMessages = [...messages, userMessage];
     setMessages(nextMessages);
     setDraft('');
     setErrorText('');
     setIsLoading(true);
 
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+
     try {
       const response = await fetch(`${API_BASE_URL}/assistant/chat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: trimmedDraft,
-          history: messages.map((message) => ({
-            role: message.role,
-            text: message.text,
-          })),
+          message: trimmed,
+          history: messages.map((m) => ({ role: m.role, text: m.text })),
         }),
       });
 
       const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Unable to get a response from CivicBot.');
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Unable to get a response from CivicBot.');
-      }
-
-      const assistantMessage = {
-        id: `${Date.now()}-assistant`,
-        role: 'assistant',
-        text: result.reply,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, { id: `${Date.now()}-assistant`, role: 'assistant', text: result.reply }]);
     } catch (error) {
-      const fallbackMessage = {
-        id: `${Date.now()}-assistant-fallback`,
-        role: 'assistant',
-        text: getFallbackReply(trimmedDraft),
-      };
-
-      setMessages((prev) => [...prev, fallbackMessage]);
+      setMessages((prev) => [...prev, { id: `${Date.now()}-fallback`, role: 'assistant', text: getFallbackReply(trimmed) }]);
       setErrorText(
         error?.message?.includes('fetch')
-          ? 'Live CivicBot is unreachable right now. Showing offline guidance.'
-          : error.message || 'Unable to get a response from CivicBot.'
+          ? 'Live CivicBot is unreachable. Showing offline guidance.'
+          : error.message || 'Unable to get a response.'
       );
     } finally {
       setIsLoading(false);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
-        <View style={styles.logoWrap}>
-          <MaterialCommunityIcons name="robot-outline" size={24} color="#000000" />
+        <View style={styles.botAvatar}>
+          <MaterialCommunityIcons name="robot-outline" size={22} color="#16A34A" />
         </View>
         <View style={styles.headerCopy}>
           <Text style={styles.title}>CivicBot</Text>
-          <Text style={styles.subtitle}>
-            Plain-language help for civic complaints, rights, RTI, and local rules for {displayName}.
-          </Text>
-          <Text style={styles.disclaimer}>
-            General guidance only, not a substitute for a lawyer or official legal advice.
-          </Text>
+          <Text style={styles.subtitle}>Civic guidance for {displayName} · Not legal advice</Text>
         </View>
+        <View style={styles.onlineDot} />
       </View>
 
+      {/* Chat */}
       <ScrollView
+        ref={scrollRef}
         style={styles.chat}
         contentContainerStyle={styles.chatContent}
         showsVerticalScrollIndicator={false}
@@ -140,153 +106,263 @@ const CivicAssistant = ({ user }) => {
         {messages.map((message) => (
           <View
             key={message.id}
-            style={[
-              styles.bubble,
-              message.role === 'user' ? styles.userBubble : styles.assistantBubble,
-            ]}
+            style={[styles.bubbleRow, message.role === 'user' ? styles.userRow : styles.assistantRow]}
           >
-            <Text
-              style={[
-                styles.bubbleText,
-                message.role === 'user' ? styles.userBubbleText : styles.assistantBubbleText,
-              ]}
-            >
-              {message.text}
-            </Text>
+            {message.role === 'assistant' ? (
+              <View style={styles.botAvatarSmall}>
+                <MaterialCommunityIcons name="robot-outline" size={14} color="#16A34A" />
+              </View>
+            ) : null}
+            <View style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.assistantBubble]}>
+              <Text style={[styles.bubbleText, message.role === 'user' ? styles.userBubbleText : styles.assistantBubbleText]}>
+                {message.text}
+              </Text>
+            </View>
           </View>
         ))}
 
         {isLoading ? (
-          <View style={[styles.bubble, styles.assistantBubble]}>
-            <Text style={[styles.bubbleText, styles.assistantBubbleText]}>
-              CivicBot is thinking...
-            </Text>
+          <View style={[styles.bubbleRow, styles.assistantRow]}>
+            <View style={styles.botAvatarSmall}>
+              <MaterialCommunityIcons name="robot-outline" size={14} color="#16A34A" />
+            </View>
+            <View style={[styles.bubble, styles.assistantBubble, styles.typingBubble]}>
+              <Text style={styles.typingText}>Thinking...</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* Suggestions (only when few messages) */}
+        {messages.length <= 1 ? (
+          <View style={styles.suggestions}>
+            {SUGGESTIONS.map((s) => (
+              <TouchableOpacity key={s} style={styles.suggestionChip} onPress={() => sendMessage(s)} activeOpacity={0.75}>
+                <Text style={styles.suggestionText}>{s}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         ) : null}
       </ScrollView>
 
-      {errorText ? <Text style={styles.errorText}>{errorText}</Text> : null}
+      {errorText ? (
+        <View style={styles.errorBanner}>
+          <Feather name="wifi-off" size={13} color="#92400E" />
+          <Text style={styles.errorText}>{errorText}</Text>
+        </View>
+      ) : null}
 
+      {/* Input */}
       <View style={styles.inputRow}>
         <TextInput
           style={styles.input}
-          placeholder="Ask about civic laws, duties, rights..."
-          placeholderTextColor="#71717A"
+          placeholder="Ask a civic question..."
+          placeholderTextColor="#9CA3AF"
           value={draft}
           onChangeText={setDraft}
+          onSubmitEditing={() => sendMessage(draft)}
+          returnKeyType="send"
+          multiline={false}
         />
-        <TouchableOpacity style={styles.sendButton} onPress={handleSend} disabled={isLoading}>
-          <MaterialCommunityIcons name="send" size={18} color="#000000" />
+        <TouchableOpacity
+          style={[styles.sendButton, (!draft.trim() || isLoading) && styles.sendButtonDisabled]}
+          onPress={() => sendMessage(draft)}
+          disabled={!draft.trim() || isLoading}
+          activeOpacity={0.8}
+        >
+          <Feather name="send" size={17} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#F3F4F6',
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
     paddingTop: 16,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  logoWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#3B82F6',
+  botAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#F0FDF4',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
+    borderWidth: 1.5,
+    borderColor: '#BBF7D0',
   },
   headerCopy: {
     flex: 1,
   },
   title: {
-    color: '#1A1A1A',
-    fontSize: 21,
+    color: '#111827',
+    fontSize: 17,
     fontWeight: '800',
+    letterSpacing: -0.2,
   },
   subtitle: {
-    color: '#666666',
+    color: '#9CA3AF',
     marginTop: 2,
     fontSize: 12,
-    lineHeight: 17,
   },
-  disclaimer: {
-    color: '#999999',
-    marginTop: 4,
-    fontSize: 11,
-    lineHeight: 15,
+  onlineDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: '#22C55E',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
   chat: {
     flex: 1,
   },
   chatContent: {
-    paddingBottom: 12,
-    gap: 10,
     paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 10,
+  },
+  bubbleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    maxWidth: '85%',
+  },
+  assistantRow: {
+    alignSelf: 'flex-start',
+    gap: 8,
+  },
+  userRow: {
+    alignSelf: 'flex-end',
+    flexDirection: 'row-reverse',
+  },
+  botAvatarSmall: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: '#F0FDF4',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+    flexShrink: 0,
   },
   bubble: {
-    maxWidth: '88%',
     borderRadius: 18,
     paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    flexShrink: 1,
   },
   assistantBubble: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#E5E7EB',
+    borderBottomLeftRadius: 4,
   },
   userBubble: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#3B82F6',
+    backgroundColor: '#16A34A',
+    borderBottomRightRadius: 4,
+  },
+  typingBubble: {
+    paddingVertical: 12,
   },
   bubbleText: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 21,
   },
   assistantBubbleText: {
-    color: '#1A1A1A',
+    color: '#111827',
   },
   userBubbleText: {
     color: '#FFFFFF',
   },
+  typingText: {
+    color: '#9CA3AF',
+    fontSize: 14,
+    fontStyle: 'italic',
+  },
+  suggestions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 8,
+  },
+  suggestionChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+  },
+  suggestionText: {
+    color: '#374151',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FEF3C7',
+    borderTopWidth: 1,
+    borderTopColor: '#FDE68A',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  errorText: {
+    color: '#92400E',
+    fontSize: 12,
+    flex: 1,
+  },
   inputRow: {
-    marginTop: 14,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-  },
-  errorText: {
-    color: '#EF4444',
-    fontSize: 13,
-    marginTop: 8,
+    paddingVertical: 12,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    gap: 10,
   },
   input: {
     flex: 1,
-    height: 48,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#F5F5F5',
-    color: '#1A1A1A',
-    paddingHorizontal: 16,
-    marginRight: 10,
+    height: 46,
+    borderRadius: 23,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+    paddingHorizontal: 18,
+    fontSize: 14,
   },
   sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#3B82F6',
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#16A34A',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#D1D5DB',
+    shadowOpacity: 0,
+    elevation: 0,
   },
 });
 

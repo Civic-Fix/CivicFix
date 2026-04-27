@@ -8,7 +8,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 console.log('[Signup] API_BASE_URL', API_BASE_URL);
@@ -21,6 +23,7 @@ const Signup = ({ onLoginPress }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [focusedField, setFocusedField] = useState(null);
 
   const handleSignup = async () => {
     setError('');
@@ -36,9 +39,7 @@ const Signup = ({ onLoginPress }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, phone, password }),
       });
 
@@ -56,75 +57,85 @@ const Signup = ({ onLoginPress }) => {
     }
   };
 
+  const fields = [
+    { key: 'name', label: 'Full Name', placeholder: 'Jane Smith', value: name, onChange: setName, autoCapitalize: 'words', keyboardType: 'default' },
+    { key: 'email', label: 'Email', placeholder: 'you@example.com', value: email, onChange: setEmail, autoCapitalize: 'none', keyboardType: 'email-address' },
+    { key: 'phone', label: 'Phone (optional)', placeholder: '+1 234 567 8900', value: phone, onChange: setPhone, autoCapitalize: 'none', keyboardType: 'phone-pad' },
+    { key: 'password', label: 'Password', placeholder: '••••••••', value: password, onChange: setPassword, autoCapitalize: 'none', keyboardType: 'default', secureTextEntry: true },
+  ];
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.innerContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Create CivicFix Account</Text>
-          <Text style={styles.subtitle}>Join to report issues and track civic work</Text>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        {/* Hero */}
+        <View style={styles.hero}>
+          <View style={styles.logoWrap}>
+            <MaterialCommunityIcons name="city-variant-outline" size={36} color="#FFFFFF" />
+          </View>
+          <Text style={styles.heroTitle}>CivicFix</Text>
+          <Text style={styles.heroTagline}>Join your community today</Text>
         </View>
 
-        <View style={styles.inputGroup}>
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            placeholderTextColor="#7C8DB0"
-            autoCapitalize="words"
-            value={name}
-            onChangeText={setName}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email Address"
-            placeholderTextColor="#7C8DB0"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={setEmail}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            placeholderTextColor="#7C8DB0"
-            keyboardType="phone-pad"
-            value={phone}
-            onChangeText={setPhone}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#7C8DB0"
-            secureTextEntry
-            value={password}
-            onChangeText={setPassword}
-          />
-        </View>
+        {/* Form Card */}
+        <View style={styles.formCard}>
+          <Text style={styles.formHeading}>Create account</Text>
+          <Text style={styles.formSubheading}>Start reporting civic issues near you</Text>
 
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        {success ? <Text style={styles.successText}>{success}</Text> : null}
+          {fields.map((field) => (
+            <View key={field.key} style={styles.fieldWrap}>
+              <Text style={styles.fieldLabel}>{field.label}</Text>
+              <TextInput
+                style={[styles.input, focusedField === field.key && styles.inputFocused]}
+                placeholder={field.placeholder}
+                placeholderTextColor="#9CA3AF"
+                keyboardType={field.keyboardType}
+                autoCapitalize={field.autoCapitalize}
+                secureTextEntry={field.secureTextEntry}
+                value={field.value}
+                onChangeText={field.onChange}
+                onFocus={() => setFocusedField(field.key)}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+          ))}
 
-        <TouchableOpacity
-          style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-          onPress={handleSignup}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#EFF6FF" />
-          ) : (
-            <Text style={styles.loginButtonText}>Sign Up</Text>
-          )}
-        </TouchableOpacity>
+          {error ? (
+            <View style={styles.alertError}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={15} color="#DC2626" />
+              <Text style={styles.alertErrorText}>{error}</Text>
+            </View>
+          ) : null}
+          {success ? (
+            <View style={styles.alertSuccess}>
+              <MaterialCommunityIcons name="check-circle-outline" size={15} color="#16A34A" />
+              <Text style={styles.alertSuccessText}>{success}</Text>
+            </View>
+          ) : null}
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Already have an account? </Text>
-          <TouchableOpacity onPress={onLoginPress}>
-            <Text style={styles.signUpText}>Log In</Text>
+          <TouchableOpacity
+            style={[styles.primaryBtn, loading && styles.btnDisabled]}
+            onPress={handleSignup}
+            disabled={loading}
+            activeOpacity={0.85}
+          >
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryBtnText}>Create Account</Text>
+            )}
           </TouchableOpacity>
+
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Already have an account? </Text>
+            <TouchableOpacity onPress={onLoginPress}>
+              <Text style={styles.footerLink}>Sign In</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 };
@@ -132,84 +143,152 @@ const Signup = ({ onLoginPress }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F9FA',
+    backgroundColor: '#15803D',
   },
-  innerContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
+  scroll: {
+    flexGrow: 1,
   },
-  header: {
-    marginBottom: 24,
-    padding: 24,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
+  hero: {
+    alignItems: 'center',
+    paddingTop: 50,
+    paddingBottom: 36,
+    paddingHorizontal: 24,
+    backgroundColor: '#15803D',
   },
-  title: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: '#1A1A1A',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#666666',
-  },
-  inputGroup: {
-    marginBottom: 18,
-  },
-  input: {
-    backgroundColor: '#F5F5F5',
-    height: 52,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    fontSize: 15,
-    marginBottom: 12,
-    color: '#1A1A1A',
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  errorText: {
-    color: '#EF4444',
-    marginBottom: 12,
-    textAlign: 'center',
-    fontSize: 13,
-  },
-  successText: {
-    color: '#10B981',
-    marginBottom: 12,
-    textAlign: 'center',
-    fontSize: 13,
-  },
-  loginButton: {
-    backgroundColor: '#3B82F6',
-    height: 54,
-    borderRadius: 16,
+  logoWrap: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  loginButtonDisabled: {
-    opacity: 0.7,
+  heroTitle: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    marginBottom: 6,
   },
-  loginButtonText: {
+  heroTagline: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    letterSpacing: 0.5,
+    fontWeight: '500',
+  },
+  formCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 40,
+  },
+  formHeading: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  formSubheading: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 24,
+  },
+  fieldWrap: {
+    marginBottom: 14,
+  },
+  fieldLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 6,
+  },
+  input: {
+    height: 50,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#E5E7EB',
+    backgroundColor: '#F9FAFB',
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: '#111827',
+  },
+  inputFocused: {
+    borderColor: '#16A34A',
+    backgroundColor: '#F0FDF4',
+  },
+  alertError: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF2F2',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+  },
+  alertErrorText: {
+    color: '#DC2626',
+    fontSize: 13,
+    flex: 1,
+  },
+  alertSuccess: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F0FDF4',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 16,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: '#BBF7D0',
+  },
+  alertSuccessText: {
+    color: '#16A34A',
+    fontSize: 13,
+    flex: 1,
+  },
+  primaryBtn: {
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: '#16A34A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  btnDisabled: {
+    opacity: 0.65,
+  },
+  primaryBtnText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 22,
+    marginTop: 24,
   },
   footerText: {
-    color: '#666666',
+    color: '#6B7280',
     fontSize: 14,
   },
-  signUpText: {
-    color: '#3B82F6',
+  footerLink: {
+    color: '#16A34A',
     fontWeight: '700',
     fontSize: 14,
   },
