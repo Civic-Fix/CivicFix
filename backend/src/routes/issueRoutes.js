@@ -15,7 +15,7 @@ import { optionalAuth, requireAuth } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", optionalAuth, getIssues);
+router.get("/", requireAuth, getIssues);
 router.get("/nearby", optionalAuth, getNearbyIssues);
 router.get("/map", getIssueMapPoints);
 router.post("/attachments/upload", requireAuth, uploadIssueAttachmentAsset);
