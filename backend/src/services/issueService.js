@@ -500,6 +500,11 @@ export const getIssues = async (query = {}, currentUserId = null) => {
   const limit = parseOptionalPositiveInteger(query.limit, 20, "limit");
   const offset = (page - 1) * limit;
 
+  const { count: rawCount } = await supabase
+    .from("issues")
+    .select("id", { count: "exact", head: true });
+  console.log("[IssueService] raw issues count (no joins):", rawCount);
+
   let issuesQuery = supabase
     .from("issues")
     .select(issueSelect, { count: "exact" })
