@@ -336,11 +336,13 @@ export default function App() {
 
             <View style={styles.bottomBar}>
               <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('home')}>
-                <Feather
-                  name="home"
-                  size={22}
-                  color={activeTab === 'home' ? '#16A34A' : '#9CA3AF'}
-                />
+                <View style={[styles.tabIconWrap, activeTab === 'home' && styles.tabIconWrapActive]}>
+                  <Feather
+                    name="home"
+                    size={20}
+                    color={activeTab === 'home' ? '#16A34A' : '#9CA3AF'}
+                  />
+                </View>
                 <Text style={[styles.bottomLabel, activeTab === 'home' && styles.bottomLabelActive]}>
                   Home
                 </Text>
@@ -353,7 +355,7 @@ export default function App() {
                 <View style={[styles.bottomCenterButton, activeTab === 'assistant' && styles.bottomCenterButtonActive]}>
                   <MaterialCommunityIcons
                     name="robot-outline"
-                    size={28}
+                    size={26}
                     color={activeTab === 'assistant' ? '#FFFFFF' : '#16A34A'}
                   />
                 </View>
@@ -371,11 +373,13 @@ export default function App() {
                 style={styles.bottomItem}
                 onPress={() => setActiveTab('notifications')}
               >
-                <Feather
-                  name="bell"
-                  size={22}
-                  color={activeTab === 'notifications' ? '#16A34A' : '#9CA3AF'}
-                />
+                <View style={[styles.tabIconWrap, activeTab === 'notifications' && styles.tabIconWrapActive]}>
+                  <Feather
+                    name="bell"
+                    size={20}
+                    color={activeTab === 'notifications' ? '#16A34A' : '#9CA3AF'}
+                  />
+                </View>
                 <Text
                   style={[
                     styles.bottomLabel,
@@ -396,11 +400,11 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
   },
   appShell: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
   },
   mainContent: {
     flex: 1,
@@ -409,53 +413,75 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 24,
   },
   loadingStateText: {
     marginTop: 14,
-    color: '#6B7280',
+    color: '#9CA3AF',
     fontSize: 14,
+    fontWeight: '500',
     textAlign: 'center',
   },
   bottomBar: {
-    height: 64,
-    paddingHorizontal: 24,
-    paddingBottom: 8,
-    paddingTop: 8,
+    height: 68,
+    paddingHorizontal: 16,
+    paddingBottom: 6,
+    paddingTop: 6,
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E7EB',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 8,
   },
   bottomItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 64,
+    flex: 1,
+  },
+  tabIconWrap: {
+    width: 40,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  tabIconWrapActive: {
+    backgroundColor: '#F0FDF4',
   },
   bottomCenterItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -20,
+    marginTop: -18,
+    flex: 1,
   },
   bottomCenterButton: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: '#F0FDF4',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#86EFAC',
+    shadowColor: '#16A34A',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 4,
   },
   bottomCenterButtonActive: {
     backgroundColor: '#16A34A',
     borderColor: '#16A34A',
   },
   bottomLabel: {
-    marginTop: 3,
+    marginTop: 4,
     fontSize: 10,
     color: '#9CA3AF',
     fontWeight: '600',
