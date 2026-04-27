@@ -1,8 +1,14 @@
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../config/supabaseClient.js";
+
+// Isolated client per call so signInWithPassword/signUp never overwrite the
+// shared service-role client's session (which would break RLS bypass on DB queries).
+const createAuthClient = () =>
+  createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 export const signIn = async (email, password) => {
   console.log("[AuthService] signIn request", { email });
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await createAuthClient().auth.signInWithPassword({
     email,
     password,
   });
@@ -26,7 +32,7 @@ export const signIn = async (email, password) => {
 export const signUp = async ({ name, email, phone, password }) => {
   console.log("[AuthService] signUp request", { name, email, phone });
 
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await createAuthClient().auth.signUp({
     email,
     password,
     options: {
