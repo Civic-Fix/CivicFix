@@ -135,6 +135,25 @@ export default function App() {
   };
 
   useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const [authToken, userInfo] = await Promise.all([
+          AsyncStorage.getItem('authToken'),
+          AsyncStorage.getItem('userInfo'),
+        ]);
+        if (authToken && userInfo) {
+          const parsedUser = JSON.parse(userInfo);
+          setUser(parsedUser);
+          setScreen('feeds');
+        }
+      } catch {
+        // ignore parse errors — start at login
+      }
+    };
+    restoreSession();
+  }, []);
+
+  useEffect(() => {
     if (screen === 'feeds' && activeTab === 'home') {
       loadIssues();
     }

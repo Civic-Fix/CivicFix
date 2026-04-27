@@ -37,7 +37,11 @@ export const createIssue = async (req, res) => {
 
 export const getIssues = async (req, res) => {
   try {
+    console.log(req.query)
+    console.log(req.userId)
     const result = await getIssuesRecords(req.query, req.userId || null);
+    console.log("req.query:", req.query);
+    console.log("RESULT:", result);
 
     return res.status(200).json(result);
   } catch (err) {
