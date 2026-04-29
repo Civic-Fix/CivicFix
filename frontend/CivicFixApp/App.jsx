@@ -28,7 +28,9 @@ const formatRelativeTime = (timestamp) => {
     return 'Just now';
   }
 
-  const elapsedMs = Date.now() - new Date(timestamp).getTime();
+  // Ensure timestamp is parsed as UTC if backend omits 'Z'
+  const normalizedTimestamp = timestamp.includes('Z') ? timestamp : `${timestamp}Z`;
+  const elapsedMs = Date.now() - new Date(normalizedTimestamp).getTime();
 
   if (Number.isNaN(elapsedMs) || elapsedMs < 60000) {
     return 'Just now';
@@ -49,6 +51,33 @@ const formatRelativeTime = (timestamp) => {
   return `${Math.floor(hours / 24)}d`;
 };
 
+const formatPostTime = (timestamp) => {
+  if (!timestamp) {
+    return '';
+  }
+
+  // 1. Ensure the timestamp is parsed as UTC
+  const normalizedTimestamp = timestamp.includes('Z') ? timestamp : `${timestamp}Z`;
+  const utcDate = new Date(normalizedTimestamp);
+
+  // 2. Explicitly add IST offset (+5 hours 30 minutes = 19,800,000 milliseconds)
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const istDate = new Date(utcDate.getTime() + istOffsetMs);
+
+  // 3. Extract time using getUTC* methods (since we manually shifted the time)
+  const hours = istDate.getUTCHours();
+  const minutes = String(istDate.getUTCMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'pm' : 'am';
+  const displayHours = hours % 12 || 12;
+  
+  const day = istDate.getUTCDate();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[istDate.getUTCMonth()];
+  const year = String(istDate.getUTCFullYear()).slice(-2);
+  
+  return `${displayHours}:${minutes} ${ampm} · ${day} ${month} ${year}`;
+};
+
 const formatCoordinates = (lat, lng) => {
   if (typeof lat !== 'number' || typeof lng !== 'number') {
     return '';
@@ -57,22 +86,26 @@ const formatCoordinates = (lat, lng) => {
   return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 };
 
-const mapIssueToFeedItem = (issue, currentUserId = null) => {
+const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = []) => {
   const issueUser = issue?.created_by_user;
   const authorName = issueUser?.name || issueUser?.phone || 'CivicFix User';
   // If name still looks like an email (migration not yet run), split at @ for the handle
   const isEmail = authorName.includes('@');
   const displayName = isEmail ? authorName.split('@')[0] : authorName;
-  const handle = `@${displayName.replace(/\s+/g, '').toLowerCase()}`;
+  const isAnonymous = Boolean(issue?.isAnonymous || anonymousIssueIds.includes(issue?.id));
+  const author = isAnonymous ? 'Anonymous' : displayName;
+  const handle = isAnonymous ? '@anonymous' : `@${displayName.replace(/\s+/g, '').toLowerCase()}`;
   const primaryImage = issue?.attachments?.[0]?.file_url || null;
   const isOwner = currentUserId ? issue?.created_by === currentUserId : false;
 
   return {
     id: issue.id,
-    author: displayName,
+    author,
     handle,
     time: formatRelativeTime(issue.created_at),
-    brief: issue.description || issue.title || 'No description provided.',
+    fullTime: formatPostTime(issue.created_at),
+    title: issue.title || 'Untitled Issue',
+    brief: issue.description || 'No description provided.',
     location: formatCoordinates(issue.lat, issue.lng),
     status: formatStatus(issue.status),
     image: primaryImage,
@@ -96,6 +129,7 @@ export default function App() {
   const [screen, setScreen] = useState('login');
   const [user, setUser] = useState(null);
   const [issues, setIssues] = useState([]);
+  const [anonymousIssueIds, setAnonymousIssueIds] = useState([]);
   const [activeTab, setActiveTab] = useState('home');
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
 
@@ -118,7 +152,7 @@ export default function App() {
       }
 
       const mappedIssues = Array.isArray(result.issues)
-        ? result.issues.map((issue) => mapIssueToFeedItem(issue, activeUser?.id || null))
+        ? result.issues.map((issue) => mapIssueToFeedItem(issue, activeUser?.id || null, anonymousIssueIds))
         : [];
 
       console.log('[App] Mapped issues:', mappedIssues);
@@ -137,14 +171,18 @@ export default function App() {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const [authToken, userInfo] = await Promise.all([
+        const [authToken, userInfo, savedAnonymousIds] = await Promise.all([
           AsyncStorage.getItem('authToken'),
           AsyncStorage.getItem('userInfo'),
+          AsyncStorage.getItem('anonymousIssueIds'),
         ]);
         if (authToken && userInfo) {
           const parsedUser = JSON.parse(userInfo);
           setUser(parsedUser);
           setScreen('feeds');
+        }
+        if (savedAnonymousIds) {
+          setAnonymousIssueIds(JSON.parse(savedAnonymousIds));
         }
       } catch {
         // ignore parse errors — start at login
@@ -173,6 +211,12 @@ export default function App() {
   };
 
   const handleCreatePost = async (newPost) => {
+    if (newPost?.anonymous && newPost?.id) {
+      const nextIds = Array.from(new Set([...anonymousIssueIds, newPost.id]));
+      setAnonymousIssueIds(nextIds);
+      await AsyncStorage.setItem('anonymousIssueIds', JSON.stringify(nextIds));
+    }
+
     setIssues((prev) => [newPost, ...prev]);
     setScreen('feeds');
     setActiveTab('home');
