@@ -31,7 +31,7 @@ const issueSelect = `
   id,
   title,
   description,
-  category,
+  locality,
   lat,
   lng,
   status,
@@ -412,7 +412,7 @@ export const createIssue = async (issueData, userId) => {
   const {
     title,
     description,
-    category,
+    locality,
     lat,
     lng,
     organization_id,
@@ -438,7 +438,7 @@ export const createIssue = async (issueData, userId) => {
   const issuePayload = {
     title: validatedFields.title,
     description: description?.trim() || null,
-    category: category?.trim() || null,
+    locality: locality?.trim() || null,
     lat: validatedFields.lat,
     lng: validatedFields.lng,
     created_by: userId,
@@ -526,8 +526,8 @@ export const getIssues = async (query = {}, currentUserId = null) => {
     issuesQuery = issuesQuery.eq("organization_id", query.organization_id);
   }
 
-  if (query.category) {
-    issuesQuery = issuesQuery.ilike("category", `%${query.category}%`);
+  if (query.locality) {
+    issuesQuery = issuesQuery.ilike("locality", `%${query.locality}%`);
   }
 
   if (query.created_by) {

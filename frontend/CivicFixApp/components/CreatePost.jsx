@@ -88,10 +88,12 @@ const normalizeAssets = (assets = []) =>
 
 const CreatePost = ({ user, onPostCreated, onCancel }) => {
   const [displayName, setDisplayName] = useState('CivicFix User');
+  const [titleText, setTitleText] = useState('');
   const [issueText, setIssueText] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
   const [locationError, setLocationError] = useState('');
   const [imageError, setImageError] = useState('');
+  const [titleError, setTitleError] = useState('');
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshingLocation, setIsRefreshingLocation] = useState(false);
@@ -102,6 +104,9 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [mediaPermissionGranted, setMediaPermissionGranted] = useState(false);
   const [cameraPermissionGranted, setCameraPermissionGranted] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
+
+  const displayNameToUse = isAnonymous ? 'Anonymous' : displayName;
 
   useEffect(() => {
     if (user?.name) {
@@ -283,6 +288,11 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
   };
 
   const handlePostIssue = async () => {
+    if (!titleText.trim()) {
+      setTitleError('Please add a title for the issue before posting.');
+      return;
+    }
+
     if (!issueText.trim()) {
       setInfoMessage('Please describe the issue before posting.');
       return;
@@ -302,12 +312,15 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
     setInfoMessage('');
     setLocationError('');
     setImageError('');
+    setTitleError('');
 
     const localPost = {
       id: Date.now().toString(),
-      author: displayName,
-      handle: `@${displayName.replace(/\s+/g, '').toLowerCase()}`,
+      author: displayNameToUse,
+      handle: `@${displayNameToUse.replace(/\s+/g, '').toLowerCase()}`,
+      anonymous: isAnonymous,
       time: 'Just now',
+      title: titleText.trim(),
       brief: issueText.trim(),
       location: resolvedAddress || formatCoordinates(coordinates),
       status: 'Reported',
@@ -356,7 +369,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
             Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify({
-            title: issueText.trim(),
+            title: titleText.trim(),
             description: issueText.trim(),
             lat: coordinates.lat,
             lng: coordinates.lng,
@@ -400,6 +413,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           upvotes: createdIssue?.vote_count ?? localPost.upvotes,
           lat: createdIssue?.lat ?? localPost.lat,
           lng: createdIssue?.lng ?? localPost.lng,
+          anonymous: isAnonymous,
         };
       } else {
         setInfoMessage('Posted locally. Log in again if you want it synced to the server.');
@@ -484,7 +498,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           <View style={styles.composerCard}>
             <View style={styles.composerHeader}>
               <View style={styles.avatarCircle}>
-                <Text style={styles.avatarInitial}>{displayName.charAt(0).toUpperCase()}</Text>
+                <Text style={styles.avatarInitial}>{displayNameToUse.charAt(0).toUpperCase()}</Text>
               </View>
               <View style={styles.composerTitle}>
                 <Text style={styles.composerLabel}>Describe the civic issue</Text>
@@ -495,6 +509,19 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
             </View>
 
             <TextInput
+              style={styles.input}
+              placeholder="Issue title"
+              placeholderTextColor="#94A3B8"
+              value={titleText}
+              onChangeText={(text) => {
+                setTitleText(text);
+                if (titleError) setTitleError(''); // Clear error when user starts typing
+              }}
+              returnKeyType="next"
+            />
+            {titleError ? <Text style={styles.titleErrorText}>{titleError}</Text> : null}
+
+            <TextInput
               style={styles.textArea}
               placeholder="Describe the issue you saw..."
               placeholderTextColor="#94A3B8"
@@ -502,6 +529,26 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
               value={issueText}
               onChangeText={setIssueText}
             />
+
+            <View style={styles.anonymousToggleRow}>
+              <Text style={styles.anonymousToggleLabel}>Post anonymously</Text>
+              <TouchableOpacity
+                style={[
+                  styles.anonymousToggleButton,
+                  isAnonymous && styles.anonymousToggleButtonActive,
+                ]}
+                onPress={() => setIsAnonymous((prev) => !prev)}
+              >
+                <Text
+                  style={[
+                    styles.anonymousToggleButtonText,
+                    isAnonymous && styles.anonymousToggleButtonTextActive,
+                  ]}
+                >
+                  {isAnonymous ? 'Anonymous ON' : 'Anonymous OFF'}
+                </Text>
+              </TouchableOpacity>
+            </View>
 
             <View style={styles.locationCard}>
               <View style={styles.locationHeaderRow}>
@@ -580,7 +627,9 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
                   <Text style={styles.previewEmptyStateText}>Add an image to preview your report.</Text>
                 </View>
               )}
-              <Text style={styles.previewLocationLabel}>Location</Text>
+              <Text style={styles.previewLocationLabel}>Title</Text>
+              <Text style={styles.previewLocationText}>{titleText.trim() || 'No title yet'}</Text>
+              <Text style={[styles.previewLocationLabel, { marginTop: 10 }]}>Location</Text>
               <Text style={styles.previewLocationText}>
                 {resolvedAddress || (coordinates ? formatCoordinates(coordinates) : 'Location pending...')}
               </Text>

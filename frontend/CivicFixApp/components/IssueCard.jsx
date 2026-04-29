@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -28,6 +28,7 @@ const VoteButton = ({ icon, count, active, activeColor, onPress }) => (
 );
 
 const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
   const isOwner = typeof issue.isOwner === 'boolean' ? issue.isOwner : issue.handle === currentHandle;
   const avatarColor = getAvatarColor(issue.author);
   const statusStyle = getStatusStyle(issue.status);
@@ -72,7 +73,23 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
 
       {/* Body */}
       <View style={styles.body}>
-        <Text style={styles.brief} numberOfLines={3}>{issue.brief}</Text>
+        <Text style={styles.title}>{issue.title}</Text>
+        
+        <Text style={styles.brief} numberOfLines={isExpanded ? 0 : 3}>
+          {issue.brief}
+        </Text>
+        
+        {issue.brief.length > 150 && (
+          <TouchableOpacity 
+            style={styles.seeMoreButton} 
+            onPress={() => setIsExpanded(!isExpanded)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.seeMoreText}>
+              {isExpanded ? 'See less' : 'See more'}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.chips}>
           {issue.location ? (
@@ -91,39 +108,44 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
 
         {/* Actions */}
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
-            <Feather name="message-circle" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          <VoteButton
-            icon="arrow-up"
-            count={issue.upvotes}
-            active={Boolean(issue.currentUserUpvoteId)}
-            activeColor="#16A34A"
-            onPress={() => onVote(issue.id, 'upvote')}
-          />
-
-          <VoteButton
-            icon="arrow-down"
-            count={issue.downvotes}
-            active={Boolean(issue.currentUserDownvoteId)}
-            activeColor="#DC2626"
-            onPress={() => onVote(issue.id, 'downvote')}
-          />
-
-          <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
-            <Feather name="share-2" size={16} color="#9CA3AF" />
-          </TouchableOpacity>
-
-          {isOwner ? (
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.deleteBtn]}
-              onPress={() => onDelete?.(issue.id)}
-              activeOpacity={0.7}
-            >
-              <Feather name="trash-2" size={15} color="#EF4444" />
+          <View style={styles.actionsLeft}>
+            <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+              <Feather name="message-circle" size={14} color="#9CA3AF" />
             </TouchableOpacity>
-          ) : null}
+
+            <VoteButton
+              icon="arrow-up"
+              count={issue.upvotes}
+              active={Boolean(issue.currentUserUpvoteId)}
+              activeColor="#16A34A"
+              onPress={() => onVote(issue.id, 'upvote')}
+            />
+
+            <VoteButton
+              icon="arrow-down"
+              count={issue.downvotes}
+              active={Boolean(issue.currentUserDownvoteId)}
+              activeColor="#DC2626"
+              onPress={() => onVote(issue.id, 'downvote')}
+            />
+
+            <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+              <Feather name="share-2" size={14} color="#9CA3AF" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.actionsRight}>
+            {isOwner ? (
+              <TouchableOpacity
+                style={[styles.actionBtn, styles.deleteBtn]}
+                onPress={() => onDelete?.(issue.id)}
+                activeOpacity={0.7}
+              >
+                <Feather name="trash-2" size={13} color="#EF4444" />
+              </TouchableOpacity>
+            ) : null}
+            <Text style={styles.postTime}>{issue.fullTime}</Text>
+          </View>
         </View>
       </View>
     </View>
@@ -133,36 +155,42 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 18,
+    borderRadius: 12,
     overflow: 'hidden',
-    marginBottom: 14,
+    marginBottom: 8,
     marginHorizontal: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E2E8F0',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 10,
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 8,
   },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   avatarText: {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '700',
+    color: '#FFFFFF',
   },
   headerInfo: {
     flex: 1,
@@ -170,7 +198,7 @@ const styles = StyleSheet.create({
   authorName: {
     fontSize: 14,
     fontWeight: '700',
-    color: '#111827',
+    color: '#0F172A',
   },
   metaLine: {
     flexDirection: 'row',
@@ -179,22 +207,23 @@ const styles = StyleSheet.create({
   },
   authorHandle: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#64748B',
   },
   dot: {
     fontSize: 12,
-    color: '#D1D5DB',
+    color: '#CBD5E1',
+    marginHorizontal: 4,
   },
   timeStamp: {
     fontSize: 12,
-    color: '#9CA3AF',
+    color: '#64748B',
   },
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 20,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 4,
   },
@@ -204,18 +233,33 @@ const styles = StyleSheet.create({
   },
   issueImage: {
     width: '100%',
-    height: 180,
+    height: 160,
   },
   body: {
-    paddingHorizontal: 14,
-    paddingTop: 12,
+    paddingHorizontal: 12,
+    paddingTop: 10,
     paddingBottom: 4,
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 8,
+    lineHeight: 22,
   },
   brief: {
     fontSize: 14,
-    color: '#374151',
-    lineHeight: 21,
+    color: '#334155',
+    lineHeight: 20,
     marginBottom: 10,
+  },
+  seeMoreButton: {
+    marginBottom: 10,
+  },
+  seeMoreText: {
+    color: '#2563EB',
+    fontSize: 13,
+    fontWeight: '600',
   },
   chips: {
     flexDirection: 'row',
@@ -227,55 +271,77 @@ const styles = StyleSheet.create({
   locationChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 5,
     flex: 1,
     minWidth: 0,
+    backgroundColor: '#F1F5F9',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
   locationText: {
     fontSize: 12,
-    color: '#6B7280',
+    color: '#475569',
     flexShrink: 1,
   },
   statusChip: {
     paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
+    paddingVertical: 5,
+    borderRadius: 14,
     borderWidth: 1,
   },
   statusText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingVertical: 8,
-    gap: 4,
+    borderTopColor: '#E2E8F0',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    gap: 2,
+  },
+  actionsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  actionsRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   actionBtn: {
-    padding: 8,
-    borderRadius: 8,
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: '#F8FAFC',
   },
   deleteBtn: {
-    marginLeft: 'auto',
+    backgroundColor: '#FEF2F2',
   },
   voteBtn: {
-    marginLeft: 2,
+    marginLeft: 0,
   },
   voteBtnInner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    gap: 4,
   },
   voteCount: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    color: '#6B7280',
+    color: '#64748B',
+  },
+  postTime: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    fontWeight: '500',
   },
 });
 
