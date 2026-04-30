@@ -27,7 +27,7 @@ const VoteButton = ({ icon, count, active, activeColor, onPress }) => (
   </TouchableOpacity>
 );
 
-const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
+const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentPress }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isOwner = typeof issue.isOwner === 'boolean' ? issue.isOwner : issue.handle === currentHandle;
   const avatarColor = getAvatarColor(issue.author);
@@ -42,7 +42,7 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
   const badge = VERIFICATION_BADGES[issue.verification_status] ?? VERIFICATION_BADGES.pending;
 
   return (
-    <View style={styles.card}>
+    <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
         <View style={[styles.avatar, { backgroundColor: avatarColor + '22' }]}>
@@ -109,7 +109,11 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
         {/* Actions */}
         <View style={styles.actions}>
           <View style={styles.actionsLeft}>
-            <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+              <TouchableOpacity
+              style={styles.actionBtn}
+              activeOpacity={0.7}
+              onPress={onCommentPress ? () => onCommentPress(issue) : undefined}
+            >
               <Feather name="message-circle" size={14} color="#9CA3AF" />
             </TouchableOpacity>
 
@@ -148,7 +152,7 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle }) => {
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
