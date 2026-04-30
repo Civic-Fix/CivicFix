@@ -11,6 +11,8 @@ import Feeds from './components/Feeds';
 import CreatePost from './components/CreatePost';
 import Notifications from './components/Notifications';
 import CivicAssistant from './components/CivicAssistant';
+import Post from './components/Post';
+import CommentForm from './components/CommentForm';
 
 // const API_BASE_URL = 'http://localhost:5000/api';
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
@@ -128,10 +130,13 @@ const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = [])
 export default function App() {
   const [screen, setScreen] = useState('login');
   const [user, setUser] = useState(null);
+  const [selectedIssue, setSelectedIssue] = useState(null);
+  const [selectedIssueComments, setSelectedIssueComments] = useState([]);
   const [issues, setIssues] = useState([]);
   const [anonymousIssueIds, setAnonymousIssueIds] = useState([]);
   const [activeTab, setActiveTab] = useState('home');
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
+  const [isLoadingComments, setIsLoadingComments] = useState(false);
 
   const loadIssues = async (activeUser = user) => {
     setIsLoadingIssues(true);
@@ -325,6 +330,139 @@ export default function App() {
     }
   };
 
+  const mapCommentToViewItem = (comment) => {
+    const authorName = comment?.created_by_user?.name || comment?.created_by_user?.email || 'CivicFix User';
+    const isEmail = authorName.includes('@');
+    const displayName = isEmail ? authorName.split('@')[0] : authorName;
+    return {
+      id: comment.id,
+      description: comment.description,
+      vote: comment.vote || 0,
+      createdAt: comment.created_at,
+      author: displayName,
+      handle: `@${displayName.replace(/\s+/g, '').toLowerCase()}`,
+      createdBy: comment.created_by,
+      isOwner: user?.id ? comment.created_by === user.id : false,
+    };
+  };
+
+  const loadCommentsForIssue = async (issueId) => {
+    if (!issueId) return;
+    setIsLoadingComments(true);
+
+    try {
+      const authToken = await AsyncStorage.getItem('authToken');
+      const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
+      const response = await fetch(`${API_BASE_URL}/comments?issue_id=${issueId}`, { headers });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to fetch comments');
+      }
+
+      const items = Array.isArray(result.comments)
+        ? result.comments.map(mapCommentToViewItem).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        : [];
+      setSelectedIssueComments(items);
+    } catch (error) {
+      console.error('[App] loadCommentsForIssue failed', error.message);
+      setSelectedIssueComments([]);
+    } finally {
+      setIsLoadingComments(false);
+    }
+  };
+
+  const handleOpenPostDetail = async (issue) => {
+    setSelectedIssue(issue);
+    setScreen('postDetail');
+    await loadCommentsForIssue(issue.id);
+  };
+
+  const handleOpenCommentForm = (issue) => {
+    setSelectedIssue(issue);
+    setScreen('commentForm');
+  };
+
+  const handleCreateComment = async (description) => {
+    if (!selectedIssue || !description) return;
+
+    const authToken = await AsyncStorage.getItem('authToken');
+    if (!authToken) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/comments`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ issue_id: selectedIssue.id, description }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to create comment');
+      }
+      await loadCommentsForIssue(selectedIssue.id);
+      setScreen('postDetail');
+    } catch (error) {
+      console.error('[App] handleCreateComment failed', error.message);
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!commentId) return;
+
+    const authToken = await AsyncStorage.getItem('authToken');
+    if (!authToken) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/comments/${commentId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to delete comment');
+      }
+      setSelectedIssueComments((prev) => prev.filter((comment) => comment.id !== commentId));
+    } catch (error) {
+      console.error('[App] handleDeleteComment failed', error.message);
+    }
+  };
+
+  const handleVoteComment = async (commentId, voteType) => {
+    if (!commentId || !['upvote', 'downvote'].includes(voteType)) return;
+    const authToken = await AsyncStorage.getItem('authToken');
+    if (!authToken) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/comments/${commentId}/vote`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ vote_type: voteType }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to vote on comment');
+      }
+
+      setSelectedIssueComments((prev) =>
+        prev.map((comment) =>
+          comment.id === commentId
+            ? { ...comment, vote: result.comment?.vote ?? comment.vote }
+            : comment
+        )
+      );
+    } catch (error) {
+      console.error('[App] handleVoteComment failed', error.message);
+    }
+  };
+
   const renderMainScreen = () => {
     if (activeTab === 'notifications') {
       return <Notifications issues={issues} />;
@@ -352,6 +490,8 @@ export default function App() {
         onDeletePost={handleDeletePost}
         onLogout={handleLogout}
         onOpenCreatePost={() => setScreen('createPost')}
+        onOpenPostDetail={handleOpenPostDetail}
+        onOpenCommentForm={handleOpenCommentForm}
         onRefresh={loadIssues}
       />
     );
@@ -373,6 +513,25 @@ export default function App() {
             user={user}
             onPostCreated={handleCreatePost}
             onCancel={() => setScreen('feeds')}
+          />
+        ) : screen === 'postDetail' ? (
+          <Post
+            issue={selectedIssue}
+            comments={selectedIssueComments}
+            isLoadingComments={isLoadingComments}
+            onVote={handleVote}
+            onDelete={handleDeletePost}
+            currentHandle={user ? `@${user.name?.replace(/\s+/g, '').toLowerCase()}` : ''}
+            onBack={() => setScreen('feeds')}
+            onOpenCommentForm={() => handleOpenCommentForm(selectedIssue)}
+            onDeleteComment={handleDeleteComment}
+            onVoteComment={handleVoteComment}
+          />
+        ) : screen === 'commentForm' ? (
+          <CommentForm
+            issue={selectedIssue}
+            onSubmit={handleCreateComment}
+            onCancel={() => setScreen('postDetail')}
           />
         ) : (
           <View style={styles.appShell}>

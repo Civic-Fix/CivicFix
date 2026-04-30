@@ -3,7 +3,7 @@ import { Text, View, TouchableOpacity, ScrollView, ActivityIndicator, RefreshCon
 import IssueCard from './IssueCard';
 import styles from './FeedsStyles';
 
-const Feeds = ({ user, onLogout, issues, onVote, onDeletePost, onOpenCreatePost, isLoading, onRefresh }) => {
+const Feeds = ({ user, onLogout, issues, onVote, onDeletePost, onOpenCreatePost, isLoading, onRefresh, onOpenPostDetail, onOpenCommentForm }) => {
   const [displayName, setDisplayName] = useState('CivicFix User');
   const [currentHandle, setCurrentHandle] = useState('@civicfixuser');
   const [feedTab, setFeedTab] = useState('forYou');
@@ -88,6 +88,8 @@ const Feeds = ({ user, onLogout, issues, onVote, onDeletePost, onOpenCreatePost,
               onVote={onVote}
               onDelete={onDeletePost}
               currentHandle={currentHandle}
+              onPress={onOpenPostDetail ? () => onOpenPostDetail(item) : undefined}
+              onCommentPress={onOpenCommentForm ? () => onOpenCommentForm(item) : undefined}
             />
           ))
         ) : (
