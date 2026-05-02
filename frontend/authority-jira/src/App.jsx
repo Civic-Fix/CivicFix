@@ -1,23 +1,32 @@
 import './App.css'
-import Navbar from './components/Navbar'
-import Hero from './components/Hero'
-import HowItWorks from './components/HowItWorks'
-import Features from './components/Features'
-import Stats from './components/Stats'
-import Testimonials from './components/Testimonials'
-import Footer from './components/Footer'
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import Landing from './pages/Landing.jsx'
+import Login from './pages/Login.jsx'
+import Dashboard from './pages/Dashboard.jsx'
+import Issues from './pages/Issues.jsx'
+import IssueDetail from './pages/IssueDetail.jsx'
+import Map from './pages/Map.jsx'
+import Reports from './pages/Reports.jsx'
+import AppLayout from './layouts/AppLayout.jsx'
 
 function App() {
   return (
-    <main className="civic-app min-h-screen overflow-x-hidden bg-stone-50 text-slate-950">
-      <Navbar />
-      <Hero />
-      <HowItWorks />
-      <Features />
-      <Stats />
-      <Testimonials />
-      <Footer />
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/issues" element={<Issues />} />
+          <Route path="/issues/:issueId" element={<IssueDetail />} />
+          <Route path="/map" element={<Map />} />
+          <Route path="/reports" element={<Reports />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
