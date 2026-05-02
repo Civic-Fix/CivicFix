@@ -567,6 +567,95 @@ export const getIssueById = async (issueId, currentUserId = null) => {
   return enrichedIssue;
 };
 
+export const updateIssue = async (issueId, patch = {}, userId = null) => {
+  await getIssueRecordById(issueId);
+
+  const updatePayload = {};
+
+  if (patch.status !== undefined) {
+    if (!allowedStatuses.includes(patch.status)) {
+      throw new IssueServiceError("Invalid issue status");
+    }
+    updatePayload.status = patch.status;
+  }
+
+  if (patch.assigned_to !== undefined) {
+    updatePayload.assigned_to = patch.assigned_to || null;
+  }
+
+  if (!Object.keys(updatePayload).length) {
+    throw new IssueServiceError("No supported fields provided for update");
+  }
+
+  const { error } = await supabase
+    .from("issues")
+    .update(updatePayload)
+    .eq("id", issueId);
+
+  if (error) {
+    console.error("[IssueService] updateIssue failed", {
+      issueId,
+      userId,
+      patch,
+      error,
+    });
+    throw new IssueServiceError(error.message || "Unable to update issue", 500);
+  }
+
+  return getIssueById(issueId, userId);
+};
+
+export const listIssueUpdates = async (issueId) => {
+  await getIssueRecordById(issueId);
+
+  const { data, error } = await supabase
+    .from("updates")
+    .select("id, issue_id, content, created_at, author_id")
+    .eq("issue_id", issueId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[IssueService] listIssueUpdates failed", {
+      issueId,
+      error,
+    });
+    throw new IssueServiceError(error.message || "Unable to fetch issue updates", 500);
+  }
+
+  return data || [];
+};
+
+export const addIssueUpdate = async (issueId, content, userId) => {
+  await getIssueRecordById(issueId);
+
+  const normalizedContent = typeof content === "string" ? content.trim() : "";
+
+  if (!normalizedContent) {
+    throw new IssueServiceError("content is required");
+  }
+
+  const { data, error } = await supabase
+    .from("updates")
+    .insert({
+      issue_id: issueId,
+      content: normalizedContent,
+      author_id: userId,
+    })
+    .select("id, issue_id, content, created_at, author_id")
+    .single();
+
+  if (error || !data) {
+    console.error("[IssueService] addIssueUpdate failed", {
+      issueId,
+      userId,
+      error,
+    });
+    throw new IssueServiceError(error?.message || "Unable to add issue update", 500);
+  }
+
+  return data;
+};
+
 export const addIssueVote = async (issueId, userId, voteType = "upvote") => {
   if (!["upvote", "downvote"].includes(voteType)) {
     throw new IssueServiceError("vote_type must be 'upvote' or 'downvote'", 400);

@@ -45,7 +45,7 @@ function Stats() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
               className="rounded-2xl bg-white px-6 py-4 text-center font-black text-emerald-700 transition duration-300 hover:-translate-y-1"
-              href="mailto:hello@civicfix.dev"
+              href="mailto:kaushikharsha2020@gmail.com"
             >
               Request Access
             </a>
