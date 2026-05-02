@@ -2,24 +2,26 @@ import { api } from './api'
 
 const statusLabelMap = {
   reported: 'Reported',
-  verified: 'Open',
+  verified: 'Verified',
   in_progress: 'In Progress',
   review: 'Review',
-  completed: 'Resolved',
+  completed: 'Completed',
   closed: 'Closed',
-  blocked: 'Rejected',
+  blocked: 'Blocked',
 }
 
-function toDisplayStatus(status) {
-  if (!status) return 'Open'
-  return statusLabelMap[status] || status
-}
+export const issueStatusOptions = [
+  { value: 'reported', label: 'Reported' },
+  { value: 'verified', label: 'Verified' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'review', label: 'Review' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'closed', label: 'Closed' },
+  { value: 'blocked', label: 'Blocked' },
+]
 
-function toBackendStatus(status) {
-  return String(status)
-    .trim()
-    .toLowerCase()
-    .replaceAll(/\s+/g, '_')
+export function getIssueStatusLabel(status) {
+  return statusLabelMap[status] || status || 'reported'
 }
 
 function normalizeIssue(issue) {
@@ -27,7 +29,8 @@ function normalizeIssue(issue) {
 
   return {
     ...issue,
-    status: toDisplayStatus(issue?.status),
+    status: issue?.status || 'reported',
+    statusLabel: getIssueStatusLabel(issue?.status),
     latitude: issue?.lat ?? null,
     longitude: issue?.lng ?? null,
     images: attachments.map((attachment) => attachment.file_url).filter(Boolean),
@@ -52,7 +55,7 @@ export async function updateIssue(issueId, patch) {
   const normalizedPatch = {}
 
   if (patch?.status !== undefined) {
-    normalizedPatch.status = toBackendStatus(patch.status)
+    normalizedPatch.status = patch.status
   }
 
   if (patch?.assigned_to !== undefined) {
@@ -68,20 +71,18 @@ export async function getIssueStats() {
 
   const total = rows.length
   const byStatus = rows.reduce((acc, row) => {
-    const key = row.status || 'Open'
+    const key = row.status || 'reported'
     acc[key] = (acc[key] || 0) + 1
     return acc
   }, {})
 
   const open =
-    (byStatus.Open || 0) +
-    (byStatus.New || 0) +
-    (byStatus.Reported || 0) +
-    (byStatus['In Progress'] || 0) +
-    (byStatus.Active || 0) +
-    (byStatus.Review || 0)
+    (byStatus.reported || 0) +
+    (byStatus.verified || 0) +
+    (byStatus.in_progress || 0) +
+    (byStatus.review || 0)
 
-  const resolved = (byStatus.Resolved || 0) + (byStatus.Closed || 0)
+  const resolved = (byStatus.completed || 0) + (byStatus.closed || 0)
 
   return { total, open, resolved, byStatus }
 }

@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
   const signInWithPassword = useCallback(async ({ email, password }) => {
     const data = await api.post(
       '/auth/login',
-      { email, password },
+      { email, password, accountType: 'organization_member' },
       { auth: false },
     )
 
@@ -71,6 +71,16 @@ export function AuthProvider({ children }) {
     return data
   }, [])
 
+  const signUpOrganizationMember = useCallback(async ({ name, email, phone, password }) => {
+    const data = await api.post(
+      '/auth/signup',
+      { name, email, phone, password, accountType: 'organization_member' },
+      { auth: false },
+    )
+
+    return data
+  }, [])
+
   const signOut = useCallback(async () => {
     clearAuthToken()
     writeStoredUser(null)
@@ -84,9 +94,10 @@ export function AuthProvider({ children }) {
       user,
       loading,
       signInWithPassword,
+      signUpOrganizationMember,
       signOut,
     }),
-    [session, user, loading, signInWithPassword, signOut],
+    [session, user, loading, signInWithPassword, signUpOrganizationMember, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
