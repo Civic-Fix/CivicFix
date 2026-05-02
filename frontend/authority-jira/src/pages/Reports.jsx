@@ -3,7 +3,7 @@ import Card, { CardBody, CardDescription, CardHeader, CardTitle } from '../compo
 import Loader from '../components/ui/Loader'
 import StatusBadge from '../components/ui/StatusBadge'
 import Table from '../components/ui/Table'
-import { getIssueStats } from '../services/issuesService'
+import { getIssueStats, getIssueStatusLabel } from '../services/issuesService'
 
 function Reports() {
   const [stats, setStats] = useState(null)
@@ -95,7 +95,12 @@ function Reports() {
 
           <div className="grid gap-3">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Breakdown by status</p>
-            <Table columns={breakdownCols} rows={breakdownRows} emptyState="No data." rowKey={(r) => r.status} />
+            <Table
+              columns={breakdownCols}
+              rows={breakdownRows.map((row) => ({ ...row, label: getIssueStatusLabel(row.status) }))}
+              emptyState="No data."
+              rowKey={(r) => r.status}
+            />
           </div>
         </>
       )}

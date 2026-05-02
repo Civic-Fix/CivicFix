@@ -1,14 +1,14 @@
 import { signIn, signUp } from "../services/authService.js";
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, accountType } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ error: "Email and password are required" });
   }
 
   try {
-    const authData = await signIn(email, password);
+    const authData = await signIn(email, password, accountType);
     return res.status(200).json(authData);
   } catch (err) {
     console.error("[AuthController] login error", { body: req.body, error: err });
@@ -17,14 +17,23 @@ export const login = async (req, res) => {
 };
 
 export const signup = async (req, res) => {
-  const { name, email, phone, password } = req.body;
+  const { name, email, phone, password, accountType, organization_id, role } =
+    req.body;
 
   if (!name || !email || !password) {
     return res.status(400).json({ error: "Name, email, and password are required" });
   }
 
   try {
-    const authData = await signUp({ name, email, phone, password });
+    const authData = await signUp({
+      name,
+      email,
+      phone,
+      password,
+      accountType,
+      organization_id,
+      role,
+    });
     return res.status(201).json(authData);
   } catch (err) {
     console.error("[AuthController] signup error", { body: req.body, error: err });
