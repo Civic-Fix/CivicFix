@@ -5,6 +5,7 @@ import Login from './pages/Login.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Issues from './pages/Issues.jsx'
 import IssueDetail from './pages/IssueDetail.jsx'
+import Team from './pages/Team.jsx'
 import Map from './pages/Map.jsx'
 import Reports from './pages/Reports.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
@@ -20,6 +21,7 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/issues" element={<Issues />} />
           <Route path="/issues/:issueId" element={<IssueDetail />} />
+          <Route path="/team" element={<Team />} />
           <Route path="/map" element={<Map />} />
           <Route path="/reports" element={<Reports />} />
         </Route>
