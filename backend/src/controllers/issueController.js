@@ -1,14 +1,17 @@
 import {
   addIssueAttachment as addIssueAttachmentRecord,
+  addIssueUpdate as addIssueUpdateRecord,
   addIssueVote as addIssueVoteRecord,
   createIssue as createIssueRecord,
   deleteIssue as deleteIssueRecord,
   getIssueById as getIssueByIdRecord,
   getIssues as getIssuesRecords,
   getIssueMapPoints as getIssueMapPointsRecords,
+  listIssueUpdates as listIssueUpdatesRecords,
   getNearbyIssues as getNearbyIssueRecords,
   IssueServiceError,
   removeIssueVote as removeIssueVoteRecord,
+  updateIssue as updateIssueRecord,
   uploadIssueAttachmentAsset as uploadIssueAttachmentAssetRecord,
 } from "../services/issueService.js";
 
@@ -77,6 +80,76 @@ export const getIssueById = async (req, res) => {
       .status(err instanceof IssueServiceError ? err.statusCode : 500)
       .json({
         error: err.message || "Unable to fetch issue",
+      });
+  }
+};
+
+export const updateIssue = async (req, res) => {
+  try {
+    const issue = await updateIssueRecord(req.params.id, req.body, req.userId);
+
+    return res.status(200).json({
+      message: "Issue updated successfully",
+      issue,
+    });
+  } catch (err) {
+    console.error("[IssueController] updateIssue error", {
+      params: req.params,
+      body: req.body,
+      userId: req.userId,
+      error: err,
+    });
+
+    return res
+      .status(err instanceof IssueServiceError ? err.statusCode : 500)
+      .json({
+        error: err.message || "Unable to update issue",
+      });
+  }
+};
+
+export const getIssueUpdates = async (req, res) => {
+  try {
+    const updates = await listIssueUpdatesRecords(req.params.id);
+
+    return res.status(200).json({
+      updates,
+    });
+  } catch (err) {
+    console.error("[IssueController] getIssueUpdates error", {
+      params: req.params,
+      userId: req.userId,
+      error: err,
+    });
+
+    return res
+      .status(err instanceof IssueServiceError ? err.statusCode : 500)
+      .json({
+        error: err.message || "Unable to fetch issue updates",
+      });
+  }
+};
+
+export const addIssueUpdate = async (req, res) => {
+  try {
+    const update = await addIssueUpdateRecord(req.params.id, req.body?.content, req.userId);
+
+    return res.status(201).json({
+      message: "Issue update added successfully",
+      update,
+    });
+  } catch (err) {
+    console.error("[IssueController] addIssueUpdate error", {
+      params: req.params,
+      body: req.body,
+      userId: req.userId,
+      error: err,
+    });
+
+    return res
+      .status(err instanceof IssueServiceError ? err.statusCode : 500)
+      .json({
+        error: err.message || "Unable to add issue update",
       });
   }
 };
