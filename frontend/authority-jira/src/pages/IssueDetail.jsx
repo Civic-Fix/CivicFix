@@ -4,11 +4,9 @@ import Button from '../components/ui/Button'
 import Card, { CardBody, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
 import Loader from '../components/ui/Loader'
 import StatusBadge from '../components/ui/StatusBadge'
-import { getIssueById, updateIssue } from '../services/issuesService'
+import { getIssueById, issueStatusOptions, updateIssue } from '../services/issuesService'
 import { addUpdate, listUpdates } from '../services/updatesService'
 import { formatDate } from '../utils/formatDate'
-
-const statusOptions = ['Open', 'In Progress', 'Resolved', 'Closed', 'Rejected']
 
 function normalizeImages(issue) {
   const images = issue?.images
@@ -49,7 +47,7 @@ function IssueDetail() {
       const [issueData, updatesData] = await Promise.all([getIssueById(issueId), listUpdates(issueId)])
       setIssue(issueData)
       setUpdates(updatesData)
-      setNewStatus(issueData?.status || 'Open')
+      setNewStatus(issueData?.status || 'reported')
     } catch (err) {
       setError(err?.message || 'Failed to load issue')
     } finally {
@@ -200,9 +198,9 @@ function IssueDetail() {
                   value={newStatus}
                   onChange={(e) => setNewStatus(e.target.value)}
                 >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
+                {issueStatusOptions.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
                     </option>
                   ))}
                 </select>

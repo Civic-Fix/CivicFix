@@ -5,6 +5,13 @@ function cx(...tokens) {
 }
 
 const palette = {
+  reported: 'bg-sky-100 text-sky-800 ring-sky-200',
+  verified: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+  in_progress: 'bg-amber-100 text-amber-800 ring-amber-200',
+  review: 'bg-violet-100 text-violet-800 ring-violet-200',
+  completed: 'bg-emerald-100 text-emerald-800 ring-emerald-200',
+  closed: 'bg-slate-100 text-slate-700 ring-slate-200',
+  blocked: 'bg-rose-100 text-rose-800 ring-rose-200',
   Open: 'bg-sky-100 text-sky-800 ring-sky-200',
   New: 'bg-sky-100 text-sky-800 ring-sky-200',
   Reported: 'bg-sky-100 text-sky-800 ring-sky-200',
@@ -20,6 +27,16 @@ const palette = {
   High: 'bg-rose-100 text-rose-800 ring-rose-200',
 }
 
+const labels = {
+  reported: 'Reported',
+  verified: 'Verified',
+  in_progress: 'In Progress',
+  review: 'Review',
+  completed: 'Completed',
+  closed: 'Closed',
+  blocked: 'Blocked',
+}
+
 function StatusBadge({ status, className, ...props }) {
   const styles = palette[status] ?? 'bg-slate-100 text-slate-700 ring-slate-200'
 
@@ -32,7 +49,7 @@ function StatusBadge({ status, className, ...props }) {
       )}
       {...props}
     >
-      {status}
+      {labels[status] || status}
     </span>
   )
 }

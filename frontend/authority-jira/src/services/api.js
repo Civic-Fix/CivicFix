@@ -1,4 +1,5 @@
 const TOKEN_STORAGE_KEY = 'authority-jira.auth-token'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '')
 
 function getStoredToken() {
   return window.localStorage.getItem(TOKEN_STORAGE_KEY)
@@ -23,7 +24,7 @@ export function clearAuthToken() {
 async function request(path, { method = 'GET', body, headers = {}, auth = true } = {}) {
   const token = auth ? getStoredToken() : null
 
-  const response = await fetch(`/api${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     method,
     headers: {
       'Content-Type': 'application/json',

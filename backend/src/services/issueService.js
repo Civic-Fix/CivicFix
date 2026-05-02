@@ -40,26 +40,7 @@ const issueSelect = `
   assigned_to,
   organization_id,
   created_at,
-  updated_at,
-  created_by_user:users!issues_created_by_fkey (
-    id,
-    name,
-    phone,
-    trust_score,
-    is_verified
-  ),
-  assigned_to_user:users!issues_assigned_to_fkey (
-    id,
-    name,
-    phone,
-    trust_score,
-    is_verified
-  ),
-  organization:organizations (
-    id,
-    name,
-    type
-  )
+  updated_at
 `;
 
 const parseRequiredNumber = (value, fieldName) => {
@@ -268,16 +249,97 @@ const fetchVotesByIssueIds = async (issueIds) => {
   return data || [];
 };
 
+const fetchUsersByIds = async (userIds) => {
+  const uniqueUserIds = [...new Set(userIds.filter(Boolean))];
+
+  if (!uniqueUserIds.length) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, name, phone, email, trust_score, is_verified")
+    .in("id", uniqueUserIds);
+
+  if (error) {
+    console.error("[IssueService] fetchUsersByIds failed", {
+      userIds: uniqueUserIds,
+      error,
+    });
+    throw new IssueServiceError(error.message || "Unable to fetch users", 500);
+  }
+
+  return new Map((data || []).map((user) => [user.id, user]));
+};
+
+const fetchOrganizationMembersByIds = async (memberIds) => {
+  const uniqueMemberIds = [...new Set(memberIds.filter(Boolean))];
+
+  if (!uniqueMemberIds.length) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select("id, name, phone, email, role, organization_id, is_verified")
+    .in("id", uniqueMemberIds);
+
+  if (error) {
+    console.error("[IssueService] fetchOrganizationMembersByIds failed", {
+      memberIds: uniqueMemberIds,
+      error,
+    });
+    throw new IssueServiceError(
+      error.message || "Unable to fetch organization members",
+      500
+    );
+  }
+
+  return new Map((data || []).map((member) => [member.id, member]));
+};
+
+const fetchOrganizationsByIds = async (organizationIds) => {
+  const uniqueOrganizationIds = [...new Set(organizationIds.filter(Boolean))];
+
+  if (!uniqueOrganizationIds.length) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from("organizations")
+    .select("id, name, type")
+    .in("id", uniqueOrganizationIds);
+
+  if (error) {
+    console.error("[IssueService] fetchOrganizationsByIds failed", {
+      organizationIds: uniqueOrganizationIds,
+      error,
+    });
+    throw new IssueServiceError(
+      error.message || "Unable to fetch organizations",
+      500
+    );
+  }
+
+  return new Map(
+    (data || []).map((organization) => [organization.id, organization])
+  );
+};
+
 const attachRelatedData = async (issues, currentUserId = null) => {
   if (!issues.length) {
     return [];
   }
 
   const issueIds = issues.map((issue) => issue.id);
-  const [attachmentsMap, votes] = await Promise.all([
-    fetchAttachmentsByIssueIds(issueIds),
-    fetchVotesByIssueIds(issueIds),
-  ]);
+  const [attachmentsMap, votes, usersMap, membersMap, organizationsMap] =
+    await Promise.all([
+      fetchAttachmentsByIssueIds(issueIds),
+      fetchVotesByIssueIds(issueIds),
+      fetchUsersByIds(issues.map((issue) => issue.created_by)),
+      fetchOrganizationMembersByIds(issues.map((issue) => issue.assigned_to)),
+      fetchOrganizationsByIds(issues.map((issue) => issue.organization_id)),
+    ]);
 
   const voteSummaryMap = new Map();
 
@@ -313,6 +375,9 @@ const attachRelatedData = async (issues, currentUserId = null) => {
     const s = voteSummaryMap.get(issue.id);
     return {
       ...issue,
+      created_by_user: usersMap.get(issue.created_by) || null,
+      assigned_to_user: membersMap.get(issue.assigned_to) || null,
+      organization: organizationsMap.get(issue.organization_id) || null,
       attachments: attachmentsMap.get(issue.id) || [],
       upvote_count: s?.upvote_count || 0,
       downvote_count: s?.downvote_count || 0,
@@ -610,7 +675,7 @@ export const listIssueUpdates = async (issueId) => {
 
   const { data, error } = await supabase
     .from("updates")
-    .select("id, issue_id, content, created_at, author_id")
+    .select("id, issue_id, message, image_url, type, created_by, created_at")
     .eq("issue_id", issueId)
     .order("created_at", { ascending: false });
 
@@ -622,7 +687,11 @@ export const listIssueUpdates = async (issueId) => {
     throw new IssueServiceError(error.message || "Unable to fetch issue updates", 500);
   }
 
-  return data || [];
+  return (data || []).map((update) => ({
+    ...update,
+    content: update.message,
+    author_id: update.created_by,
+  }));
 };
 
 export const addIssueUpdate = async (issueId, content, userId) => {
@@ -638,10 +707,11 @@ export const addIssueUpdate = async (issueId, content, userId) => {
     .from("updates")
     .insert({
       issue_id: issueId,
-      content: normalizedContent,
-      author_id: userId,
+      message: normalizedContent,
+      created_by: userId,
+      type: "comment",
     })
-    .select("id, issue_id, content, created_at, author_id")
+    .select("id, issue_id, message, image_url, type, created_by, created_at")
     .single();
 
   if (error || !data) {
@@ -653,7 +723,11 @@ export const addIssueUpdate = async (issueId, content, userId) => {
     throw new IssueServiceError(error?.message || "Unable to add issue update", 500);
   }
 
-  return data;
+  return {
+    ...data,
+    content: data.message,
+    author_id: data.created_by,
+  };
 };
 
 export const addIssueVote = async (issueId, userId, voteType = "upvote") => {
