@@ -3,7 +3,7 @@ import Card, { CardBody, CardDescription, CardHeader, CardTitle } from '../compo
 import Loader from '../components/ui/Loader'
 import StatusBadge from '../components/ui/StatusBadge'
 import Table from '../components/ui/Table'
-import { getIssueStats } from '../services/issuesService'
+import { getIssueStats, getIssueStatusLabel } from '../services/issuesService'
 
 function Reports() {
   const [stats, setStats] = useState(null)
