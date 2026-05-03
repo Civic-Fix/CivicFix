@@ -32,96 +32,121 @@ function Dashboard() {
   }, [])
 
   return (
-    <div className="space-y-6 p-6 lg:p-8">
-      {/* Header */}
-      <div className="space-y-2">
-        <p className="text-xs font-bold uppercase tracking-wide text-slate-600">Dashboard</p>
-        <h1 className="text-4xl font-black tracking-tight text-slate-950">Overview</h1>
-        <p className="text-sm font-semibold text-slate-700">Track civic issues and team performance at a glance</p>
+    <div className="space-y-8 p-6 lg:p-8">
+      {/* Header with Gradient */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">📊 Dashboard</p>
+            <h1 className="bg-gradient-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-4xl font-black tracking-tight text-transparent">
+              Civic Overview
+            </h1>
+            <p className="text-base font-semibold text-slate-600">Monitor issues, track resolution, and manage your team</p>
+          </div>
+        </div>
+        <div className="h-1 w-16 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-900">
-          <AlertCircle className="mb-2 inline-block h-4 w-4" />
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-5 py-4 text-sm font-bold text-rose-900 shadow-sm">
+          <AlertCircle className="h-5 w-5 flex-shrink-0" />
           {error}
         </div>
       ) : null}
 
       {loading ? (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-6 py-12 text-center">
+        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-6 py-16 text-center">
           <Loader label="Loading dashboard" />
         </div>
       ) : (
         <>
-          {/* Stats Cards - Jira Style */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase text-slate-600">Total Issues</p>
-                  <p className="text-3xl font-black text-slate-950">{stats?.total ?? 0}</p>
+          {/* Stats Cards - Modern Jira Style */}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Total Issues */}
+            <div className="group relative rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm transition hover:border-slate-300 hover:shadow-lg">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-slate-500/0 via-slate-500/0 to-slate-500/0 opacity-0 transition group-hover:opacity-5"></div>
+              <div className="relative space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Total Issues</p>
+                    <p className="text-4xl font-black text-slate-950">{stats?.total ?? 0}</p>
+                  </div>
+                  <div className="rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 p-2.5">
+                    <TrendingUp className="h-5 w-5 text-slate-700" />
+                  </div>
                 </div>
-                <div className="rounded-lg bg-slate-100 p-2">
-                  <TrendingUp className="h-5 w-5 text-slate-600" />
-                </div>
+                <p className="text-xs font-semibold text-slate-500">All reports in the system</p>
               </div>
-              <p className="mt-2 text-xs text-slate-500">All reports in the system</p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase text-slate-600">Open Issues</p>
-                  <p className="text-3xl font-black text-amber-600">{stats?.open ?? 0}</p>
+            {/* Open Issues */}
+            <div className="group relative rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-sm transition hover:border-amber-300 hover:shadow-lg">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-amber-500/0 via-amber-500/0 to-amber-500/0 opacity-0 transition group-hover:opacity-5"></div>
+              <div className="relative space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-bold uppercase tracking-widest text-amber-700">Open Issues</p>
+                    <p className="text-4xl font-black text-amber-700">{stats?.open ?? 0}</p>
+                  </div>
+                  <div className="rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 p-2.5">
+                    <Clock className="h-5 w-5 text-amber-700" />
+                  </div>
                 </div>
-                <div className="rounded-lg bg-amber-100 p-2">
-                  <Clock className="h-5 w-5 text-amber-600" />
-                </div>
+                <p className="text-xs font-semibold text-amber-600">Needs action</p>
               </div>
-              <p className="mt-2 text-xs text-slate-500">Needs action or in progress</p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase text-slate-600">Resolved</p>
-                  <p className="text-3xl font-black text-emerald-600">{stats?.resolved ?? 0}</p>
+            {/* Resolved Issues */}
+            <div className="group relative rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-5 shadow-sm transition hover:border-emerald-300 hover:shadow-lg">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-emerald-500/0 via-emerald-500/0 to-emerald-500/0 opacity-0 transition group-hover:opacity-5"></div>
+              <div className="relative space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-bold uppercase tracking-widest text-emerald-700">Resolved</p>
+                    <p className="text-4xl font-black text-emerald-700">{stats?.resolved ?? 0}</p>
+                  </div>
+                  <div className="rounded-lg bg-gradient-to-br from-emerald-100 to-teal-100 p-2.5">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-700" />
+                  </div>
                 </div>
-                <div className="rounded-lg bg-emerald-100 p-2">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                </div>
+                <p className="text-xs font-semibold text-emerald-600">Fixed or closed</p>
               </div>
-              <p className="mt-2 text-xs text-slate-500">Fixed or closed</p>
             </div>
 
-            <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 hover:shadow-md">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <p className="text-xs font-bold uppercase text-slate-600">Resolution Rate</p>
-                  <p className="text-3xl font-black text-slate-950">
-                    {stats?.total ? Math.round((stats?.resolved / stats?.total) * 100) : 0}%
-                  </p>
+            {/* Resolution Rate */}
+            <div className="group relative rounded-xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-5 shadow-sm transition hover:border-slate-300 hover:shadow-lg">
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-slate-500/0 via-slate-500/0 to-slate-500/0 opacity-0 transition group-hover:opacity-5"></div>
+              <div className="relative space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Resolution Rate</p>
+                    <p className="text-4xl font-black text-slate-950">
+                      {stats?.total ? Math.round((stats?.resolved / stats?.total) * 100) : 0}<span className="text-2xl">%</span>
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-gradient-to-br from-slate-100 to-slate-200 p-2.5">
+                    <TrendingUp className="h-5 w-5 text-slate-700" />
+                  </div>
                 </div>
-                <div className="rounded-lg bg-slate-100 p-2">
-                  <TrendingUp className="h-5 w-5 text-slate-600" />
-                </div>
+                <p className="text-xs font-semibold text-slate-500">Performance metric</p>
               </div>
-              <p className="mt-2 text-xs text-slate-500">Performance metric</p>
             </div>
           </div>
 
-          {/* Status Breakdown */}
+          {/* Status Breakdown - Modern Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Issues by Status</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-xl">📊</span> Issues by Status
+              </CardTitle>
               <CardDescription>Current distribution of all civic reports</CardDescription>
             </CardHeader>
             <CardBody>
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+              <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
                 {stats?.byStatus && Object.entries(stats.byStatus).map(([status, count]) => (
-                  <div key={status} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
-                    <span className="font-semibold text-slate-700">{status}</span>
-                    <span className="rounded-full bg-white px-3 py-1 text-sm font-bold text-slate-900">{count}</span>
+                  <div key={status} className="flex items-center justify-between rounded-lg border border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4 transition hover:border-slate-200 hover:shadow-sm">
+                    <span className="font-bold text-slate-800">{status}</span>
+                    <span className="rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-1.5 text-sm font-black text-white">{count}</span>
                   </div>
                 ))}
               </div>
@@ -131,19 +156,32 @@ function Dashboard() {
           {/* Quick Actions */}
           <Card>
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common workflows</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-xl">⚡</span> Quick Actions
+              </CardTitle>
+              <CardDescription>Common workflows and shortcuts</CardDescription>
             </CardHeader>
             <CardBody>
               <div className="flex flex-wrap gap-3">
-                <a href="/issues" className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-emerald-700">
-                  View All Issues
+                <a href="/issues" className="group relative inline-flex overflow-hidden rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 transition hover:shadow-xl hover:shadow-emerald-600/40">
+                  <span className="relative flex items-center gap-2">
+                    <span>📋</span> View All Issues
+                  </span>
                 </a>
-                <a href="/map" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                  View Map
+                <a href="/team" className="group relative inline-flex overflow-hidden rounded-lg border-2 border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">
+                  <span className="relative flex items-center gap-2">
+                    <span>👥</span> View Team
+                  </span>
                 </a>
-                <a href="/reports" className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                  View Reports
+                <a href="/map" className="group relative inline-flex overflow-hidden rounded-lg border-2 border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">
+                  <span className="relative flex items-center gap-2">
+                    <span>🗺️</span> View Map
+                  </span>
+                </a>
+                <a href="/reports" className="group relative inline-flex overflow-hidden rounded-lg border-2 border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:border-emerald-300 hover:bg-emerald-50">
+                  <span className="relative flex items-center gap-2">
+                    <span>📈</span> View Reports
+                  </span>
                 </a>
               </div>
             </CardBody>
