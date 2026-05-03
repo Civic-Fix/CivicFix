@@ -1,24 +1,51 @@
 import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
+const commentSelect = `
+  id,
+  issue_id,
+  description,
+  vote,
+  created_at,
+  updated_at,
+  created_by
+`;
+
+async function attachCommentUsers(comments) {
+  if (!comments?.length) {
+    return comments || [];
+  }
+
+  const userIds = [...new Set(comments.map((comment) => comment.created_by).filter(Boolean))];
+
+  if (!userIds.length) {
+    return comments.map((comment) => ({ ...comment, created_by_user: null }));
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .select('id, name, email')
+    .in('id', userIds);
+
+  if (error) {
+    throw new Error(`Failed to fetch comment users: ${error.message}`);
+  }
+
+  const usersById = new Map((data || []).map((user) => [user.id, user]));
+
+  return comments.map((comment) => ({
+    ...comment,
+    created_by_user: usersById.get(comment.created_by) || null,
+  }));
+}
+
 class CommentService {
   // Get all comments for an issue
   async getCommentsByIssueId(issueId) {
     try {
       const { data, error } = await supabase
         .from('comments')
-        .select(`
-          id,
-          description,
-          vote,
-          created_at,
-          created_by,
-          created_by_user:users!comments_created_by_fkey (
-            id,
-            name,
-            email
-          )
-        `)
+        .select(commentSelect)
         .eq('issue_id', issueId)
         .order('created_at', { ascending: true });
 
@@ -26,7 +53,7 @@ class CommentService {
         throw new Error(`Failed to fetch comments: ${error.message}`);
       }
 
-      return data || [];
+      return attachCommentUsers(data || []);
     } catch (error) {
       console.error('CommentService.getCommentsByIssueId error:', error);
       throw error;
@@ -44,25 +71,15 @@ class CommentService {
           created_by: createdBy,
           vote: 0
         })
-        .select(`
-          id,
-          description,
-          vote,
-          created_at,
-          created_by,
-          created_by_user:users!comments_created_by_fkey (
-            id,
-            name,
-            email
-          )
-        `)
+        .select(commentSelect)
         .single();
 
       if (error) {
         throw new Error(`Failed to create comment: ${error.message}`);
       }
 
-      return data;
+      const [comment] = await attachCommentUsers([data]);
+      return comment;
     } catch (error) {
       console.error('CommentService.createComment error:', error);
       throw error;
@@ -80,19 +97,7 @@ class CommentService {
         })
         .eq('id', commentId)
         .eq('created_by', userId)
-        .select(`
-          id,
-          description,
-          vote,
-          created_at,
-          updated_at,
-          created_by,
-          created_by_user:users!comments_created_by_fkey (
-            id,
-            name,
-            email
-          )
-        `)
+        .select(commentSelect)
         .single();
 
       if (error) {
@@ -103,7 +108,8 @@ class CommentService {
         throw new Error('Comment not found or not authorized');
       }
 
-      return data;
+      const [comment] = await attachCommentUsers([data]);
+      return comment;
     } catch (error) {
       console.error('CommentService.updateComment error:', error);
       throw error;
@@ -163,25 +169,15 @@ class CommentService {
         .from('comments')
         .update({ vote: newVote })
         .eq('id', commentId)
-        .select(`
-          id,
-          description,
-          vote,
-          created_at,
-          created_by,
-          created_by_user:users!comments_created_by_fkey (
-            id,
-            name,
-            email
-          )
-        `)
+        .select(commentSelect)
         .single();
 
       if (error) {
         throw new Error(`Failed to vote on comment: ${error.message}`);
       }
 
-      return data;
+      const [updatedComment] = await attachCommentUsers([data]);
+      return updatedComment;
     } catch (error) {
       console.error('CommentService.voteComment error:', error);
       throw error;

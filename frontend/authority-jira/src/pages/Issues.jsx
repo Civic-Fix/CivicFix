@@ -5,7 +5,7 @@ import Table from '../components/ui/Table'
 import StatusBadge from '../components/ui/StatusBadge'
 import Loader from '../components/ui/Loader'
 import Button from '../components/ui/Button'
-import { listIssues } from '../services/issuesService'
+import { issueStatusOptions, listIssues } from '../services/issuesService'
 import { formatDate } from '../utils/formatDate'
 
 // Mock team members for assignment
@@ -174,11 +174,12 @@ function Issues() {
               onChange={(e) => setFilterStatus(e.target.value)}
               className="appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm font-bold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
             >
-              <option>All Status</option>
-              <option>Open</option>
-              <option>In Progress</option>
-              <option>Resolved</option>
-              <option>Closed</option>
+              <option value="All">All Status</option>
+              {issueStatusOptions.map((status) => (
+                <option key={status.value} value={status.value}>
+                  {status.label}
+                </option>
+              ))}
             </select>
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
           </div>
