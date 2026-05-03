@@ -101,31 +101,46 @@ function Map() {
   }, [issues, navigate])
 
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Map</p>
-          <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">Issue locations</h1>
-          <p className="mt-2 text-sm font-semibold text-slate-600">Click a marker to open the issue.</p>
+    <div className="space-y-8 p-6 lg:p-8">
+      {/* Header with Gradient */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">🗺️ Map</p>
+            <h1 className="bg-gradient-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-4xl font-black tracking-tight text-transparent">
+              Issue Locations
+            </h1>
+            <p className="text-base font-semibold text-slate-600">Click a marker to view issue details and take action</p>
+          </div>
+          <Button variant="secondary" onClick={refresh}>
+            🔄 Refresh
+          </Button>
         </div>
-        <Button variant="secondary" onClick={refresh}>
-          Refresh
-        </Button>
+        <div className="h-1 w-16 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
       </div>
 
       {error ? (
-        <div className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-800">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-5 py-4 text-sm font-bold text-rose-900 shadow-sm">
           {error}
         </div>
       ) : null}
 
       {loading ? (
-        <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-10">
+        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-5 py-16 text-center">
           <Loader label="Loading map issues" />
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-3xl border border-slate-200">
+      {/* Legend and Info */}
+      <div className="rounded-xl border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-5 shadow-sm">
+        <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
+          <span className="text-lg">ℹ️</span>
+          <span>Showing <span className="font-black text-emerald-600">{issues.length}</span> civic issues on the map</span>
+        </div>
+      </div>
+
+      {/* Map Container */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 shadow-lg">
         <div ref={containerRef} className="h-[32rem] w-full bg-slate-100" />
       </div>
     </div>
