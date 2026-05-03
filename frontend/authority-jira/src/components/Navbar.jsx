@@ -12,71 +12,78 @@ function Navbar() {
   }, [isDark])
 
   return (
-    <header className="sticky top-0 z-50 px-4 py-4">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-        <nav className="theme-nav flex flex-1 items-center gap-6 rounded-3xl border border-white/80 bg-white/90 px-5 py-3 shadow-2xl shadow-emerald-950/10 ring-1 ring-slate-900/5 backdrop-blur-xl lg:px-8">
-          <a href="#top" className="group flex shrink-0 items-center gap-2 text-slate-950">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-emerald-400 via-emerald-600 to-slate-950 text-sm font-black text-white shadow-lg shadow-emerald-700/25 transition duration-300 group-hover:scale-105 group-hover:shadow-emerald-700/35">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-4">
+          {/* Logo & Brand */}
+          <a href="#top" className="group flex shrink-0 items-center gap-2.5 text-slate-950">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-gradient-to-br from-emerald-400 via-emerald-600 to-slate-950 text-sm font-black text-white shadow-md shadow-emerald-700/30 transition duration-300 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-emerald-700/40">
               CF
             </span>
-            <span className="leading-tight">
-              <span className="theme-brand-text block text-lg font-black tracking-tight">
+            <div className="hidden leading-tight sm:block">
+              <div className="text-base font-black tracking-tight">
                 Civic<span className="text-emerald-600">Fix</span>
-              </span>
-              <span className="hidden text-xs font-bold uppercase tracking-[0.18em] text-slate-400 sm:block">
-                Report. Track. Resolve.
-              </span>
-            </span>
+              </div>
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-500">Civic Platform</div>
+            </div>
           </a>
 
-          <div className="theme-nav-links hidden items-center gap-1 rounded-full bg-stone-100/90 p-1 text-sm font-bold text-slate-600 lg:flex">
+          {/* Navigation Links - Desktop Only */}
+          <nav className="hidden flex-1 items-center justify-center gap-8 lg:flex">
             {navItems.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                className="rounded-full px-4 py-2 transition duration-200 hover:-translate-y-0.5 hover:bg-white hover:text-emerald-700 hover:shadow-sm"
+                className="text-sm font-semibold text-slate-700 transition duration-200 hover:text-emerald-600 hover:-translate-y-0.5"
               >
                 {item.label}
               </a>
             ))}
-          </div>
+          </nav>
 
-          <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <span className="hidden rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-black text-emerald-700 ring-1 ring-emerald-100 xl:inline-flex">
-              Live civic beta
+          {/* Right Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Beta Badge */}
+            <span className="hidden rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-emerald-200 xl:inline-block">
+              Live Beta
             </span>
+
+            {/* Officer Login */}
             <a
               href="/login"
-              className="rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-black text-slate-700 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-emerald-200 hover:text-emerald-700 hover:shadow-md sm:px-4"
+              className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition duration-300 hover:border-slate-400 hover:shadow-md hover:-translate-y-0.5 sm:text-sm"
             >
               Officer Login
             </a>
+
+            {/* Request Access */}
             <button
               onClick={() => setIsRequestAccessOpen(true)}
-              className="rounded-2xl bg-slate-600 px-3 py-2.5 text-sm font-black text-white shadow-lg shadow-slate-700/25 transition duration-300 hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-slate-700 hover:shadow-slate-700/35 sm:px-4"
+              className="rounded-lg bg-slate-700 px-3.5 py-2 text-xs font-bold text-white shadow-md transition duration-300 hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5 sm:text-sm"
             >
               Request Access
             </button>
+
+            {/* Report Issue */}
             <a
               href="#final-cta"
-              className="rounded-2xl bg-emerald-600 px-3 py-2.5 text-sm font-black text-white shadow-xl shadow-emerald-700/25 transition duration-300 hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-emerald-700 hover:shadow-emerald-700/35 sm:px-4"
+              className="rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-700 px-3.5 py-2 text-xs font-bold text-white shadow-lg shadow-emerald-600/30 transition duration-300 hover:shadow-xl hover:shadow-emerald-600/40 hover:-translate-y-0.5 sm:text-sm"
             >
               Report Issue
             </a>
-          </div>
-        </nav>
 
-        <button
-          type="button"
-          aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
-          aria-pressed={isDark}
-          onClick={() => setIsDark((current) => !current)}
-          className="theme-toggle theme-bubble grid shrink-0 place-items-center border border-white/80 bg-white text-2xl shadow-2xl shadow-emerald-950/15 ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-1 hover:scale-105 hover:border-emerald-200"
-        >
-          <span className="theme-bubble-icon" aria-hidden="true">
-            {isDark ? '☀️' : '🌙'}
-          </span>
-        </button>
+            {/* Theme Toggle */}
+            <button
+              type="button"
+              aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+              aria-pressed={isDark}
+              onClick={() => setIsDark((current) => !current)}
+              className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-slate-200 bg-white text-lg transition duration-300 hover:bg-slate-50 hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <span aria-hidden="true">{isDark ? '☀️' : '🌙'}</span>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Request Access Modal */}
