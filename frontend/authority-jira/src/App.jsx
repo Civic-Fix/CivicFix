@@ -8,6 +8,7 @@ import IssueDetail from './pages/IssueDetail.jsx'
 import Team from './pages/Team.jsx'
 import Map from './pages/Map.jsx'
 import Reports from './pages/Reports.jsx'
+import RequestAccess from './pages/RequestAccess.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/request-access" element={<RequestAccess />} />
 
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />

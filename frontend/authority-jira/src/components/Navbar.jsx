@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { navItems } from './landingData'
+import RequestAccessModal from './RequestAccessModal'
 
 function Navbar() {
   const [isDark, setIsDark] = useState(() => localStorage.getItem('civic-theme') === 'dark')
+  const [isRequestAccessOpen, setIsRequestAccessOpen] = useState(false)
 
   useEffect(() => {
     document.documentElement.classList.toggle('civic-dark', isDark)
@@ -49,6 +51,12 @@ function Navbar() {
             >
               Officer Login
             </a>
+            <button
+              onClick={() => setIsRequestAccessOpen(true)}
+              className="rounded-2xl bg-slate-600 px-3 py-2.5 text-sm font-black text-white shadow-lg shadow-slate-700/25 transition duration-300 hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-slate-700 hover:shadow-slate-700/35 sm:px-4"
+            >
+              Request Access
+            </button>
             <a
               href="#final-cta"
               className="rounded-2xl bg-emerald-600 px-3 py-2.5 text-sm font-black text-white shadow-xl shadow-emerald-700/25 transition duration-300 hover:-translate-y-0.5 hover:scale-[1.02] hover:bg-emerald-700 hover:shadow-emerald-700/35 sm:px-4"
@@ -70,6 +78,9 @@ function Navbar() {
           </span>
         </button>
       </div>
+
+      {/* Request Access Modal */}
+      <RequestAccessModal isOpen={isRequestAccessOpen} onClose={() => setIsRequestAccessOpen(false)} />
     </header>
   )
 }
