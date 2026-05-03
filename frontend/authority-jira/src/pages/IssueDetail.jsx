@@ -97,174 +97,195 @@ function IssueDetail() {
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-10">
-        <Loader label="Loading issue" />
+      <div className="space-y-8 p-6 lg:p-8">
+        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-5 py-16 text-center">
+          <Loader label="Loading issue" />
+        </div>
       </div>
     )
   }
 
   if (error && !issue) {
     return (
-      <div className="grid gap-4">
-        <div className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-800">
-          {error}
+      <div className="space-y-8 p-6 lg:p-8">
+        <div className="grid gap-4">
+          <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-5 py-4 text-sm font-bold text-rose-900 shadow-sm">
+            {error}
+          </div>
+          <Link className="text-sm font-black text-emerald-700 hover:text-emerald-800" to="/issues">
+            ← Back to issues
+          </Link>
         </div>
-        <Link className="text-sm font-black text-emerald-700 hover:text-emerald-800" to="/issues">
-          ← Back to issues
-        </Link>
       </div>
     )
   }
 
   return (
-    <div className="grid gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Issue</p>
-          <h1 className="mt-2 truncate text-3xl font-black tracking-tight text-slate-950">
-            {issue?.title || `Issue #${issue?.id}`}
-          </h1>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <StatusBadge status={issue?.status || 'Open'} />
-            <span className="text-sm font-semibold text-slate-600">{issue?.locality || '—'}</span>
-            <span className="text-sm font-semibold text-slate-400">•</span>
-            <span className="text-sm font-semibold text-slate-600">
-              Created {issue?.created_at ? formatDate(issue.created_at) : '—'}
-            </span>
-          </div>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <Button variant="secondary" as={Link} to="/issues">
-            Back
-          </Button>
-          <Button variant="secondary" onClick={refresh}>
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      {error ? (
-        <div className="rounded-3xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-800">
-          {error}
-        </div>
-      ) : null}
-
-      <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Description</CardTitle>
-            <CardDescription>Citizen-submitted details and supporting evidence.</CardDescription>
-          </CardHeader>
-          <CardBody className="grid gap-6">
-            <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">
-              {issue?.description || '—'}
-            </p>
-
-            {images.length ? (
-              <div className="grid gap-3">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Images</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {images.map((src, idx) => (
-                    <a
-                      key={`${src}-${idx}`}
-                      href={src}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group overflow-hidden rounded-3xl border border-slate-200 bg-slate-50"
-                    >
-                      <img
-                        src={src}
-                        alt={`Proof ${idx + 1}`}
-                        className="h-56 w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-                        loading="lazy"
-                      />
-                    </a>
-                  ))}
-                </div>
+    <div className="space-y-8 p-6 lg:p-8">
+      <div className="grid gap-6">
+        {/* Header Section */}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">📋 Issue Detail</p>
+              <h1 className="bg-gradient-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-3xl font-black tracking-tight text-transparent">
+                {issue?.title || `Issue #${issue?.id}`}
+              </h1>
+              <div className="flex flex-wrap items-center gap-3">
+                <StatusBadge status={issue?.status || 'Open'} />
+                <span className="text-sm font-semibold text-slate-600">📍 {issue?.locality || '—'}</span>
+                <span className="text-sm font-semibold text-slate-400">•</span>
+                <span className="text-sm font-semibold text-slate-600">
+                  Created {issue?.created_at ? formatDate(issue.created_at) : '—'}
+                </span>
               </div>
-            ) : null}
-          </CardBody>
-        </Card>
-
-        <div className="grid gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Workflow</CardTitle>
-              <CardDescription>Update status and ownership.</CardDescription>
-            </CardHeader>
-            <CardBody className="grid gap-4">
-              <label className="grid gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Status</span>
-                <select
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                >
-                  {statusOptions.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Button disabled={savingStatus} onClick={onSaveStatus}>
-                {savingStatus ? 'Saving…' : 'Save status'}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <Button variant="secondary" as={Link} to="/issues">
+                ← Back
               </Button>
+              <Button variant="secondary" onClick={refresh}>
+                🔄 Refresh
+              </Button>
+            </div>
+          </div>
+          <div className="h-1 w-16 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
+        </div>
 
-              <div className="rounded-3xl bg-slate-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Assigned to</p>
-                <p className="mt-1 text-sm font-bold text-slate-700">{issue?.assigned_to || 'Unassigned'}</p>
-              </div>
+        {error ? (
+          <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-5 py-4 text-sm font-bold text-rose-900 shadow-sm">
+            {error}
+          </div>
+        ) : null}
 
-              <div className="rounded-3xl bg-slate-50 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">Location</p>
-                <p className="mt-1 text-sm font-bold text-slate-700">{issue?.locality || '—'}</p>
-                <p className="mt-1 text-sm font-semibold text-slate-600">
-                  {issue?.latitude && issue?.longitude ? `${issue.latitude}, ${issue.longitude}` : '—'}
-                </p>
-              </div>
-            </CardBody>
-          </Card>
-
+        {/* Main Content Grid */}
+        <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
+          {/* Left Column - Description & Images */}
           <Card>
             <CardHeader>
-              <CardTitle>Updates</CardTitle>
-              <CardDescription>Progress logs and officer comments.</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <span className="text-xl">📝</span> Description
+              </CardTitle>
+              <CardDescription>Citizen-submitted details and supporting evidence.</CardDescription>
             </CardHeader>
-            <CardBody className="grid gap-4">
-              <form onSubmit={onAddUpdate} className="grid gap-2">
-                <textarea
-                  className="min-h-28 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
-                  value={newUpdate}
-                  onChange={(e) => setNewUpdate(e.target.value)}
-                  placeholder="Add a progress update…"
-                />
-                <Button disabled={postingUpdate} type="submit">
-                  {postingUpdate ? 'Posting…' : 'Add update'}
-                </Button>
-              </form>
-
-              <div className="grid gap-3">
-                {updates.length === 0 ? (
-                  <p className="text-sm font-semibold text-slate-600">No updates yet.</p>
-                ) : (
-                  updates.map((u) => (
-                    <article key={u.id} className="rounded-3xl border border-slate-200 bg-white p-4">
-                      <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{u.content}</p>
-                      <p className="mt-3 text-xs font-black uppercase tracking-[0.18em] text-slate-400">
-                        {u.created_at ? formatDate(u.created_at) : '—'}
-                      </p>
-                    </article>
-                  ))
-                )}
-              </div>
-            </CardBody>
-            <CardFooter>
-              <p className="text-xs font-semibold text-slate-500">
-                Tip: keep updates factual and include next action + ETA.
+            <CardBody className="grid gap-6">
+              <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">
+                {issue?.description || '—'}
               </p>
-            </CardFooter>
+
+              {images.length ? (
+                <div className="grid gap-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600">📸 Photos</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {images.map((src, idx) => (
+                      <a
+                        key={`${src}-${idx}`}
+                        href={src}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition hover:border-emerald-300 hover:shadow-md"
+                      >
+                        <img
+                          src={src}
+                          alt={`Proof ${idx + 1}`}
+                          className="h-56 w-full object-cover transition duration-300 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </CardBody>
           </Card>
+
+          {/* Right Column - Workflow & Updates */}
+          <div className="grid gap-6">
+            {/* Workflow Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="text-xl">⚙️</span> Workflow
+                </CardTitle>
+                <CardDescription>Update status and assignment.</CardDescription>
+              </CardHeader>
+              <CardBody className="grid gap-4">
+                <label className="grid gap-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-700">Status</span>
+                  <select
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                  >
+                    {statusOptions.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <Button disabled={savingStatus} onClick={onSaveStatus}>
+                  {savingStatus ? '⏳ Saving…' : '✓ Save status'}
+                </Button>
+
+                <div className="rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600">👤 Assigned To</p>
+                  <p className="mt-2 text-sm font-bold text-slate-800">{issue?.assigned_to || '—'}</p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600">📍 Location</p>
+                  <p className="mt-2 text-sm font-bold text-slate-800">{issue?.locality || '—'}</p>
+                  <p className="mt-1 text-xs font-semibold text-slate-600">
+                    {issue?.latitude && issue?.longitude ? `${issue.latitude.toFixed(4)}, ${issue.longitude.toFixed(4)}` : 'No coordinates'}
+                  </p>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Updates Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <span className="text-xl">💬</span> Updates
+                </CardTitle>
+                <CardDescription>Progress logs and officer comments.</CardDescription>
+              </CardHeader>
+              <CardBody className="grid gap-4">
+                <form onSubmit={onAddUpdate} className="grid gap-3">
+                  <textarea
+                    className="min-h-28 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
+                    value={newUpdate}
+                    onChange={(e) => setNewUpdate(e.target.value)}
+                    placeholder="Add a progress update…"
+                  />
+                  <Button disabled={postingUpdate} type="submit">
+                    {postingUpdate ? '⏳ Posting…' : '➕ Add Update'}
+                  </Button>
+                </form>
+
+                <div className="grid gap-3">
+                  {updates.length === 0 ? (
+                    <p className="text-sm font-semibold text-slate-500">No updates yet. Be the first to add one!</p>
+                  ) : (
+                    updates.map((u) => (
+                      <article key={u.id} className="rounded-lg border border-slate-200 bg-gradient-to-r from-white to-slate-50 p-4 transition hover:border-emerald-200 hover:shadow-sm">
+                        <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{u.content}</p>
+                        <p className="mt-3 text-xs font-bold uppercase tracking-widest text-slate-400">
+                          ⏰ {u.created_at ? formatDate(u.created_at) : '—'}
+                        </p>
+                      </article>
+                    ))
+                  )}
+                </div>
+              </CardBody>
+              <CardFooter>
+                <p className="text-xs font-semibold text-slate-500">
+                  💡 Tip: Keep updates factual and include next action + ETA.
+                </p>
+              </CardFooter>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

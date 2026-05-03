@@ -125,47 +125,54 @@ function Issues() {
   )
 
   return (
-    <div className="space-y-6 p-6 lg:p-8">
-      {/* Header */}
-      <div className="space-y-2">
-        <p className="text-xs font-bold uppercase tracking-wide text-slate-600">Issues</p>
-        <h1 className="text-4xl font-black tracking-tight text-slate-950">Civic Reports</h1>
-        <p className="text-sm font-semibold text-slate-700">Review, assign, and track all incoming civic issues</p>
+    <div className="space-y-8 p-6 lg:p-8">
+      {/* Header with Gradient */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">📋 Issues</p>
+            <h1 className="bg-gradient-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-4xl font-black tracking-tight text-transparent">
+              Civic Reports
+            </h1>
+            <p className="text-base font-semibold text-slate-600">Review, assign, and track all incoming civic issues</p>
+          </div>
+        </div>
+        <div className="h-1 w-16 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600"></div>
       </div>
 
       {error ? (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-900">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-gradient-to-r from-rose-50 to-rose-100 px-5 py-4 text-sm font-bold text-rose-900 shadow-sm">
           {error}
         </div>
       ) : null}
 
-      {/* Filters & Search */}
+      {/* Filters & Search - Modern Design */}
       <div className="space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search issues..."
+                placeholder="Search issues by title or location..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
+                className="w-full rounded-xl border border-slate-200 bg-white pl-12 pr-4 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-500 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
               />
             </div>
           </div>
           <Button variant="secondary" onClick={refresh}>
-            Refresh
+            🔄 Refresh
           </Button>
         </div>
 
-        {/* Filter Dropdowns */}
-        <div className="flex flex-wrap gap-3">
+        {/* Filter Dropdowns - Modern Style */}
+        <div className="flex flex-wrap gap-3 items-center">
           <div className="relative">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-4 pr-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
+              className="appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm font-bold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
             >
               <option>All Status</option>
               <option>Open</option>
@@ -180,7 +187,7 @@ function Issues() {
             <select
               value={filterPriority}
               onChange={(e) => setFilterPriority(e.target.value)}
-              className="appearance-none rounded-lg border border-slate-200 bg-white py-2 pl-4 pr-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
+              className="appearance-none rounded-lg border border-slate-200 bg-white py-2.5 pl-4 pr-10 text-sm font-bold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
             >
               <option>All Priority</option>
               <option>Low</option>
@@ -191,8 +198,8 @@ function Issues() {
             <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-600" />
           </div>
 
-          <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600">
-            <Filter className="h-4 w-4" />
+          <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 px-4 py-2.5 text-sm font-bold text-emerald-700">
+            <span className="text-lg">🎯</span>
             {filteredRows.length} result{filteredRows.length !== 1 ? 's' : ''}
           </div>
         </div>
@@ -200,16 +207,18 @@ function Issues() {
 
       {/* Issues Table */}
       {loading ? (
-        <div className="rounded-lg border border-slate-200 bg-slate-50 px-6 py-12 text-center">
+        <div className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-6 py-16 text-center">
           <Loader label="Loading issues" />
         </div>
       ) : (
-        <Table
-          columns={columns}
-          rows={filteredRows}
-          emptyState="No issues found for your filters."
-          rowKey={(row) => row.id}
-        />
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <Table
+            columns={columns}
+            rows={filteredRows}
+            emptyState="No issues found for your filters."
+            rowKey={(row) => row.id}
+          />
+        </div>
       )}
     </div>
   )
