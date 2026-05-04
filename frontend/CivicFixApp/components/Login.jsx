@@ -14,11 +14,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-console.log('[Login] API_BASE_URL', API_BASE_URL);
+
+const CIVIC_BLUE = '#1D4ED8';
+const TEAL = '#14B8A6';
 
 const Login = ({ onSignupPress, onLoginSuccess }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -77,33 +80,36 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        {/* Hero */}
         <View style={styles.hero}>
           <View style={styles.logoWrap}>
-            <MaterialCommunityIcons name="city-variant-outline" size={36} color="#FFFFFF" />
+            <MaterialCommunityIcons name="city-variant-outline" size={34} color="#FFFFFF" />
           </View>
           <Text style={styles.heroTitle}>CivicFix</Text>
-          <Text style={styles.heroTagline}>Report · Track · Resolve</Text>
+          <Text style={styles.heroTagline}>Report - Track - Resolve</Text>
         </View>
 
-        {/* Form Card */}
         <View style={styles.formCard}>
           <Text style={styles.formHeading}>Welcome back</Text>
-          <Text style={styles.formSubheading}>Sign in to your account</Text>
+          <Text style={styles.formSubheading}>Sign in to continue civic reporting</Text>
 
           <View style={styles.fieldWrap}>
             <Text style={styles.fieldLabel}>Email</Text>
-            <TextInput
-              style={[styles.input, focusedField === 'email' && styles.inputFocused]}
-              placeholder="you@example.com"
-              placeholderTextColor="#9CA3AF"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-              onFocus={() => setFocusedField('email')}
-              onBlur={() => setFocusedField(null)}
-            />
+            <View style={[styles.inputWrap, focusedField === 'email' && styles.inputFocused]}>
+              <MaterialCommunityIcons name="email-outline" size={19} color={TEAL} />
+              <TextInput
+                style={styles.input}
+                placeholder="you@example.com"
+                placeholderTextColor="#64748B"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                underlineColorAndroid="transparent"
+                selectionColor={TEAL}
+                value={email}
+                onChangeText={setEmail}
+                onFocus={() => setFocusedField('email')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
           </View>
 
           <View style={styles.fieldWrap}>
@@ -113,16 +119,32 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
                 <Text style={styles.forgotText}>Forgot?</Text>
               </TouchableOpacity>
             </View>
-            <TextInput
-              style={[styles.input, focusedField === 'password' && styles.inputFocused]}
-              placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-              onFocus={() => setFocusedField('password')}
-              onBlur={() => setFocusedField(null)}
-            />
+            <View style={[styles.inputWrap, focusedField === 'password' && styles.inputFocused]}>
+              <MaterialCommunityIcons name="lock-outline" size={19} color={TEAL} />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#64748B"
+                secureTextEntry={!showPassword}
+                underlineColorAndroid="transparent"
+                selectionColor={TEAL}
+                value={password}
+                onChangeText={setPassword}
+                onFocus={() => setFocusedField('password')}
+                onBlur={() => setFocusedField(null)}
+              />
+              <TouchableOpacity
+                style={styles.eyeButton}
+                onPress={() => setShowPassword((prev) => !prev)}
+                activeOpacity={0.75}
+              >
+                <MaterialCommunityIcons
+                  name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                  size={20}
+                  color="#475569"
+                />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {error ? (
@@ -133,7 +155,7 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
           ) : null}
           {success ? (
             <View style={styles.alertSuccess}>
-              <MaterialCommunityIcons name="check-circle-outline" size={15} color="#16A34A" />
+              <MaterialCommunityIcons name="check-circle-outline" size={15} color={TEAL} />
               <Text style={styles.alertSuccessText}>{success}</Text>
             </View>
           ) : null}
@@ -147,7 +169,10 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.primaryBtnText}>Sign In</Text>
+              <>
+                <MaterialCommunityIcons name="login" size={18} color="#FFFFFF" />
+                <Text style={styles.primaryBtnText}>Sign In</Text>
+              </>
             )}
           </TouchableOpacity>
 
@@ -177,47 +202,46 @@ const Login = ({ onSignupPress, onLoginSuccess }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#15803D',
+    backgroundColor: CIVIC_BLUE,
   },
   scroll: {
     flexGrow: 1,
   },
   hero: {
     alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 40,
+    paddingTop: 48,
+    paddingBottom: 30,
     paddingHorizontal: 24,
-    backgroundColor: '#15803D',
+    backgroundColor: CIVIC_BLUE,
   },
   logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: TEAL,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
   heroTitle: {
     fontSize: 32,
     fontWeight: '800',
     color: '#FFFFFF',
-    letterSpacing: -0.5,
     marginBottom: 6,
   },
   heroTagline: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.75)',
-    letterSpacing: 1,
-    fontWeight: '500',
+    color: '#DDE7F3',
+    letterSpacing: 0.5,
+    fontWeight: '600',
   },
   formCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 24,
     paddingTop: 32,
     paddingBottom: 40,
@@ -225,12 +249,12 @@ const styles = StyleSheet.create({
   formHeading: {
     fontSize: 24,
     fontWeight: '800',
-    color: '#111827',
+    color: '#102A43',
     marginBottom: 4,
   },
   formSubheading: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#52616B',
     marginBottom: 28,
   },
   fieldWrap: {
@@ -238,8 +262,8 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '800',
+    color: '#334155',
     marginBottom: 6,
   },
   fieldLabelRow: {
@@ -250,22 +274,40 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#16A34A',
+    fontWeight: '700',
+    color: TEAL,
+  },
+  inputWrap: {
+    height: 48,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D6DEE8',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   input: {
-    height: 50,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
-    paddingHorizontal: 16,
+    flex: 1,
+    height: '100%',
     fontSize: 15,
-    color: '#111827',
+    color: '#102A43',
+    fontWeight: '600',
+    outlineWidth: 0,
+    outlineStyle: 'none',
+    outlineColor: 'transparent',
   },
   inputFocused: {
-    borderColor: '#16A34A',
-    backgroundColor: '#F0FDF4',
+    borderColor: '#60A5FA',
+    backgroundColor: '#EFF6FF',
+  },
+  eyeButton: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 17,
   },
   alertError: {
     flexDirection: 'row',
@@ -287,31 +329,33 @@ const styles = StyleSheet.create({
   alertSuccess: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#ECFDF5',
     borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginBottom: 16,
     gap: 8,
     borderWidth: 1,
-    borderColor: '#BBF7D0',
+    borderColor: '#99F6E4',
   },
   alertSuccessText: {
-    color: '#16A34A',
+    color: TEAL,
     fontSize: 13,
     flex: 1,
   },
   primaryBtn: {
-    height: 52,
+    height: 46,
     borderRadius: 14,
-    backgroundColor: '#16A34A',
+    backgroundColor: CIVIC_BLUE,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#16A34A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    flexDirection: 'row',
+    gap: 8,
+    shadowColor: CIVIC_BLUE,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 3,
   },
   btnDisabled: {
     opacity: 0.65,
@@ -320,7 +364,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '700',
-    letterSpacing: 0.3,
   },
   divider: {
     flexDirection: 'row',
@@ -331,27 +374,27 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#D6DEE8',
   },
   dividerLabel: {
     fontSize: 12,
-    color: '#9CA3AF',
-    fontWeight: '500',
+    color: '#64748B',
+    fontWeight: '600',
   },
   socialBtn: {
     height: 52,
     borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D6DEE8',
+    backgroundColor: '#F8FAFC',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
   },
   socialBtnText: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '700',
+    color: '#334155',
   },
   footer: {
     flexDirection: 'row',
@@ -359,12 +402,12 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: '#6B7280',
+    color: '#52616B',
     fontSize: 14,
   },
   footerLink: {
-    color: '#16A34A',
-    fontWeight: '700',
+    color: TEAL,
+    fontWeight: '800',
     fontSize: 14,
   },
 });

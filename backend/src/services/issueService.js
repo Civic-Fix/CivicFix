@@ -57,6 +57,20 @@ const parseRequiredNumber = (value, fieldName) => {
   return parsedValue;
 };
 
+const parseOptionalNumber = (value, fieldName) => {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+
+  if (Number.isNaN(parsedValue)) {
+    throw new IssueServiceError(`${fieldName} must be a valid number`);
+  }
+
+  return parsedValue;
+};
+
 const parseOptionalPositiveInteger = (value, defaultValue, fieldName = "Value") => {
   if (value === undefined || value === null || value === "") {
     return defaultValue;
@@ -134,6 +148,7 @@ const normalizeAttachments = (attachments) => {
 
 const validateCreateIssuePayload = ({
   title,
+  locality,
   lat,
   lng,
   status,
@@ -142,6 +157,10 @@ const validateCreateIssuePayload = ({
 }) => {
   if (!title || !title.trim()) {
     throw new IssueServiceError("Title is required");
+  }
+
+  if (!locality || !locality.trim()) {
+    throw new IssueServiceError("Locality is required");
   }
 
   if (status && !allowedStatuses.includes(status)) {
@@ -155,10 +174,18 @@ const validateCreateIssuePayload = ({
     throw new IssueServiceError("Invalid verification status");
   }
 
+  const parsedLat = parseOptionalNumber(lat, "lat");
+  const parsedLng = parseOptionalNumber(lng, "lng");
+
+  if ((parsedLat === null) !== (parsedLng === null)) {
+    throw new IssueServiceError("Both lat and lng are required when adding an exact location");
+  }
+
   return {
     title: title.trim(),
-    lat: parseRequiredNumber(lat, "lat"),
-    lng: parseRequiredNumber(lng, "lng"),
+    locality: locality.trim(),
+    lat: parsedLat,
+    lng: parsedLng,
     attachments: normalizeAttachments(attachments),
   };
 };
@@ -491,6 +518,7 @@ export const createIssue = async (issueData, userId) => {
 
   const validatedFields = validateCreateIssuePayload({
     title,
+    locality,
     lat,
     lng,
     status,
@@ -503,7 +531,7 @@ export const createIssue = async (issueData, userId) => {
   const issuePayload = {
     title: validatedFields.title,
     description: description?.trim() || null,
-    locality: locality?.trim() || null,
+    locality: validatedFields.locality,
     lat: validatedFields.lat,
     lng: validatedFields.lng,
     created_by: userId,

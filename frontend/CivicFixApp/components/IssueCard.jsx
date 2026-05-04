@@ -4,10 +4,10 @@ import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const STATUS_COLORS = {
-  Reported:     { bg: '#FEF9C3', border: '#FDE047', text: '#854D0E' },
-  'In Progress':{ bg: '#DBEAFE', border: '#93C5FD', text: '#1D4ED8' },
-  Resolved:     { bg: '#DCFCE7', border: '#86EFAC', text: '#15803D' },
-  Closed:       { bg: '#F3F4F6', border: '#D1D5DB', text: '#4B5563' },
+  Reported: { bg: '#EAF2FF', border: '#B8CEF3', text: '#0B2D5C' },
+  'In Progress': { bg: '#CCFBF1', border: '#5EEAD4', text: '#0F766E' },
+  Resolved: { bg: '#DCFCE7', border: '#86EFAC', text: '#15803D' },
+  Closed: { bg: '#F3F4F6', border: '#D1D5DB', text: '#4B5563' },
 };
 
 const getStatusStyle = (status) =>
@@ -40,6 +40,9 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
   };
 
   const badge = VERIFICATION_BADGES[issue.verification_status] ?? VERIFICATION_BADGES.pending;
+  const locationText = [issue.locality || issue.location, issue.coordinateLocation]
+    .filter(Boolean)
+    .join(' - ');
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.card}>
@@ -73,7 +76,14 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
 
       {/* Body */}
       <View style={styles.body}>
-        <Text style={styles.title}>{issue.title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>{issue.title}</Text>
+          {issue.status ? (
+            <View style={[styles.statusChip, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
+              <Text style={[styles.statusText, { color: statusStyle.text }]}>{issue.status}</Text>
+            </View>
+          ) : null}
+        </View>
         
         <Text style={styles.brief} numberOfLines={isExpanded ? 0 : 3}>
           {issue.brief}
@@ -91,19 +101,18 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
           </TouchableOpacity>
         )}
 
-        <View style={styles.chips}>
-          {issue.location ? (
-            <View style={styles.locationChip}>
-              <Feather name="map-pin" size={11} color="#6B7280" />
-              <Text style={styles.locationText} numberOfLines={1}>{issue.location}</Text>
+        <View style={styles.metaRow}>
+          {locationText ? (
+            <View style={styles.locationBlock}>
+              <Feather name="map-pin" size={13} color="#0F766E" />
+              <View style={styles.locationContent}>
+                <Text style={styles.locationText}>{locationText}</Text>
+              </View>
             </View>
-          ) : null}
+          ) : (
+            <View style={styles.locationPlaceholder} />
+          )}
 
-          {issue.status ? (
-            <View style={[styles.statusChip, { backgroundColor: statusStyle.bg, borderColor: statusStyle.border }]}>
-              <Text style={[styles.statusText, { color: statusStyle.text }]}>{issue.status}</Text>
-            </View>
-          ) : null}
         </View>
 
         {/* Actions */}
@@ -244,12 +253,18 @@ const styles = StyleSheet.create({
     paddingTop: 10,
     paddingBottom: 4,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginBottom: 6,
+  },
   title: {
-    fontSize: 16,
+    flex: 1,
+    fontSize: 15,
     fontWeight: '700',
-    color: '#0F172A',
-    marginBottom: 8,
-    lineHeight: 22,
+    color: '#102A43',
+    lineHeight: 20,
   },
   brief: {
     fontSize: 14,
@@ -265,34 +280,44 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  chips: {
+  metaRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    alignItems: 'flex-start',
     gap: 8,
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  locationChip: {
+  locationBlock: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
+    alignItems: 'flex-start',
+    gap: 6,
     flex: 1,
     minWidth: 0,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     paddingHorizontal: 8,
-    paddingVertical: 5,
-    borderRadius: 14,
+    paddingVertical: 6,
+    borderRadius: 9,
+  },
+  locationContent: {
+    flex: 1,
+    minWidth: 0,
   },
   locationText: {
     fontSize: 12,
-    color: '#475569',
-    flexShrink: 1,
+    color: '#334155',
+    fontWeight: '600',
+    lineHeight: 16,
+  },
+  locationPlaceholder: {
+    flex: 1,
   },
   statusChip: {
-    paddingHorizontal: 10,
+    paddingHorizontal: 9,
     paddingVertical: 5,
-    borderRadius: 14,
+    borderRadius: 12,
     borderWidth: 1,
+    alignSelf: 'flex-start',
   },
   statusText: {
     fontSize: 11,
