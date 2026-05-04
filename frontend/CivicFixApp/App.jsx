@@ -88,6 +88,17 @@ const formatCoordinates = (lat, lng) => {
   return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 };
 
+const formatLocationDisplay = (locality, lat, lng) => {
+  const coordinateText = formatCoordinates(lat, lng);
+  const trimmedLocality = typeof locality === 'string' ? locality.trim() : '';
+
+  if (trimmedLocality && coordinateText) {
+    return `${trimmedLocality} (${coordinateText})`;
+  }
+
+  return trimmedLocality || coordinateText;
+};
+
 const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = []) => {
   const issueUser = issue?.created_by_user;
   const authorName = issueUser?.name || issueUser?.phone || 'CivicFix User';
@@ -108,7 +119,9 @@ const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = [])
     fullTime: formatPostTime(issue.created_at),
     title: issue.title || 'Untitled Issue',
     brief: issue.description || 'No description provided.',
-    location: formatCoordinates(issue.lat, issue.lng),
+    locality: issue.locality || '',
+    location: formatLocationDisplay(issue.locality, issue.lat, issue.lng),
+    coordinateLocation: formatCoordinates(issue.lat, issue.lng),
     status: formatStatus(issue.status),
     image: primaryImage,
     images: (issue.attachments || []).map((attachment) => ({
@@ -475,7 +488,7 @@ export default function App() {
     if (isLoadingIssues) {
       return (
         <View style={styles.loadingState}>
-          <ActivityIndicator size="large" color="#16A34A" />
+          <ActivityIndicator size="large" color="#0F766E" />
           <Text style={styles.loadingStateText}>Loading civic reports...</Text>
         </View>
       );
@@ -543,7 +556,7 @@ export default function App() {
                   <Feather
                     name="home"
                     size={20}
-                    color={activeTab === 'home' ? '#16A34A' : '#9CA3AF'}
+                    color={activeTab === 'home' ? '#0B2D5C' : '#9CA3AF'}
                   />
                 </View>
                 <Text style={[styles.bottomLabel, activeTab === 'home' && styles.bottomLabelActive]}>
@@ -559,7 +572,7 @@ export default function App() {
                   <MaterialCommunityIcons
                     name="robot-outline"
                     size={26}
-                    color={activeTab === 'assistant' ? '#FFFFFF' : '#16A34A'}
+                    color={activeTab === 'assistant' ? '#FFFFFF' : '#0B2D5C'}
                   />
                 </View>
                 <Text
@@ -580,7 +593,7 @@ export default function App() {
                   <Feather
                     name="bell"
                     size={20}
-                    color={activeTab === 'notifications' ? '#16A34A' : '#9CA3AF'}
+                    color={activeTab === 'notifications' ? '#0B2D5C' : '#9CA3AF'}
                   />
                 </View>
                 <Text
@@ -673,15 +686,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#86EFAC',
-    shadowColor: '#16A34A',
+    shadowColor: '#0B2D5C',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 4,
   },
   bottomCenterButtonActive: {
-    backgroundColor: '#16A34A',
-    borderColor: '#16A34A',
+    backgroundColor: '#0B2D5C',
+    borderColor: '#0B2D5C',
   },
   bottomLabel: {
     marginTop: 4,
@@ -690,6 +703,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomLabelActive: {
-    color: '#16A34A',
+    color: '#0B2D5C',
   },
 });

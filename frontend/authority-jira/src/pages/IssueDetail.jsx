@@ -235,7 +235,7 @@ function IssueDetail() {
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-600">📍 Location</p>
                   <p className="mt-2 text-sm font-bold text-slate-800">{issue?.locality || '—'}</p>
                   <p className="mt-1 text-xs font-semibold text-slate-600">
-                    {issue?.latitude && issue?.longitude ? `${issue.latitude.toFixed(4)}, ${issue.longitude.toFixed(4)}` : 'No coordinates'}
+                    {issue?.latitude !== null && issue?.longitude !== null ? `${issue.latitude.toFixed(4)}, ${issue.longitude.toFixed(4)}` : 'No coordinates'}
                   </p>
                 </div>
               </CardBody>

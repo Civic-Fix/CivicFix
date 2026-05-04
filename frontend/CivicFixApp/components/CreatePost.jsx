@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -22,6 +23,13 @@ const MAX_IMAGES = 6;
 
 const formatCoordinates = ({ lat, lng }) => `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
 
+const formatLocationDisplay = (locality, coordinates) => {
+  const trimmedLocality = typeof locality === 'string' ? locality.trim() : '';
+  if (!coordinates) return trimmedLocality || 'No pin selected';
+  const coordinateText = formatCoordinates(coordinates);
+  return trimmedLocality ? `${trimmedLocality} (${coordinateText})` : coordinateText;
+};
+
 const formatStatus = (status) =>
   status
     ? status
@@ -35,6 +43,16 @@ const buildAttachmentPayload = (images = []) =>
     file_url: image.uri,
     file_type: image.file_type || image.mimeType || 'image/jpeg',
   }));
+
+const isAuthError = (error) =>
+  error?.status === 401 ||
+  /invalid token|session expired|missing or invalid token|unauthorized/i.test(error?.message || '');
+
+const buildRequestError = (message, status) => {
+  const error = new Error(message || 'Request failed');
+  error.status = status;
+  return error;
+};
 
 const getCurrentLocation = async () => {
   try {
@@ -90,11 +108,13 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
   const [displayName, setDisplayName] = useState('CivicFix User');
   const [titleText, setTitleText] = useState('');
   const [issueText, setIssueText] = useState('');
+  const [localityText, setLocalityText] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
+  const [submitError, setSubmitError] = useState('');
   const [locationError, setLocationError] = useState('');
   const [imageError, setImageError] = useState('');
   const [titleError, setTitleError] = useState('');
-  const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [localityError, setLocalityError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRefreshingLocation, setIsRefreshingLocation] = useState(false);
   const [isResolvingAddress, setIsResolvingAddress] = useState(false);
@@ -115,49 +135,6 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
       setDisplayName(user.email.split('@')[0]);
     }
   }, [user]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    const initializeReporting = async () => {
-      setIsBootstrapping(true);
-      setInfoMessage('');
-      setImageError('');
-      setLocationError('');
-
-      try {
-        const [mediaPermission, cameraPermission] = await Promise.all([
-          ImagePicker.requestMediaLibraryPermissionsAsync(),
-          ImagePicker.requestCameraPermissionsAsync(),
-        ]);
-
-        if (!isActive) {
-          return;
-        }
-
-        const hasImageAccess = mediaPermission.granted || cameraPermission.granted;
-
-        setMediaPermissionGranted(mediaPermission.granted);
-        setCameraPermissionGranted(cameraPermission.granted);
-
-        if (!hasImageAccess) {
-          setImageError('Camera or photo library access is required to upload proof.');
-        }
-
-        await requestLocationAccess();
-      } finally {
-        if (isActive) {
-          setIsBootstrapping(false);
-        }
-      }
-    };
-
-    initializeReporting();
-
-    return () => {
-      isActive = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (!coordinates) {
@@ -223,9 +200,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
       setCoordinates(nextCoordinates);
       return nextCoordinates;
     } catch (error) {
-      setCoordinates(null);
-      setResolvedAddress('');
-      setLocationError('Location is required to report an issue');
+      setLocationError(error.message || 'Unable to detect your current location');
       return null;
     } finally {
       if (isRetry) {
@@ -236,8 +211,13 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
 
   const handlePickFromGallery = async () => {
     if (!mediaPermissionGranted) {
-      setImageError('Photo library access is required to upload proof.');
-      return;
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      setMediaPermissionGranted(permission.granted);
+
+      if (!permission.granted) {
+        setImageError('Photo library access was not allowed. You can still submit without images.');
+        return;
+      }
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -257,8 +237,13 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
 
   const handleCapturePhoto = async () => {
     if (!cameraPermissionGranted) {
-      setImageError('Camera access is required to capture proof.');
-      return;
+      const permission = await ImagePicker.requestCameraPermissionsAsync();
+      setCameraPermissionGranted(permission.granted);
+
+      if (!permission.granted) {
+        setImageError('Camera access was not allowed. You can still submit without images.');
+        return;
+      }
     }
 
     const result = await ImagePicker.launchCameraAsync({
@@ -277,10 +262,6 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
   const handleRemoveImage = (uriToRemove) => {
     const nextImages = selectedImages.filter((image) => image.uri !== uriToRemove);
     setSelectedImages(nextImages);
-
-    if (!nextImages.length) {
-      setImageError('Please add at least 1 image to continue');
-    }
   };
 
   const handleRefreshLocation = async () => {
@@ -288,23 +269,27 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
   };
 
   const handlePostIssue = async () => {
+    setSubmitError('');
+    setInfoMessage('');
+
     if (!titleText.trim()) {
-      setTitleError('Please add a title for the issue before posting.');
+      const message = 'Please add a title for the issue before posting.';
+      setTitleError(message);
+      Alert.alert('Missing title', message);
       return;
     }
 
     if (!issueText.trim()) {
-      setInfoMessage('Please describe the issue before posting.');
+      const message = 'Please describe the issue before posting.';
+      setInfoMessage(message);
+      Alert.alert('Missing description', message);
       return;
     }
 
-    if (!coordinates) {
-      setLocationError('Location is required to report an issue');
-      return;
-    }
-
-    if (!selectedImages.length) {
-      setImageError('Please add at least 1 image to continue');
+    if (!localityText.trim()) {
+      const message = 'Please enter the locality for this issue.';
+      setLocalityError(message);
+      Alert.alert('Missing locality', message);
       return;
     }
 
@@ -313,6 +298,12 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
     setLocationError('');
     setImageError('');
     setTitleError('');
+    setLocalityError('');
+    setSubmitError('');
+
+    const locality = localityText.trim();
+    const issueCoordinates = coordinates;
+    const displayLocation = formatLocationDisplay(locality, issueCoordinates);
 
     const localPost = {
       id: Date.now().toString(),
@@ -322,14 +313,16 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
       time: 'Just now',
       title: titleText.trim(),
       brief: issueText.trim(),
-      location: resolvedAddress || formatCoordinates(coordinates),
+      locality,
+      location: displayLocation,
+      coordinateLocation: issueCoordinates ? formatCoordinates(issueCoordinates) : '',
       status: 'Reported',
       image: selectedImages[0]?.uri,
       images: selectedImages,
       upvotes: 0,
       downvotes: 0,
-      lat: coordinates.lat,
-      lng: coordinates.lng,
+      lat: issueCoordinates?.lat ?? null,
+      lng: issueCoordinates?.lng ?? null,
     };
 
     try {
@@ -355,7 +348,10 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
             const uploadResult = await uploadResponse.json();
 
             if (!uploadResponse.ok) {
-              throw new Error(uploadResult.error || 'Unable to upload proof image');
+              throw buildRequestError(
+                uploadResult.error || 'Unable to upload proof image',
+                uploadResponse.status
+              );
             }
 
             return uploadResult.asset;
@@ -371,8 +367,9 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           body: JSON.stringify({
             title: titleText.trim(),
             description: issueText.trim(),
-            lat: coordinates.lat,
-            lng: coordinates.lng,
+            locality,
+            lat: issueCoordinates?.lat ?? null,
+            lng: issueCoordinates?.lng ?? null,
             status: 'reported',
             attachments: buildAttachmentPayload(
               uploadResponses.map((asset) => ({
@@ -386,23 +383,24 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
         const result = await response.json();
 
         if (!response.ok) {
-          throw new Error(result.error || 'Unable to create issue');
+          throw buildRequestError(result.error || 'Unable to create issue', response.status);
         }
 
         const createdIssue = result.issue;
         const primaryImage = createdIssue?.attachments?.[0]?.file_url || selectedImages[0]?.uri;
-        const displayLocation =
-          resolvedAddress ||
-          formatCoordinates({
-            lat: createdIssue?.lat ?? coordinates.lat,
-            lng: createdIssue?.lng ?? coordinates.lng,
-          });
+        const syncedCoordinates =
+          typeof createdIssue?.lat === 'number' && typeof createdIssue?.lng === 'number'
+            ? { lat: createdIssue.lat, lng: createdIssue.lng }
+            : issueCoordinates;
+        const syncedLocation = formatLocationDisplay(createdIssue?.locality || locality, syncedCoordinates);
 
         syncedPost = {
           ...localPost,
           id: createdIssue?.id || localPost.id,
           brief: createdIssue?.description || createdIssue?.title || localPost.brief,
-          location: displayLocation,
+          locality: createdIssue?.locality || locality,
+          location: syncedLocation,
+          coordinateLocation: syncedCoordinates ? formatCoordinates(syncedCoordinates) : '',
           status: formatStatus(createdIssue?.status),
           image: primaryImage,
           images:
@@ -421,59 +419,25 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
 
       onPostCreated(syncedPost);
     } catch (error) {
-      onPostCreated(localPost);
-      setInfoMessage(
-        error.message
-          ? `${error.message}. Your report was added locally and can sync later.`
-          : 'Your report was added locally and can sync later.'
-      );
+      let message = error.message || 'Unable to create issue right now.';
+
+      if (isAuthError(error)) {
+        await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userInfo']);
+        message = 'Your login session expired. Please log in again, then submit the report.';
+      }
+
+      setSubmitError(message);
+      Alert.alert('Submit failed', message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (isBootstrapping) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity style={styles.secondaryButton} onPress={onCancel}>
-            <Text style={styles.secondaryButtonText}>Cancel</Text>
-          </TouchableOpacity>
-          <Text style={styles.createPostTitle}>Report Issue</Text>
-          <View style={styles.topBarSpacer} />
-        </View>
-
-        <View style={styles.permissionGateCard}>
-          <Text style={styles.permissionGateEyebrow}>Preparing report</Text>
-          <Text style={styles.permissionGateTitle}>Getting your current location and media access ready.</Text>
-          <Text style={styles.permissionGateBody}>
-            Your location is being attached automatically, and uploaded images will appear below with a remove option before you submit.
-          </Text>
-          <ActivityIndicator color="#16A34A" size="large" style={{ marginBottom: 18 }} />
-
-          {locationError ? <Text style={styles.permissionErrorText}>{locationError}</Text> : null}
-          {imageError ? <Text style={styles.permissionErrorText}>{imageError}</Text> : null}
-
-          <View style={styles.permissionActions}>
-            <TouchableOpacity style={styles.secondaryButton} onPress={onCancel}>
-              <Text style={styles.secondaryButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.postButton}
-              onPress={() => setIsBootstrapping(false)}
-            >
-              <Text style={styles.postButtonText}>Open form</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
       <View style={styles.topBar}>
         <TouchableOpacity style={styles.secondaryButton} onPress={onCancel}>
+          <Feather name="arrow-left" size={16} color="#047857" />
           <Text style={styles.secondaryButtonText}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.createPostTitle}>Report Issue</Text>
@@ -482,9 +446,19 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           onPress={handlePostIssue}
           disabled={isSubmitting}
         >
-          <Text style={styles.postButtonText}>{isSubmitting ? 'Posting...' : 'Submit'}</Text>
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFFFFF" size="small" />
+          ) : (
+            <Feather name="send" size={15} color="#FFFFFF" />
+          )}
+          <Text style={styles.postButtonText}>{isSubmitting ? 'Posting' : 'Submit'}</Text>
         </TouchableOpacity>
       </View>
+      {submitError ? (
+        <View style={styles.submitErrorBanner}>
+          <Text style={styles.submitErrorBannerText}>{submitError}</Text>
+        </View>
+      ) : null}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -498,40 +472,71 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           <View style={styles.composerCard}>
             <View style={styles.composerHeader}>
               <View style={styles.avatarCircle}>
-                <Text style={styles.avatarInitial}>{displayNameToUse.charAt(0).toUpperCase()}</Text>
+                <Feather name="edit-3" size={22} color="#FFFFFF" />
               </View>
               <View style={styles.composerTitle}>
-                <Text style={styles.composerLabel}>Describe the civic issue</Text>
+                <Text style={styles.composerLabel}>New civic report</Text>
                 <Text style={styles.composerSubLabel}>
-                  Browsing stays permission-free. Reporting uses your location and proof photo only for this issue.
+                  Locality is required. Photos and exact location are optional.
                 </Text>
               </View>
             </View>
 
-            <TextInput
-              style={styles.input}
-              placeholder="Issue title"
-              placeholderTextColor="#94A3B8"
-              value={titleText}
-              onChangeText={(text) => {
-                setTitleText(text);
-                if (titleError) setTitleError(''); // Clear error when user starts typing
-              }}
-              returnKeyType="next"
-            />
+            <View style={styles.inputIconWrap}>
+              <Feather name="type" size={16} color="#059669" />
+              <TextInput
+                style={styles.inputWithIcon}
+                placeholder="Issue title"
+                placeholderTextColor="#64748B"
+                underlineColorAndroid="transparent"
+                selectionColor="#60A5FA"
+                value={titleText}
+                onChangeText={(text) => {
+                  setTitleText(text);
+                  if (titleError) setTitleError('');
+                }}
+                returnKeyType="next"
+              />
+            </View>
             {titleError ? <Text style={styles.titleErrorText}>{titleError}</Text> : null}
 
-            <TextInput
-              style={styles.textArea}
-              placeholder="Describe the issue you saw..."
-              placeholderTextColor="#94A3B8"
-              multiline
-              value={issueText}
-              onChangeText={setIssueText}
-            />
+            <View style={styles.textAreaWrap}>
+              <Feather name="align-left" size={16} color="#059669" style={styles.textAreaIcon} />
+              <TextInput
+                style={styles.textArea}
+                placeholder="Describe the issue you saw..."
+                placeholderTextColor="#64748B"
+                underlineColorAndroid="transparent"
+                selectionColor="#60A5FA"
+                multiline
+                value={issueText}
+                onChangeText={setIssueText}
+              />
+            </View>
+
+            <View style={styles.inputIconWrap}>
+              <Feather name="map-pin" size={16} color="#059669" />
+              <TextInput
+                style={styles.inputWithIcon}
+                placeholder="Locality, area, or landmark"
+                placeholderTextColor="#64748B"
+                underlineColorAndroid="transparent"
+                selectionColor="#60A5FA"
+                value={localityText}
+                onChangeText={(text) => {
+                  setLocalityText(text);
+                  if (localityError) setLocalityError('');
+                }}
+                returnKeyType="next"
+              />
+            </View>
+            {localityError ? <Text style={styles.titleErrorText}>{localityError}</Text> : null}
 
             <View style={styles.anonymousToggleRow}>
-              <Text style={styles.anonymousToggleLabel}>Post anonymously</Text>
+              <View style={styles.anonymousLabelRow}>
+                <Feather name="eye-off" size={15} color="#475569" />
+                <Text style={styles.anonymousToggleLabel}>Post anonymously</Text>
+              </View>
               <TouchableOpacity
                 style={[
                   styles.anonymousToggleButton,
@@ -545,7 +550,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
                     isAnonymous && styles.anonymousToggleButtonTextActive,
                   ]}
                 >
-                  {isAnonymous ? 'Anonymous ON' : 'Anonymous OFF'}
+                  {isAnonymous ? 'On' : 'Off'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -553,13 +558,19 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
             <View style={styles.locationCard}>
               <View style={styles.locationHeaderRow}>
                 <View>
-                  <Text style={styles.locationCardTitle}>Detected location</Text>
+                  <View style={styles.sectionTitleRow}>
+                    <Feather name="navigation" size={15} color="#047857" />
+                    <Text style={styles.locationCardTitle}>Exact location pin</Text>
+                  </View>
                   <Text style={styles.locationCardText}>
-                    {resolvedAddress || (coordinates ? formatCoordinates(coordinates) : 'Detecting location...')}
+                    {resolvedAddress || (coordinates ? formatCoordinates(coordinates) : 'Optional. Detect your current location.')}
                   </Text>
                 </View>
+              </View>
+
+              <View style={styles.locationActionRow}>
                 <TouchableOpacity
-                  style={styles.locationRefreshButton}
+                  style={styles.detectLocationButton}
                   onPress={handleRefreshLocation}
                   disabled={isRefreshingLocation}
                 >
@@ -568,6 +579,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
                   ) : (
                     <Feather name="map-pin" size={16} color="#16A34A" />
                   )}
+                  <Text style={styles.detectLocationButtonText}>Detect current location</Text>
                 </TouchableOpacity>
               </View>
 
@@ -580,17 +592,22 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
 
             <View style={styles.imageUploadSection}>
               <View style={styles.imageUploadHeader}>
-                <Text style={styles.imageUploadTitle}>Proof images</Text>
+                <View style={styles.sectionTitleRow}>
+                  <Feather name="image" size={15} color="#047857" />
+                  <Text style={styles.imageUploadTitle}>Proof images</Text>
+                </View>
                 <Text style={styles.imageUploadHelper}>
-                  At least 1 image is required. You can use gallery or camera.
+                  Optional. You can add images from gallery or camera.
                 </Text>
               </View>
 
               <View style={styles.imageSourceRow}>
                 <TouchableOpacity style={styles.imagePickerButton} onPress={handlePickFromGallery}>
+                  <Feather name="image" size={16} color="#047857" />
                   <Text style={styles.imagePickerButtonText}>Choose from Gallery</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.imagePickerButton} onPress={handleCapturePhoto}>
+                  <Feather name="camera" size={16} color="#047857" />
                   <Text style={styles.imagePickerButtonText}>Take Photo</Text>
                 </TouchableOpacity>
               </View>
@@ -616,10 +633,15 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
             </View>
 
             <View style={styles.previewCard}>
-              <Text style={styles.previewTitle}>Submission preview</Text>
-              <Text style={styles.previewHelper}>
-                The issue can only be submitted when both the detected location and proof image are present.
-              </Text>
+              <View style={styles.previewHeaderRow}>
+                <View style={styles.previewIcon}>
+                  <Feather name="file-text" size={17} color="#FFFFFF" />
+                </View>
+                <View style={styles.composerTitle}>
+                  <Text style={styles.previewTitle}>Preview</Text>
+                  <Text style={styles.previewHelper}>How the report will read in the feed.</Text>
+                </View>
+              </View>
               {selectedImages[0] ? (
                 <Image source={{ uri: selectedImages[0].uri }} style={styles.previewImage} />
               ) : (
@@ -631,7 +653,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
               <Text style={styles.previewLocationText}>{titleText.trim() || 'No title yet'}</Text>
               <Text style={[styles.previewLocationLabel, { marginTop: 10 }]}>Location</Text>
               <Text style={styles.previewLocationText}>
-                {resolvedAddress || (coordinates ? formatCoordinates(coordinates) : 'Location pending...')}
+                {formatLocationDisplay(localityText, coordinates)}
               </Text>
             </View>
 

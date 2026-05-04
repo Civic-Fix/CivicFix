@@ -110,6 +110,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#0F172A',
     marginBottom: 18,
+    outlineWidth: 0,
+    outlineStyle: 'none',
+    outlineColor: 'transparent',
   },
   submitButton: {
     backgroundColor: '#16A34A',

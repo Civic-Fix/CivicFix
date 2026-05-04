@@ -15,11 +15,15 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 console.log('[Signup] API_BASE_URL', API_BASE_URL);
 
+const CIVIC_BLUE = '#1D4ED8';
+const TEAL = '#14B8A6';
+
 const Signup = ({ onLoginPress }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -87,18 +91,45 @@ const Signup = ({ onLoginPress }) => {
           {fields.map((field) => (
             <View key={field.key} style={styles.fieldWrap}>
               <Text style={styles.fieldLabel}>{field.label}</Text>
-              <TextInput
-                style={[styles.input, focusedField === field.key && styles.inputFocused]}
-                placeholder={field.placeholder}
-                placeholderTextColor="#9CA3AF"
-                keyboardType={field.keyboardType}
-                autoCapitalize={field.autoCapitalize}
-                secureTextEntry={field.secureTextEntry}
-                value={field.value}
-                onChangeText={field.onChange}
-                onFocus={() => setFocusedField(field.key)}
-                onBlur={() => setFocusedField(null)}
-              />
+              <View style={[styles.inputWrap, focusedField === field.key && styles.inputFocused]}>
+                <MaterialCommunityIcons
+                  name={{
+                    name: 'account-outline',
+                    email: 'email-outline',
+                    phone: 'phone-outline',
+                    password: 'lock-outline',
+                  }[field.key]}
+                  size={19}
+                  color={TEAL}
+                />
+                <TextInput
+                  style={styles.input}
+                  placeholder={field.key === 'password' ? 'Password' : field.placeholder}
+                  placeholderTextColor="#64748B"
+                  keyboardType={field.keyboardType}
+                  autoCapitalize={field.autoCapitalize}
+                  underlineColorAndroid="transparent"
+                  selectionColor={TEAL}
+                  secureTextEntry={field.secureTextEntry && !showPassword}
+                  value={field.value}
+                  onChangeText={field.onChange}
+                  onFocus={() => setFocusedField(field.key)}
+                  onBlur={() => setFocusedField(null)}
+                />
+                {field.key === 'password' ? (
+                  <TouchableOpacity
+                    style={styles.eyeButton}
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    activeOpacity={0.75}
+                  >
+                    <MaterialCommunityIcons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color="#475569"
+                    />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
             </View>
           ))}
 
@@ -110,7 +141,7 @@ const Signup = ({ onLoginPress }) => {
           ) : null}
           {success ? (
             <View style={styles.alertSuccess}>
-              <MaterialCommunityIcons name="check-circle-outline" size={15} color="#16A34A" />
+              <MaterialCommunityIcons name="check-circle-outline" size={15} color={TEAL} />
               <Text style={styles.alertSuccessText}>{success}</Text>
             </View>
           ) : null}
@@ -124,7 +155,10 @@ const Signup = ({ onLoginPress }) => {
             {loading ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.primaryBtnText}>Create Account</Text>
+              <>
+                <MaterialCommunityIcons name="account-plus-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.primaryBtnText}>Create Account</Text>
+              </>
             )}
           </TouchableOpacity>
 
@@ -143,23 +177,23 @@ const Signup = ({ onLoginPress }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#15803D',
+    backgroundColor: CIVIC_BLUE,
   },
   scroll: {
     flexGrow: 1,
   },
   hero: {
     alignItems: 'center',
-    paddingTop: 50,
-    paddingBottom: 36,
+    paddingTop: 42,
+    paddingBottom: 26,
     paddingHorizontal: 24,
-    backgroundColor: '#15803D',
+    backgroundColor: CIVIC_BLUE,
   },
   logoWrap: {
-    width: 72,
-    height: 72,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    width: 68,
+    height: 68,
+    borderRadius: 20,
+    backgroundColor: TEAL,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -175,15 +209,15 @@ const styles = StyleSheet.create({
   },
   heroTagline: {
     fontSize: 13,
-    color: 'rgba(255,255,255,0.75)',
+    color: '#DDE7F3',
     letterSpacing: 0.5,
     fontWeight: '500',
   },
   formCard: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 24,
     paddingTop: 32,
     paddingBottom: 40,
@@ -204,23 +238,41 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#374151',
+    fontWeight: '800',
+    color: '#334155',
     marginBottom: 6,
   },
-  input: {
-    height: 50,
+  inputWrap: {
+    height: 48,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: '#E5E7EB',
-    backgroundColor: '#F9FAFB',
+    borderColor: '#D6DEE8',
+    backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  input: {
+    flex: 1,
+    height: '100%',
     fontSize: 15,
-    color: '#111827',
+    color: '#102A43',
+    fontWeight: '600',
+    outlineWidth: 0,
+    outlineStyle: 'none',
+    outlineColor: 'transparent',
   },
   inputFocused: {
-    borderColor: '#16A34A',
-    backgroundColor: '#F0FDF4',
+    borderColor: '#60A5FA',
+    backgroundColor: '#EFF6FF',
+  },
+  eyeButton: {
+    width: 34,
+    height: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 17,
   },
   alertError: {
     flexDirection: 'row',
@@ -252,22 +304,24 @@ const styles = StyleSheet.create({
     borderColor: '#BBF7D0',
   },
   alertSuccessText: {
-    color: '#16A34A',
+    color: TEAL,
     fontSize: 13,
     flex: 1,
   },
   primaryBtn: {
-    height: 52,
+    height: 46,
     borderRadius: 14,
-    backgroundColor: '#16A34A',
+    backgroundColor: CIVIC_BLUE,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
     marginTop: 4,
-    shadowColor: '#16A34A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: CIVIC_BLUE,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
+    elevation: 3,
   },
   btnDisabled: {
     opacity: 0.65,
@@ -284,11 +338,11 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: '#6B7280',
+    color: '#52616B',
     fontSize: 14,
   },
   footerLink: {
-    color: '#16A34A',
+    color: TEAL,
     fontWeight: '700',
     fontSize: 14,
   },

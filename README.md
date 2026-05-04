@@ -8,39 +8,120 @@ CivicFix is a centralized platform designed to streamline the process of reporti
 
 ```
 CivicFix/
-├── backend/                        Node.js + Express API server
-│   ├── server.js                   Entry point (port 5000)
-│   ├── .env.example                Environment variable template
+├── backend/                              Node.js + Express API server
+│   ├── server.js                         Entry point (port 5000)
+│   ├── package.json                      Dependencies & scripts
+│   ├── check-db.js                       Database health check utility
+│   ├── test-api.js                       API testing script
+│   ├── db/
+│   │   └── migrations/                   SQL migrations
+│   │       ├── 001_issue_geospatial_setup.sql
+│   │       ├── 002_votes_unique_constraint.sql
+│   │       ├── 003_fix_storage_rls.sql
+│   │       ├── 004_fix_users_trigger_add_email.sql
+│   │       ├── 005_votes_add_vote_type.sql
+│   │       ├── 006_comments_table.sql
+│   │       └── 007_split_citizen_and_org_member_profiles.sql
+│   ├── scripts/                          Setup & configuration scripts
+│   │   ├── setup-organization.js
+│   │   ├── setup-storage.js
+│   │   └── setup-storage-rls.js
 │   └── src/
-│       ├── app.js                  Express app setup & middleware
+│       ├── app.js                        Express app setup & middleware
 │       ├── config/
-│       │   └── supabaseClient.js   Supabase initialization
+│       │   └── supabaseClient.js         Supabase initialization
 │       ├── controllers/
-│       │   ├── authController.js   Login / Signup handlers
-│       │   └── issueController.js  Issue management (in progress)
+│       │   ├── authController.js         Authentication handlers
+│       │   ├── issueController.js        Issue management handlers
+│       │   ├── commentController.js      Comment management handlers
+│       │   └── assistantController.js    AI Assistant handlers
 │       ├── routes/
-│       │   ├── authRoutes.js       Auth endpoints
-│       │   └── issueRoutes.js      Issue endpoints (in progress)
+│       │   ├── authRoutes.js             Authentication endpoints
+│       │   ├── issueRoutes.js            Issue management endpoints
+│       │   ├── commentRoutes.js          Comment endpoints
+│       │   └── assistantRoutes.js        Assistant AI endpoints
 │       ├── services/
-│       │   └── authService.js      Supabase auth logic
+│       │   ├── authService.js            Supabase auth logic
+│       │   ├── issueService.js           Issue business logic
+│       │   ├── commentService.js         Comment business logic
+│       │   └── assistantService.js       AI Assistant logic
 │       └── middlewares/
-│           └── authMiddleware.js   JWT verification
+│           └── authMiddleware.js         JWT verification
 │
 └── frontend/
-    ├── CivicFixApp/                Mobile app – React Native + Expo
-    │   ├── App.jsx                 Root component
-    │   ├── .env.example            Environment variable template
+    ├── CivicFixApp/                      Mobile app – React Native + Expo
+    │   ├── App.jsx                       Root component
+    │   ├── index.js                      Entry point
+    │   ├── app.json                      Expo configuration
+    │   ├── eas.json                      EAS build configuration
+    │   ├── package.json                  Dependencies & scripts
+    │   ├── assets/                       Static assets
+    │   ├── config/                       Configuration files
     │   ├── components/
-    │   │   ├── Login.jsx
-    │   │   └── Signup.jsx
+    │   │   ├── Login.jsx                 Login screen
+    │   │   ├── Signup.jsx                Signup screen
+    │   │   ├── CreatePost.jsx            Create issue component
+    │   │   ├── IssueCard.jsx             Issue card component
+    │   │   ├── Feeds.jsx                 Issues feed
+    │   │   ├── FeedsStyles.js            Feed styling
+    │   │   ├── Post.jsx                  Post/Issue view
+    │   │   ├── CommentForm.jsx           Comment submission
+    │   │   ├── CivicAssistant.jsx        AI Assistant component
+    │   │   └── Notifications.jsx         Notifications
     │   └── utils/
-    │       └── api.js              Axios API client
+    │       └── api.js                    API client
     │
-    └── authority-jira/             Web dashboard – React + Vite
-        ├── src/
-        │   ├── main.jsx
-        │   └── App.jsx
-        └── vite.config.js
+    └── authority-jira/                   Web dashboard – React + Vite
+        ├── index.html                    HTML entry point
+        ├── package.json                  Dependencies & scripts
+        ├── vite.config.js                Vite configuration
+        ├── eslint.config.js              ESLint configuration
+        ├── README.md                     Dashboard documentation
+        └── src/
+            ├── main.jsx                  React entry point
+            ├── App.jsx                   Root component
+            ├── App.css                   Global styles
+            ├── index.css                 Base styles
+            ├── components/
+            │   ├── Navbar.jsx
+            │   ├── Footer.jsx
+            │   ├── Hero.jsx
+            │   ├── Features.jsx
+            │   ├── HowItWorks.jsx
+            │   ├── Stats.jsx
+            │   ├── Testimonials.jsx
+            │   ├── Icon.jsx
+            │   ├── landingData.js
+            │   ├── RequestAccessModal.jsx
+            │   └── ui/
+            │       ├── Button.jsx
+            │       ├── Card.jsx
+            │       ├── Loader.jsx
+            │       ├── StatusBadge.jsx
+            │       └── Table.jsx
+            ├── context/
+            │   ├── AuthContext.js
+            │   └── AuthContext.jsx
+            ├── hooks/
+            │   └── useAuth.js
+            ├── layouts/
+            │   └── AppLayout.jsx
+            ├── pages/
+            │   ├── Dashboard.jsx
+            │   ├── Issues.jsx
+            │   ├── IssueDetail.jsx
+            │   ├── Map.jsx
+            │   ├── Reports.jsx
+            │   ├── Team.jsx
+            │   ├── Login.jsx
+            │   ├── Landing.jsx
+            │   └── RequestAccess.jsx
+            ├── services/
+            │   ├── api.js
+            │   ├── issuesService.js
+            │   └── updatesService.js
+            └── utils/
+                └── formatDate.js
 ```
 
 ---
@@ -65,10 +146,16 @@ CivicFix/
 | Method | Path | Description |
 |---|---|---|
 | POST | `/api/auth/signup` | Register (name, email, phone, password) |
-| POST | `/api/issues` | Create an issue with mandatory image proof and coordinates |
-| GET | `/api/issues/nearby?lat=<lat>&lng=<lng>&radius=<meters>&limit=<count>` | Fetch nearby issues sorted by distance |
-| GET | `/api/issues/map?limit=<count>` | Fetch geo points for future map, clustering, and heatmap views |
 | POST | `/api/auth/login` | Login with email/password → returns JWT |
+| POST | `/api/issues` | Create an issue with mandatory image proof and coordinates |
+| GET | `/api/issues` | Fetch all issues with pagination |
+| GET | `/api/issues/:id` | Get specific issue details |
+| GET | `/api/issues/nearby?lat=<lat>&lng=<lng>&radius=<meters>&limit=<count>` | Fetch nearby issues sorted by distance |
+| GET | `/api/issues/map?limit=<count>` | Fetch geo points for map, clustering, and heatmap views |
+| POST | `/api/comments` | Add comment to an issue |
+| GET | `/api/comments/:issueId` | Fetch comments for an issue |
+| POST | `/api/assistant` | Query the AI Assistant |
+| GET | `/api/assistant/suggestions` | Get AI suggestions for issues |
 
 ---
 
@@ -178,13 +265,28 @@ Dashboard runs at `http://localhost:5173`.
 
 ---
 
+## Features
+
+- **Issue Reporting**: Citizens can report civic issues with location, images, and detailed descriptions
+- **Geospatial Search**: Find nearby issues using coordinates and radius filtering
+- **Commenting System**: Community discussions and updates on issues
+- **AI Assistant**: Smart suggestions and automated responses via integrated AI
+- **Issue Voting**: Upvote/downvote issues to highlight priority
+- **Role-Based Access**: Separate profiles for citizens and organization members
+- **Real-Time Updates**: Track issue status and receive notifications
+- **Storage Management**: RLS-secured image and document storage via Supabase
+
+---
+
 ## Workflow
 
-1. Citizen submits a complaint (location, images, description)
-2. System assigns priority based on urgency and complexity
-3. Officer reviews and assigns to a field contractor
-4. Contractor completes the task and uploads proof
-5. Citizen receives a resolution update
+1. **Citizen Reporting**: Report complaints with location, images, and detailed descriptions
+2. **Community Engagement**: Other citizens can comment, vote, and discuss the issue
+3. **AI Assistance**: AI Assistant provides suggestions and context for better resolution
+4. **Officer Review**: Municipal officers prioritize based on urgency, impact, and votes
+5. **Task Assignment**: Officers assign to field contractors with full issue details
+6. **Contractor Updates**: Field workers upload proof of completion and track progress
+7. **Citizen Notification**: Real-time updates and resolution notifications to reporters
 
 ---
 

@@ -345,6 +345,9 @@ const styles = StyleSheet.create({
     color: '#111827',
     paddingHorizontal: 18,
     fontSize: 14,
+    outlineWidth: 0,
+    outlineStyle: 'none',
+    outlineColor: 'transparent',
   },
   sendButton: {
     width: 46,
