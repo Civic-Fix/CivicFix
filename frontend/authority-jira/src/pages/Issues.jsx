@@ -51,7 +51,10 @@ function Issues() {
 
   const filteredRows = useMemo(() => {
     return rows.filter((row) => {
-      const matchesSearch = row.title?.toLowerCase().includes(searchTerm.toLowerCase())
+      const query = searchTerm.toLowerCase()
+      const matchesSearch =
+        row.title?.toLowerCase().includes(query) ||
+        row.locality?.toLowerCase().includes(query)
       const matchesStatus = filterStatus === 'All' || row.status === filterStatus
       const matchesPriority = filterPriority === 'All' || row.priority === filterPriority
       return matchesSearch && matchesStatus && matchesPriority
