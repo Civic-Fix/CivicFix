@@ -9,6 +9,7 @@ import Team from './pages/Team.jsx'
 import Map from './pages/Map.jsx'
 import Reports from './pages/Reports.jsx'
 import RequestAccess from './pages/RequestAccess.jsx'
+import PublicIssue from './pages/PublicIssue.jsx'
 import AppLayout from './layouts/AppLayout.jsx'
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/request-access" element={<RequestAccess />} />
+        <Route path="/share/issues/:issueId" element={<PublicIssue />} />
 
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<Dashboard />} />

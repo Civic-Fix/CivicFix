@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from '@expo/vector-icons/Feather';
@@ -15,8 +15,12 @@ import CivicAssistant from './components/CivicAssistant';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 
-const API_BASE_URL = 'http://localhost:5000/api';
-//const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const ISSUE_SHARE_BASE_URL = (
+   process.env.EXPO_PUBLIC_ISSUE_SHARE_BASE_URL ||
+   process.env.EXPO_PUBLIC_WEB_BASE_URL ||
+  'http://localhost:5173'
+).replace(/\/$/, '');
 
 
 const formatStatus = (status) =>
@@ -100,6 +104,9 @@ const formatLocationDisplay = (locality, lat, lng) => {
 
   return trimmedLocality || coordinateText;
 };
+
+const buildIssueShareUrl = (issueId) =>
+  `${ISSUE_SHARE_BASE_URL}/share/issues/${encodeURIComponent(issueId)}`;
 
 const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = []) => {
   const issueUser = issue?.created_by_user;
@@ -406,6 +413,33 @@ export default function App() {
     }
   };
 
+  const handleShareIssue = async (issue) => {
+    if (!issue?.id) return;
+
+    const shareUrl = buildIssueShareUrl(issue.id);
+    const title = issue.title || `CivicFix issue #${issue.id}`;
+    const location = issue.locality || issue.location;
+    const message = [
+      title,
+      location ? `Location: ${location}` : '',
+      issue.brief ? `Details: ${issue.brief}` : '',
+      `View live issue: ${shareUrl}`,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
+
+    try {
+      await Share.share({
+        title,
+        message,
+        url: shareUrl,
+      });
+    } catch (error) {
+      console.warn('[App] share failed', error.message);
+      Alert.alert('Unable to share', 'Please try sharing this issue again.');
+    }
+  };
+
   const mapCommentToViewItem = (comment) => {
     const authorName = comment?.created_by_user?.name || comment?.created_by_user?.email || 'CivicFix User';
     const isEmail = authorName.includes('@');
@@ -568,6 +602,7 @@ export default function App() {
           onOpenCommentForm={handleOpenCommentForm}
           onVote={handleVote}
           onDeletePost={handleDeletePost}
+          onShareIssue={handleShareIssue}
         />
       );
     }
@@ -593,6 +628,7 @@ export default function App() {
         onOpenPostDetail={handleOpenPostDetail}
         onOpenCommentForm={handleOpenCommentForm}
         onRefresh={loadIssues}
+        onShareIssue={handleShareIssue}
       />
     );
   };

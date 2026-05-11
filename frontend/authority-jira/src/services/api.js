@@ -1,5 +1,8 @@
 const TOKEN_STORAGE_KEY = 'authority-jira.auth-token'
-const DEFAULT_API_BASE_URL = import.meta.env.DEV ? 'http://localhost:5000/api' : '/api'
+const DEFAULT_API_BASE_URL =
+  import.meta.env.DEV && typeof window !== 'undefined'
+    ? `${window.location.protocol}//${window.location.hostname}:5000/api`
+    : '/api'
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/$/, '')
 
 function getStoredToken() {
