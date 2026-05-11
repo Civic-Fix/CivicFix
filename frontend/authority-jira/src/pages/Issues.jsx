@@ -110,7 +110,7 @@ function IssueCard({ issue, index, onOpen }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={[
-            'group h-[8.75rem] rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm transition',
+            'group h-35 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm transition',
             snapshot.isDragging ? 'rotate-1 border-blue-300 shadow-xl shadow-blue-950/15' : 'hover:border-blue-200 hover:shadow-md',
           ].join(' ')}
         >
@@ -277,7 +277,7 @@ function Issues() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-100 p-4 lg:p-6">
-      <div className="mx-auto max-w-[96rem] space-y-4">
+      <div className="mx-auto max-w-384 space-y-4">
         <section className="border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
             <div>
@@ -331,7 +331,7 @@ function Issues() {
 
         {error ? (
           <div className="flex items-center gap-3 border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <AlertCircle className="h-5 w-5 shrink-0" />
             {error}
           </div>
         ) : null}
@@ -441,7 +441,7 @@ function Issues() {
                             {row.priority}
                           </span>
                         </td>
-                        <td className="min-w-[12rem] px-4 py-3">
+                        <td className="min-w-48 px-4 py-3">
                           <div className="flex items-center gap-2">
                             <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-900 text-[10px] font-black text-white">
                               {row.assignee?.initials || 'NA'}
@@ -449,13 +449,13 @@ function Issues() {
                             <span className="font-semibold text-slate-700">{row.assignee?.name || 'Unassigned'}</span>
                           </div>
                         </td>
-                        <td className="min-w-[12rem] px-4 py-3 text-slate-600">
+                        <td className="min-w-48 px-4 py-3 text-slate-600">
                           <span className="inline-flex items-center gap-2 font-semibold">
                             <MapPin className="h-4 w-4 text-slate-400" />
                             {row.locality || '-'}
                           </span>
                         </td>
-                        <td className="min-w-[12rem] px-4 py-3 text-slate-600">
+                        <td className="min-w-48 px-4 py-3 text-slate-600">
                           <span className="inline-flex items-center gap-2 font-semibold">
                             <CalendarDays className="h-4 w-4 text-slate-400" />
                             {row.created_at ? formatDate(row.created_at) : '-'}
@@ -471,11 +471,11 @@ function Issues() {
         ) : (
           <DragDropContext onDragEnd={handleDragEnd}>
             <section className="overflow-x-auto rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="flex min-h-[32rem] gap-4">
+              <div className="flex min-h-128 gap-4">
                 {boardColumns.map((column) => (
                   <div
                     key={column.value}
-                    className={`flex max-h-[calc(100vh-15rem)] min-h-[30rem] w-64 shrink-0 flex-col rounded-xl border border-slate-200 shadow-sm ${
+                    className={`flex max-h-[calc(100vh-15rem)] min-h-120 w-64 shrink-0 flex-col rounded-xl border border-slate-200 shadow-sm ${
                       columnStyles[column.value]?.shell || 'bg-slate-50'
                     }`}
                   >

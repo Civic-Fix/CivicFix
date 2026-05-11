@@ -143,7 +143,7 @@ function Dashboard() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-slate-100 p-4 lg:p-6">
-      <div className="mx-auto max-w-[90rem] space-y-5">
+      <div className="mx-auto max-w-360 space-y-5">
         <section className="border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -181,7 +181,7 @@ function Dashboard() {
 
         {error ? (
           <div className="flex items-center gap-3 border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <AlertCircle className="h-5 w-5 shrink-0" />
             {error}
           </div>
         ) : null}
