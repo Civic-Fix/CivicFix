@@ -671,6 +671,29 @@ export const getIssues = async (query = {}, currentUserId = null) => {
   };
 };
 
+export const searchIssues = async (searchTerm, currentUserId = null) => {
+  const normalizedTerm = typeof searchTerm === "string" ? searchTerm.trim() : "";
+
+  if (!normalizedTerm) {
+    return [];
+  }
+
+  const { data, error } = await supabase.rpc("search_issues", {
+    search_term: normalizedTerm,
+  });
+
+  if (error) {
+    console.error("[IssueService] searchIssues failed", {
+      searchTerm: normalizedTerm,
+      error,
+    });
+    throw new IssueServiceError(error.message || "Unable to search issues", 500);
+  }
+
+  const issues = Array.isArray(data) ? data : [];
+  return attachRelatedData(issues, currentUserId);
+};
+
 export const getIssueById = async (issueId, currentUserId = null) => {
   const issue = await getIssueRecordById(issueId);
   const [enrichedIssue] = await attachRelatedData([issue], currentUserId);

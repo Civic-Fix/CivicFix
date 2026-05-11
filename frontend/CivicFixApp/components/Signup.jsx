@@ -12,9 +12,11 @@ import {
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-// const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-const API_BASE_URL = 'http://localhost:5000/api';
-console.log('[Signup] API_BASE_URL', API_BASE_URL);
+
+//const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+//console.log('[Signup] API_BASE_URL', API_BASE_URL);
+const API_BASE_URL="http://localhost:5000/api";
+
 
 const CIVIC_BLUE = '#1D4ED8';
 const TEAL = '#14B8A6';
