@@ -43,7 +43,7 @@ function Reports() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">ðŸ“ˆ Reports</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">Reports</p>
             <h1 className="bg-linear-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-4xl font-black tracking-tight text-transparent">
               Analytics & Insights
             </h1>
@@ -70,7 +70,7 @@ function Reports() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <span className="text-2xl">ðŸ“Š</span> Total Issues
+                   Total Issues
                 </CardTitle>
                 <CardDescription>All reports in the system.</CardDescription>
               </CardHeader>
@@ -85,7 +85,7 @@ function Reports() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <span className="text-2xl">â³</span> Open Issues
+                  Open Issues
                 </CardTitle>
                 <CardDescription>Awaiting resolution.</CardDescription>
               </CardHeader>
@@ -107,7 +107,7 @@ function Reports() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <span className="text-2xl">âœ“</span> Resolved Issues
+                Resolved Issues
                 </CardTitle>
                 <CardDescription>Resolved or closed.</CardDescription>
               </CardHeader>
@@ -131,7 +131,7 @@ function Reports() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">ðŸ“‹</span> Breakdown by Status
+                 Breakdown by Status
               </CardTitle>
               <CardDescription>Distribution of all issues across different statuses</CardDescription>
             </CardHeader>
@@ -156,7 +156,7 @@ function Reports() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <span className="text-2xl">ðŸ“ˆ</span> Performance Metrics
+              Performance Metrics
               </CardTitle>
               <CardDescription>Key indicators and efficiency rates</CardDescription>
             </CardHeader>
