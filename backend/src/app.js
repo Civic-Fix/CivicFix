@@ -4,6 +4,7 @@ import authRoutes from "./routes/authRoutes.js";
 import assistantRoutes from "./routes/assistantRoutes.js";
 import issueRoutes from "./routes/issueRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
+import teamRoutes from "./routes/teamRoutes.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ console.log('Mounting issue routes...');
 app.use("/api/issues", issueRoutes);
 console.log('Mounted issue routes');
 app.use("/api/comments", commentRoutes);
+app.use("/api/team", teamRoutes);
 
 app.get("/", (req, res) => {
   res.send("CivicFix API running");

@@ -1,6 +1,6 @@
 export const navItems = [
-  { label: 'How it works', href: '#how-it-works' },
-  { label: 'Features', href: '#features' },
+  { label: 'Workflow', href: '#how-it-works' },
+  { label: 'Platform', href: '#features' },
   { label: 'Impact', href: '#impact' },
 ]
 
@@ -10,7 +10,7 @@ export const issueCards = [
     title: 'Pothole near school gate',
     status: 'High',
     progress: 'w-3/4',
-    meta: 'Assigned to roads team',
+    meta: 'Roads team assigned, site visit due today',
     area: 'MG Road',
     votes: 128,
   },
@@ -19,7 +19,7 @@ export const issueCards = [
     title: 'Garbage pickup missed',
     status: 'New',
     progress: 'w-1/2',
-    meta: '23 neighbors upvoted',
+    meta: 'Auto-routed to sanitation queue',
     area: 'Lake View',
     votes: 94,
   },
@@ -28,7 +28,7 @@ export const issueCards = [
     title: 'Streetlight outage',
     status: 'Review',
     progress: 'w-2/3',
-    meta: 'Field visit scheduled',
+    meta: 'Field photo requested from technician',
     area: 'Sector 8',
     votes: 67,
   },
@@ -37,7 +37,7 @@ export const issueCards = [
     title: 'Blocked storm drain',
     status: 'Urgent',
     progress: 'w-4/5',
-    meta: 'Escalated before rainfall',
+    meta: 'Escalated before rainfall alert',
     area: 'Market Lane',
     votes: 156,
   },
@@ -63,68 +63,68 @@ export const issueCards = [
 
 export const steps = [
   {
-    title: 'Report',
-    text: 'Upload a photo, pin the location, and describe the civic issue in under a minute.',
+    title: 'Intake',
+    text: 'Receive citizen reports with photos, location, category, ward, urgency, and duplicate detection.',
     icon: 'camera',
   },
   {
-    title: 'Track',
-    text: 'Follow status changes, civic body updates, and community activity from one timeline.',
+    title: 'Triage',
+    text: 'Prioritize cases by severity, public support, SLA risk, and department ownership before assignment.',
     icon: 'map',
   },
   {
     title: 'Resolve',
-    text: 'See verified fixes, share feedback, and keep public teams accountable.',
+    text: 'Track field work, publish updates, verify fixes, and close the public loop with an auditable timeline.',
     icon: 'check',
   },
 ]
 
 export const features = [
   {
-    title: 'Report with photo & location',
-    text: 'Capture potholes, garbage piles, broken streetlights, and drainage issues with proof and precise location.',
+    title: 'Structured complaint intake',
+    text: 'Convert citizen posts into actionable cases with proof, geolocation, category, duplicate signals, and ward context.',
     icon: 'camera',
   },
   {
-    title: 'Real-time tracking',
-    text: 'Every issue gets a transparent timeline from submitted to acknowledged, assigned, in progress, and resolved.',
+    title: 'Status timelines',
+    text: 'Keep every issue moving through submitted, acknowledged, assigned, in progress, verified, and resolved states.',
     icon: 'clock',
   },
   {
-    title: 'Community upvotes',
-    text: 'Residents can support important reports so local authorities understand what matters most right now.',
+    title: 'Community priority signals',
+    text: 'Use upvotes, comments, repeat reports, and locality patterns to identify what residents need handled first.',
     icon: 'users',
   },
   {
-    title: 'Transparency dashboard',
-    text: 'Public dashboards reveal resolution rates, response times, issue hotspots, and department performance.',
+    title: 'Authority dashboards',
+    text: 'Monitor resolution rate, team workload, hotspots, SLA breaches, and department performance from one workspace.',
     icon: 'chart',
   },
 ]
 
 export const stats = [
-  { value: '12,480+', label: 'issues resolved' },
-  { value: '38k', label: 'active users' },
-  { value: '24', label: 'cities covered' },
+  { value: '42%', label: 'faster first response' },
+  { value: '18k+', label: 'reports organized' },
+  { value: '31', label: 'wards monitored' },
 ]
 
 export const testimonials = [
   {
     quote:
-      'CivicFix made our neighborhood reports visible. We finally had one place to track what was being fixed.',
-    name: 'Ananya Rao',
-    role: 'Resident volunteer',
+      'Our team stopped losing complaints across calls, chats, and spreadsheets. CivicFix gave every report an owner and a timeline.',
+    name: 'Ward Operations Desk',
+    role: 'Municipal response team',
   },
   {
     quote:
-      'The dashboard helped our ward team prioritize complaints by urgency and public impact.',
-    name: 'Marcus Chen',
-    role: 'City operations lead',
+      'Hotspots and public priority signals helped us decide what needed field action before the daily review meeting.',
+    name: 'Zone Supervisor',
+    role: 'Roads and sanitation',
   },
   {
     quote:
-      'Upvotes turned scattered complaints into clear community signals. It changed how quickly issues moved.',
-    name: 'Leila Morgan',
-    role: 'Civic organizer',
+      'Residents could see acknowledgement and progress instead of filing the same complaint again and again.',
+    name: 'Citizen Services Cell',
+    role: 'Public grievance support',
   },
 ]
