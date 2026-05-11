@@ -11,10 +11,18 @@
     "preview": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://civicfix-pjlp.onrender.com/api",
+        "EXPO_PUBLIC_ISSUE_SHARE_BASE_URL": "https://civicfixcoderz.netlify.app"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_API_BASE_URL": "https://civicfix-pjlp.onrender.com/api",
+        "EXPO_PUBLIC_ISSUE_SHARE_BASE_URL": "https://civicfixcoderz.netlify.app"
+      }
     }
   },
   "submit": {
