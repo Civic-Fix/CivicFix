@@ -18,11 +18,7 @@ import CommentForm from './components/CommentForm';
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
 // const API_BASE_URL ='http://localhost:5000/api';
 
-const ISSUE_SHARE_BASE_URL = (
-   process.env.EXPO_PUBLIC_ISSUE_SHARE_BASE_URL ||
-   process.env.EXPO_PUBLIC_WEB_BASE_URL ||
-  'http://localhost:5173'
-).replace(/\/$/, '');
+const ISSUE_SHARE_BASE_URL = process.env.EXPO_PUBLIC_ISSUE_SHARE_BASE_URL;
 
 
 const formatStatus = (status) =>
