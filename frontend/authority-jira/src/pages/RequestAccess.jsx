@@ -49,7 +49,7 @@ function RequestAccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-slate-50 to-emerald-50 py-12 px-4">
+    <div className="min-h-screen bg-linear-to-br from-emerald-50 via-slate-50 to-emerald-50 py-12 px-4">
       <div className="mx-auto max-w-2xl">
         {/* Back Button */}
         <button
@@ -73,12 +73,12 @@ function RequestAccessPage() {
               </p>
 
               <div className="mt-8 space-y-4 rounded-2xl bg-emerald-50 p-6">
-                <p className="text-sm font-bold text-emerald-900">✓ What happens next:</p>
+                <p className="text-sm font-bold text-emerald-900">âœ“ What happens next:</p>
                 <ul className="space-y-3 text-left text-sm font-semibold text-emerald-800">
-                  <li>✓ Our admin team will review your request</li>
-                  <li>✓ You'll receive a confirmation email within 24 hours</li>
-                  <li>✓ If approved, login credentials will be sent to your email</li>
-                  <li>✓ You can then access the CivicFix dashboard</li>
+                  <li>âœ“ Our admin team will review your request</li>
+                  <li>âœ“ You'll receive a confirmation email within 24 hours</li>
+                  <li>âœ“ If approved, login credentials will be sent to your email</li>
+                  <li>âœ“ You can then access the CivicFix dashboard</li>
                 </ul>
               </div>
 
@@ -219,7 +219,7 @@ function RequestAccessPage() {
 
               {/* Footer Info */}
               <div className="rounded-lg border border-slate-100 bg-slate-50 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-700">ℹ️ How it works:</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-700">â„¹ï¸ How it works:</p>
                 <p className="mt-2 text-sm font-medium text-slate-600">
                   Submit your request above. Our admin team will review it and send you login credentials via email. Once approved, you can sign in to access the CivicFix Authority dashboard.
                 </p>

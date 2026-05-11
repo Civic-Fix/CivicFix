@@ -24,6 +24,7 @@ export const requireAuth = async (req, res, next) => {
 
     req.user = user;
     req.userId = user.id;
+    req.accessToken = token;
 
     next();
   } catch (err) {
@@ -50,6 +51,7 @@ export const optionalAuth = async (req, _res, next) => {
     if (user) {
       req.user = user;
       req.userId = user.id;
+      req.accessToken = token;
     }
 
     return next();

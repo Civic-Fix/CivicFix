@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../config/supabaseClient.js";
 
 const allowedStatuses = [
@@ -18,6 +19,22 @@ const allowedVerificationStatuses = [
 
 const attachmentBucketName =
   process.env.SUPABASE_ISSUE_ATTACHMENTS_BUCKET || "issue-attachments";
+
+const createUserScopedSupabaseClient = (accessToken) => {
+  if (!accessToken) {
+    return supabase;
+  }
+
+  const key = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  return createClient(process.env.SUPABASE_URL, key, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+};
 
 class IssueServiceError extends Error {
   constructor(message, statusCode = 400) {
@@ -683,42 +700,95 @@ export const getIssueById = async (issueId, currentUserId = null) => {
   return enrichedIssue;
 };
 
-export const updateIssue = async (issueId, patch = {}, userId = null) => {
-  await getIssueRecordById(issueId);
+export const updateIssue = async (issueId, patch = {}, userId = null, accessToken = null) => {
+  console.log("[IssueService] updateIssue called", { issueId, userId, patchKeys: Object.keys(patch), patch });
+  const existingIssue = await getIssueRecordById(issueId);
+  console.log("[IssueService] existingIssue", { id: existingIssue.id, status: existingIssue.status });
+  const supabaseClient = createUserScopedSupabaseClient(accessToken);
 
   const updatePayload = {};
 
   if (patch.status !== undefined) {
+    console.log("[IssueService] status update requested", { from: existingIssue.status, to: patch.status });
     if (!allowedStatuses.includes(patch.status)) {
       throw new IssueServiceError("Invalid issue status");
     }
     updatePayload.status = patch.status;
+
+    if (patch.status === "verified" && patch.verification_status === undefined) {
+      updatePayload.verification_status = "authority_verified";
+    }
+  }
+
+  if (patch.verification_status !== undefined) {
+    if (!allowedVerificationStatuses.includes(patch.verification_status)) {
+      throw new IssueServiceError("Invalid verification status");
+    }
+    updatePayload.verification_status = patch.verification_status;
   }
 
   if (patch.assigned_to !== undefined) {
     updatePayload.assigned_to = patch.assigned_to || null;
   }
 
+  console.log("[IssueService] updatePayload prepared", { updatePayload });
+  
   if (!Object.keys(updatePayload).length) {
     throw new IssueServiceError("No supported fields provided for update");
   }
 
-  const { error } = await supabase
-    .from("issues")
-    .update(updatePayload)
-    .eq("id", issueId);
+  const adminOnlyStatuses = ["completed", "blocked", "closed"];
+  if (updatePayload.status && adminOnlyStatuses.includes(updatePayload.status) && userId) {
+    const { data: member, error: memberError } = await supabase
+      .from("organization_members")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
 
-  if (error) {
-    console.error("[IssueService] updateIssue failed", {
-      issueId,
-      userId,
-      patch,
-      error,
-    });
-    throw new IssueServiceError(error.message || "Unable to update issue", 500);
+    if (memberError || !member) {
+      throw new IssueServiceError("Unable to verify member role", 500);
+    }
+
+    if (member.role !== "admin") {
+      throw new IssueServiceError(
+        `Only admins can move issues to '${updatePayload.status}' status`,
+        403
+      );
+    }
   }
 
-  return getIssueById(issueId, userId);
+  const hasStatusChange = updatePayload.status !== undefined;
+
+  if (hasStatusChange) {
+    const { error: rpcError } = await supabase.rpc("update_issue_status_by_authority", {
+      p_issue_id: issueId,
+      p_status: updatePayload.status,
+      p_changed_by: userId,
+      p_verification_status: updatePayload.verification_status ?? null,
+    });
+
+    if (rpcError) {
+      console.error("[IssueService] updateIssue rpc failed", { issueId, userId, updatePayload, error: rpcError });
+      throw new IssueServiceError(rpcError.message || "Unable to update issue", 500);
+    }
+  }
+
+  const nonStatusPayload = {};
+  if (!hasStatusChange && updatePayload.verification_status !== undefined) nonStatusPayload.verification_status = updatePayload.verification_status;
+  if (updatePayload.assigned_to !== undefined) nonStatusPayload.assigned_to = updatePayload.assigned_to;
+
+  if (Object.keys(nonStatusPayload).length) {
+    const { error: patchError } = await supabase.from("issues").update(nonStatusPayload).eq("id", issueId);
+    if (patchError) {
+      console.error("[IssueService] non-status patch failed", { issueId, nonStatusPayload, error: patchError });
+      throw new IssueServiceError(patchError.message || "Unable to update issue", 500);
+    }
+  }
+
+  console.log("[IssueService] fetching updated issue");
+  const updated = await getIssueById(issueId, userId);
+  console.log("[IssueService] returning updated issue", { id: updated.id, status: updated.status });
+  return updated;
 };
 
 export const listIssueUpdates = async (issueId) => {
