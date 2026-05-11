@@ -24,6 +24,7 @@ const SearchScreen = ({
   onOpenCommentForm,
   onVote,
   onDeletePost,
+  onShareIssue,
 }) => {
   const trimmedQuery = searchQuery?.trim();
   const isSearching = Boolean(trimmedQuery);
@@ -74,6 +75,7 @@ const SearchScreen = ({
               currentHandle={user ? `@${user.name?.replace(/\s+/g, '').toLowerCase()}` : ''}
               onPress={onOpenPostDetail ? () => onOpenPostDetail(item) : undefined}
               onCommentPress={onOpenCommentForm ? () => onOpenCommentForm(item) : undefined}
+              onShare={onShareIssue ? () => onShareIssue(item) : undefined}
             />
           ))
         ) : (

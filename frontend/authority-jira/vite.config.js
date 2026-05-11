@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     server: {
+      host: '0.0.0.0',
       proxy: {
         '/api': env.VITE_BACKEND_URL || 'http://localhost:5000',
       },

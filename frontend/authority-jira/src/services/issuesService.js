@@ -47,8 +47,8 @@ export async function listIssues({ organizationId } = {}) {
   return (data?.issues ?? []).map(normalizeIssue)
 }
 
-export async function getIssueById(issueId) {
-  const data = await api.get(`/issues/${issueId}`)
+export async function getIssueById(issueId, options) {
+  const data = await api.get(`/issues/${issueId}`, options)
   return normalizeIssue(data?.issue)
 }
 
