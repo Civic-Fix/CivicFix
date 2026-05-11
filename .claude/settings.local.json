@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\KAUSHIK\\\\Desktop\\\\CivicFix\\\\CivicFix\")",
-      "Bash(Select-Object Name, PSIsContainer)",
-      "Bash(Format-Table -AutoSize)"
-    ]
-  }
-}
