@@ -5,6 +5,7 @@ import Card, { CardBody, CardDescription, CardFooter, CardHeader, CardTitle } fr
 import Loader from '../components/ui/Loader'
 import StatusBadge from '../components/ui/StatusBadge'
 import { getIssueById, issueStatusOptions, updateIssue } from '../services/issuesService'
+import { listTeamMembers } from '../services/teamService'
 import { addUpdate, listUpdates } from '../services/updatesService'
 import { formatDate } from '../utils/formatDate'
 
@@ -15,13 +16,10 @@ function normalizeImages(issue) {
   if (typeof images === 'string') {
     const trimmed = images.trim()
     if (!trimmed) return []
-
-    // Support either a single public URL or multiple URLs separated by commas/newlines.
     const parts = trimmed
       .split(/[\n,]+/g)
       .map((p) => p.trim())
       .filter(Boolean)
-
     return parts.filter((p) => p.startsWith('http'))
   }
   return []
@@ -37,6 +35,9 @@ function IssueDetail() {
   const [newStatus, setNewStatus] = useState('')
   const [newUpdate, setNewUpdate] = useState('')
   const [postingUpdate, setPostingUpdate] = useState(false)
+  const [teamMembers, setTeamMembers] = useState([])
+  const [assignedTo, setAssignedTo] = useState('')
+  const [savingAssignee, setSavingAssignee] = useState(false)
 
   const images = useMemo(() => normalizeImages(issue), [issue])
 
@@ -57,27 +58,42 @@ function IssueDetail() {
 
   useEffect(() => {
     refresh()
+    listTeamMembers().then(setTeamMembers).catch(() => {})
   }, [refresh])
+
+  useEffect(() => {
+    if (issue) setAssignedTo(issue.assigned_to || '')
+  }, [issue?.assigned_to])
 
   async function onSaveStatus() {
     if (!issue) return
-    console.log('[IssueDetail] onSaveStatus called', { currentStatus: issue.status, newStatus })
     setSavingStatus(true)
     setError('')
     try {
-      console.log('[IssueDetail] calling updateIssue', { issueId: issue.id, newStatus })
       const updated = await updateIssue(issue.id, {
         status: newStatus,
         ...(newStatus === 'verified' ? { verification_status: 'authority_verified' } : {}),
       })
-      console.log('[IssueDetail] updateIssue returned', { updatedStatus: updated?.status })
       setIssue(updated)
-      console.log('[IssueDetail] issue state updated', { currentIssueStatus: updated?.status })
     } catch (err) {
-      console.error('[IssueDetail] updateIssue error', err)
       setError(err?.message || 'Failed to update status')
     } finally {
       setSavingStatus(false)
+    }
+  }
+
+  async function onAssign(memberId) {
+    if (!issue) return
+    setAssignedTo(memberId)
+    setSavingAssignee(true)
+    setError('')
+    try {
+      const updated = await updateIssue(issue.id, { assigned_to: memberId || null })
+      setIssue(updated)
+    } catch (err) {
+      setError(err?.message || 'Failed to assign member')
+    } finally {
+      setSavingAssignee(false)
     }
   }
 
@@ -86,7 +102,6 @@ function IssueDetail() {
     if (!issue) return
     const content = newUpdate.trim()
     if (!content) return
-
     setPostingUpdate(true)
     setError('')
     try {
@@ -119,7 +134,7 @@ function IssueDetail() {
             {error}
           </div>
           <Link className="text-sm font-black text-emerald-700 hover:text-emerald-800" to="/issues">
-            â† Back to issues
+            Back to issues
           </Link>
         </div>
       </div>
@@ -129,29 +144,28 @@ function IssueDetail() {
   return (
     <div className="space-y-8 p-6 lg:p-8">
       <div className="grid gap-6">
-        {/* Header Section */}
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0 flex-1 space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">ðŸ“‹ Issue Detail</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">Issue Detail</p>
               <h1 className="bg-linear-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-3xl font-black tracking-tight text-transparent">
                 {issue?.title || `Issue #${issue?.id}`}
               </h1>
               <div className="flex flex-wrap items-center gap-3">
                 <StatusBadge status={issue?.status || 'Open'} />
-                <span className="text-sm font-semibold text-slate-600">ðŸ“ {issue?.locality || 'â€”'}</span>
-                <span className="text-sm font-semibold text-slate-400">â€¢</span>
+                <span className="text-sm font-semibold text-slate-600">{issue?.locality || '--'}</span>
+                <span className="text-sm font-semibold text-slate-400">&bull;</span>
                 <span className="text-sm font-semibold text-slate-600">
-                  Created {issue?.created_at ? formatDate(issue.created_at) : 'â€”'}
+                  Created {issue?.created_at ? formatDate(issue.created_at) : '--'}
                 </span>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <Button variant="secondary" as={Link} to="/issues">
-                â† Back
+                Back
               </Button>
               <Button variant="secondary" onClick={refresh}>
-                ðŸ”„ Refresh
+                Refresh
               </Button>
             </div>
           </div>
@@ -164,24 +178,21 @@ function IssueDetail() {
           </div>
         ) : null}
 
-        {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-          {/* Left Column - Description & Images */}
+          {/* Left Column */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <span className="text-xl">ðŸ“</span> Description
-              </CardTitle>
+              <CardTitle>Description</CardTitle>
               <CardDescription>Citizen-submitted details and supporting evidence.</CardDescription>
             </CardHeader>
             <CardBody className="grid gap-6">
               <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">
-                {issue?.description || 'â€”'}
+                {issue?.description || '--'}
               </p>
 
               {images.length ? (
                 <div className="grid gap-3">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600">ðŸ“¸ Photos</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Photos</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {images.map((src, idx) => (
                       <a
@@ -205,14 +216,11 @@ function IssueDetail() {
             </CardBody>
           </Card>
 
-          {/* Right Column - Workflow & Updates */}
+          {/* Right Column */}
           <div className="grid gap-6">
-            {/* Workflow Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-xl">âš™ï¸</span> Workflow
-                </CardTitle>
+                <CardTitle>Workflow</CardTitle>
                 <CardDescription>Update status and assignment.</CardDescription>
               </CardHeader>
               <CardBody className="grid gap-4">
@@ -231,30 +239,53 @@ function IssueDetail() {
                   </select>
                 </label>
                 <Button disabled={savingStatus} onClick={onSaveStatus}>
-                  {savingStatus ? 'â³ Savingâ€¦' : 'âœ“ Save status'}
+                  {savingStatus ? 'Saving...' : 'Save status'}
                 </Button>
 
-                <div className="rounded-lg border border-slate-200 bg-linear-to-r from-slate-50 to-white p-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600">ðŸ‘¤ Assigned To</p>
-                  <p className="mt-2 text-sm font-bold text-slate-800">{issue?.assigned_to || 'â€”'}</p>
-                </div>
+                <label className="grid gap-2">
+                  <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-700">
+                    Assigned To
+                    {savingAssignee && (
+                      <span className="text-[10px] font-bold normal-case tracking-normal text-emerald-600">
+                        Saving...
+                      </span>
+                    )}
+                  </span>
+                  <select
+                    value={assignedTo}
+                    onChange={(e) => onAssign(e.target.value)}
+                    disabled={savingAssignee}
+                    className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25 disabled:opacity-60"
+                  >
+                    <option value="">-- Unassigned --</option>
+                    {teamMembers.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.role})
+                      </option>
+                    ))}
+                  </select>
+                  {issue?.assigned_to_user && (
+                    <p className="text-xs font-semibold text-slate-500">
+                      Currently: {issue.assigned_to_user.name} &middot; {issue.assigned_to_user.role}
+                    </p>
+                  )}
+                </label>
 
                 <div className="rounded-lg border border-slate-200 bg-linear-to-r from-slate-50 to-white p-4">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600">ðŸ“ Location</p>
-                  <p className="mt-2 text-sm font-bold text-slate-800">{issue?.locality || 'â€”'}</p>
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Location</p>
+                  <p className="mt-2 text-sm font-bold text-slate-800">{issue?.locality || '--'}</p>
                   <p className="mt-1 text-xs font-semibold text-slate-600">
-                    {issue?.latitude !== null && issue?.longitude !== null ? `${issue.latitude.toFixed(4)}, ${issue.longitude.toFixed(4)}` : 'No coordinates'}
+                    {issue?.latitude != null && issue?.longitude != null
+                      ? `${issue.latitude.toFixed(4)}, ${issue.longitude.toFixed(4)}`
+                      : 'No coordinates'}
                   </p>
                 </div>
               </CardBody>
             </Card>
 
-            {/* Updates Card */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span className="text-xl">ðŸ’¬</span> Updates
-                </CardTitle>
+                <CardTitle>Updates</CardTitle>
                 <CardDescription>Progress logs and officer comments.</CardDescription>
               </CardHeader>
               <CardBody className="grid gap-4">
@@ -263,22 +294,27 @@ function IssueDetail() {
                     className="min-h-28 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
                     value={newUpdate}
                     onChange={(e) => setNewUpdate(e.target.value)}
-                    placeholder="Add a progress updateâ€¦"
+                    placeholder="Add a progress update..."
                   />
                   <Button disabled={postingUpdate} type="submit">
-                    {postingUpdate ? 'â³ Postingâ€¦' : 'âž• Add Update'}
+                    {postingUpdate ? 'Posting...' : 'Add Update'}
                   </Button>
                 </form>
 
                 <div className="grid gap-3">
                   {updates.length === 0 ? (
-                    <p className="text-sm font-semibold text-slate-500">No updates yet. Be the first to add one!</p>
+                    <p className="text-sm font-semibold text-slate-500">No updates yet.</p>
                   ) : (
                     updates.map((u) => (
-                      <article key={u.id} className="rounded-lg border border-slate-200 bg-linear-to-r from-white to-slate-50 p-4 transition hover:border-emerald-200 hover:shadow-sm">
-                        <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">{u.content}</p>
+                      <article
+                        key={u.id}
+                        className="rounded-lg border border-slate-200 bg-linear-to-r from-white to-slate-50 p-4 transition hover:border-emerald-200 hover:shadow-sm"
+                      >
+                        <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">
+                          {u.content}
+                        </p>
                         <p className="mt-3 text-xs font-bold uppercase tracking-widest text-slate-400">
-                          â° {u.created_at ? formatDate(u.created_at) : 'â€”'}
+                          {u.created_at ? formatDate(u.created_at) : '--'}
                         </p>
                       </article>
                     ))
@@ -287,7 +323,7 @@ function IssueDetail() {
               </CardBody>
               <CardFooter>
                 <p className="text-xs font-semibold text-slate-500">
-                  ðŸ’¡ Tip: Keep updates factual and include next action + ETA.
+                  Tip: Keep updates factual and include next action + ETA.
                 </p>
               </CardFooter>
             </Card>
