@@ -19,12 +19,13 @@ import Loader from '../components/ui/Loader'
 import { issueStatusOptions, listIssues, updateIssue } from '../services/issuesService'
 import { formatDate } from '../utils/formatDate'
 
-const TEAM_MEMBERS = [
-  { id: 1, name: 'Rajesh Kumar', initials: 'RK' },
-  { id: 2, name: 'Priya Sharma', initials: 'PS' },
-  { id: 3, name: 'Amit Patel', initials: 'AP' },
-  { id: 4, name: 'Neha Gupta', initials: 'NG' },
-]
+function memberInitials(name) {
+  return (name || '?')
+    .split(' ')
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('')
+}
 
 const PRIORITIES = ['Low', 'Medium', 'High', 'Critical']
 
@@ -94,10 +95,11 @@ function stableIndex(id, length) {
 }
 
 function decorateIssue(issue) {
+  const member = issue.assigned_to_user || null
   return {
     ...issue,
     priority: issue.priority || PRIORITIES[stableIndex(issue.id, PRIORITIES.length)],
-    assignee: issue.assignee || TEAM_MEMBERS[stableIndex(`${issue.id}:assignee`, TEAM_MEMBERS.length)],
+    assignee: member ? { id: member.id, name: member.name, initials: memberInitials(member.name) } : null,
   }
 }
 
