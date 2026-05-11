@@ -14,8 +14,8 @@ import CivicAssistant from './components/CivicAssistant';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 
-// const API_BASE_URL = 'http://localhost:5000/api';
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5000/api';
+// const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 const formatStatus = (status) =>
   status

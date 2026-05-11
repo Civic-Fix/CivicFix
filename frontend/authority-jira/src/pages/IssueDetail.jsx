@@ -61,12 +61,20 @@ function IssueDetail() {
 
   async function onSaveStatus() {
     if (!issue) return
+    console.log('[IssueDetail] onSaveStatus called', { currentStatus: issue.status, newStatus })
     setSavingStatus(true)
     setError('')
     try {
-      const updated = await updateIssue(issue.id, { status: newStatus })
+      console.log('[IssueDetail] calling updateIssue', { issueId: issue.id, newStatus })
+      const updated = await updateIssue(issue.id, {
+        status: newStatus,
+        ...(newStatus === 'verified' ? { verification_status: 'authority_verified' } : {}),
+      })
+      console.log('[IssueDetail] updateIssue returned', { updatedStatus: updated?.status })
       setIssue(updated)
+      console.log('[IssueDetail] issue state updated', { currentIssueStatus: updated?.status })
     } catch (err) {
+      console.error('[IssueDetail] updateIssue error', err)
       setError(err?.message || 'Failed to update status')
     } finally {
       setSavingStatus(false)
@@ -215,9 +223,9 @@ function IssueDetail() {
                     value={newStatus}
                     onChange={(e) => setNewStatus(e.target.value)}
                   >
-                    {statusOptions.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
+                    {issueStatusOptions.map((s) => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
                       </option>
                     ))}
                   </select>
