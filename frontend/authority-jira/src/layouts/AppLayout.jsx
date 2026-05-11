@@ -45,7 +45,7 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-slate-100 text-slate-950 lg:grid lg:grid-cols-[15.5rem_1fr]">
       <aside className="border-r border-slate-800 bg-slate-950 text-white shadow-xl shadow-slate-950/10 lg:sticky lg:top-0 lg:h-screen">
-        <div className="flex h-full flex-col">
+        <div className="flex h-full min-h-0 flex-col overflow-hidden">
           <div className="border-b border-white/10 px-4 py-5">
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-md bg-blue-500 text-xs font-black text-white shadow-sm shadow-blue-950/30">
@@ -58,7 +58,7 @@ function AppLayout() {
             </div>
           </div>
 
-          <nav className="flex-1 px-3 py-5">
+          <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
             <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
               Workspace
             </p>
