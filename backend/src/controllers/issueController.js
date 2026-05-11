@@ -85,8 +85,14 @@ export const getIssueById = async (req, res) => {
 };
 
 export const updateIssue = async (req, res) => {
+  console.log("[IssueController] updateIssue called", {
+    issueId: req.params.id,
+    userId: req.userId,
+    body: req.body,
+  });
   try {
-    const issue = await updateIssueRecord(req.params.id, req.body, req.userId);
+    const issue = await updateIssueRecord(req.params.id, req.body, req.userId, req.accessToken);
+    console.log("[IssueController] updateIssue success", { issueId: issue.id, status: issue.status });
 
     return res.status(200).json({
       message: "Issue updated successfully",
@@ -97,6 +103,8 @@ export const updateIssue = async (req, res) => {
       params: req.params,
       body: req.body,
       userId: req.userId,
+      errorMessage: err.message,
+      errorCode: err.statusCode,
       error: err,
     });
 

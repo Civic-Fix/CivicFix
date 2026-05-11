@@ -31,6 +31,7 @@ function normalizeIssue(issue) {
     ...issue,
     status: issue?.status || 'reported',
     statusLabel: getIssueStatusLabel(issue?.status),
+    verificationStatus: issue?.verification_status || 'pending',
     latitude: issue?.lat ?? null,
     longitude: issue?.lng ?? null,
     images: attachments.map((attachment) => attachment.file_url).filter(Boolean),
@@ -52,18 +53,31 @@ export async function getIssueById(issueId) {
 }
 
 export async function updateIssue(issueId, patch) {
+  console.log('[issuesService] updateIssue called', { issueId, patch })
   const normalizedPatch = {}
 
   if (patch?.status !== undefined) {
     normalizedPatch.status = patch.status
+
+    if (patch.status === 'verified' && patch.verification_status === undefined) {
+      normalizedPatch.verification_status = 'authority_verified'
+    }
+  }
+
+  if (patch?.verification_status !== undefined) {
+    normalizedPatch.verification_status = patch.verification_status
   }
 
   if (patch?.assigned_to !== undefined) {
     normalizedPatch.assigned_to = patch.assigned_to
   }
 
+  console.log('[issuesService] normalized patch', { normalizedPatch })
   const data = await api.patch(`/issues/${issueId}`, normalizedPatch)
-  return normalizeIssue(data?.issue)
+  console.log('[issuesService] api response', { data })
+  const result = normalizeIssue(data?.issue)
+  console.log('[issuesService] normalized result', { status: result?.status })
+  return result
 }
 
 export async function getIssueStats() {

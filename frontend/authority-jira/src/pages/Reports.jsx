@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import Card, { CardBody, CardDescription, CardHeader, CardTitle } from '../components/ui/Card'
 import Loader from '../components/ui/Loader'
 import StatusBadge from '../components/ui/StatusBadge'
-import Table from '../components/ui/Table'
-import { getIssueStats, getIssueStatusLabel } from '../services/issuesService'
+import { getIssueStats } from '../services/issuesService'
 
 function Reports() {
   const [stats, setStats] = useState(null)
@@ -37,14 +36,6 @@ function Reports() {
     entries.sort((a, b) => b[1] - a[1])
     return entries.map(([status, count]) => ({ status, count }))
   }, [stats])
-
-  const breakdownCols = useMemo(
-    () => [
-      { key: 'status', header: 'Status', cell: (row) => <StatusBadge status={row.status} /> },
-      { key: 'count', header: 'Count', className: 'w-[8rem] text-slate-700', cell: (row) => row.count },
-    ],
-    [],
-  )
 
   return (
     <div className="space-y-8 p-6 lg:p-8">
