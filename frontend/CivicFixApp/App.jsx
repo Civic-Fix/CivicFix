@@ -8,14 +8,15 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Feeds from './components/Feeds';
+import SearchScreen from './components/SearchScreen';
 import CreatePost from './components/CreatePost';
 import Notifications from './components/Notifications';
 import CivicAssistant from './components/CivicAssistant';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 
-// const API_BASE_URL = 'http://localhost:5000/api';
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5000/api';
+//const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:5000/api';
 
 const formatStatus = (status) =>
   status
@@ -148,6 +149,9 @@ export default function App() {
   const [issues, setIssues] = useState([]);
   const [anonymousIssueIds, setAnonymousIssueIds] = useState([]);
   const [activeTab, setActiveTab] = useState('home');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
 
@@ -186,6 +190,58 @@ export default function App() {
     }
   };
 
+  const loadSearchResults = async (query) => {
+    const trimmedQuery = typeof query === 'string' ? query.trim() : '';
+
+    if (!trimmedQuery) {
+      setSearchResults([]);
+      setIsSearchLoading(false);
+      return;
+    }
+
+    setIsSearchLoading(true);
+
+    try {
+      const authToken = await AsyncStorage.getItem('authToken');
+      const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
+      const response = await fetch(
+        `${API_BASE_URL}/issues/search?q=${encodeURIComponent(trimmedQuery)}`,
+        { headers }
+      );
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to search issues');
+      }
+
+      const mappedIssues = Array.isArray(result.issues)
+        ? result.issues.map((issue) => mapIssueToFeedItem(issue, user?.id || null, anonymousIssueIds))
+        : [];
+
+      setSearchResults(mappedIssues);
+    } catch (error) {
+      console.error('[App] loadSearchResults failed', {
+        message: error.message,
+        query: trimmedQuery,
+      });
+      setSearchResults([]);
+    } finally {
+      setIsSearchLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (searchQuery.trim()) {
+        loadSearchResults(searchQuery);
+      } else {
+        setSearchResults([]);
+      }
+    }, 400);
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery, user, anonymousIssueIds]);
+
   useEffect(() => {
     const restoreSession = async () => {
       try {
@@ -213,7 +269,11 @@ export default function App() {
     if (screen === 'feeds' && activeTab === 'home') {
       loadIssues();
     }
-  }, [screen, user, activeTab]);
+
+    if (screen === 'feeds' && activeTab === 'search' && !searchQuery.trim()) {
+      loadIssues();
+    }
+  }, [screen, user, activeTab, searchQuery]);
 
   const handleLoginSuccess = async (userData) => {
     setUser(userData);
@@ -225,6 +285,8 @@ export default function App() {
     await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userInfo']);
     setUser(null);
     setIssues([]);
+    setSearchQuery('');
+    setSearchResults([]);
     setScreen('login');
   };
 
@@ -485,7 +547,31 @@ export default function App() {
       return <CivicAssistant user={user} />;
     }
 
-    if (isLoadingIssues) {
+    if (activeTab === 'search') {
+      return (
+        <SearchScreen
+          user={user}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          issues={issues}
+          searchResults={searchResults}
+          isSearchLoading={isSearchLoading}
+          onRefresh={() => {
+            if (searchQuery.trim()) {
+              loadSearchResults(searchQuery);
+            } else {
+              loadIssues();
+            }
+          }}
+          onOpenPostDetail={handleOpenPostDetail}
+          onOpenCommentForm={handleOpenCommentForm}
+          onVote={handleVote}
+          onDeletePost={handleDeletePost}
+        />
+      );
+    }
+
+    if (activeTab === 'home' && isLoadingIssues) {
       return (
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color="#0F766E" />
@@ -564,31 +650,33 @@ export default function App() {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.bottomCenterItem}
-                onPress={() => setActiveTab('assistant')}
-              >
-                <View style={[styles.bottomCenterButton, activeTab === 'assistant' && styles.bottomCenterButtonActive]}>
-                  <MaterialCommunityIcons
-                    name="robot-outline"
-                    size={26}
-                    color={activeTab === 'assistant' ? '#FFFFFF' : '#0B2D5C'}
+              <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('search')}>
+                <View style={[styles.tabIconWrap, activeTab === 'search' && styles.tabIconWrapActive]}>
+                  <Feather
+                    name="search"
+                    size={20}
+                    color={activeTab === 'search' ? '#0B2D5C' : '#9CA3AF'}
                   />
                 </View>
-                <Text
-                  style={[
-                    styles.bottomLabel,
-                    activeTab === 'assistant' && styles.bottomLabelActive,
-                  ]}
-                >
+                <Text style={[styles.bottomLabel, activeTab === 'search' && styles.bottomLabelActive]}>
+                  Search
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('assistant')}>
+                <View style={[styles.tabIconWrap, activeTab === 'assistant' && styles.tabIconWrapActive]}>
+                  <MaterialCommunityIcons
+                    name="robot-outline"
+                    size={20}
+                    color={activeTab === 'assistant' ? '#0B2D5C' : '#9CA3AF'}
+                  />
+                </View>
+                <Text style={[styles.bottomLabel, activeTab === 'assistant' && styles.bottomLabelActive]}>
                   CivicBot
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.bottomItem}
-                onPress={() => setActiveTab('notifications')}
-              >
+              <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('notifications')}>
                 <View style={[styles.tabIconWrap, activeTab === 'notifications' && styles.tabIconWrapActive]}>
                   <Feather
                     name="bell"
@@ -596,12 +684,7 @@ export default function App() {
                     color={activeTab === 'notifications' ? '#0B2D5C' : '#9CA3AF'}
                   />
                 </View>
-                <Text
-                  style={[
-                    styles.bottomLabel,
-                    activeTab === 'notifications' && styles.bottomLabelActive,
-                  ]}
-                >
+                <Text style={[styles.bottomLabel, activeTab === 'notifications' && styles.bottomLabelActive]}>
                   Alerts
                 </Text>
               </TouchableOpacity>
@@ -674,7 +757,6 @@ const styles = StyleSheet.create({
   bottomCenterItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -18,
     flex: 1,
   },
   bottomCenterButton: {

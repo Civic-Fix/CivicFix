@@ -6,9 +6,10 @@ import {
   deleteIssue as deleteIssueRecord,
   getIssueById as getIssueByIdRecord,
   getIssues as getIssuesRecords,
+  searchIssues as searchIssuesRecord,
   getIssueMapPoints as getIssueMapPointsRecords,
   listIssueUpdates as listIssueUpdatesRecords,
-  getNearbyIssues as getNearbyIssueRecords,
+  getNearbyIssues as getNearbyIssueRecord,
   IssueServiceError,
   removeIssueVote as removeIssueVoteRecord,
   updateIssue as updateIssueRecord,
@@ -192,6 +193,34 @@ export const getIssueMapPoints = async (req, res) => {
       .status(err instanceof IssueServiceError ? err.statusCode : 500)
       .json({
         error: err.message || "Unable to fetch issue map points",
+      });
+  }
+};
+
+export const searchIssues = async (req, res) => {
+  try {
+    const searchTerm = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+
+    if (!searchTerm) {
+      return res.status(200).json({ issues: [] });
+    }
+
+    const issues = await searchIssuesRecord(searchTerm, req.userId || null);
+
+    return res.status(200).json({
+      issues,
+    });
+  } catch (err) {
+    console.error("[IssueController] searchIssues error", {
+      query: req.query,
+      userId: req.userId,
+      error: err,
+    });
+
+    return res
+      .status(err instanceof IssueServiceError ? err.statusCode : 500)
+      .json({
+        error: err.message || "Unable to search issues",
       });
   }
 };
