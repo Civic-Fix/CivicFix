@@ -1,6 +1,6 @@
 # CivicFix – Smart Civic Complaint Management System
 
-CivicFix is a centralized platform designed to streamline the process of reporting, managing, and resolving civic issues. It connects **citizens, municipal officers, and field contractors** into a single transparent ecosystem.
+CivicFix is a centralized platform that streamlines reporting, managing, and resolving civic issues. It connects **citizens, municipal officers, and field contractors** into a single transparent ecosystem.
 
 ---
 
@@ -10,118 +10,73 @@ CivicFix is a centralized platform designed to streamline the process of reporti
 CivicFix/
 ├── backend/                              Node.js + Express API server
 │   ├── server.js                         Entry point (port 5000)
-│   ├── package.json                      Dependencies & scripts
-│   ├── check-db.js                       Database health check utility
-│   ├── test-api.js                       API testing script
+│   ├── package.json
 │   ├── db/
-│   │   └── migrations/                   SQL migrations
-│   │       ├── 001_issue_geospatial_setup.sql
-│   │       ├── 002_votes_unique_constraint.sql
-│   │       ├── 003_fix_storage_rls.sql
-│   │       ├── 004_fix_users_trigger_add_email.sql
-│   │       ├── 005_votes_add_vote_type.sql
-│   │       ├── 006_comments_table.sql
-│   │       └── 007_split_citizen_and_org_member_profiles.sql
-│   ├── scripts/                          Setup & configuration scripts
-│   │   ├── setup-organization.js
-│   │   ├── setup-storage.js
-│   │   └── setup-storage-rls.js
+│   │   └── migrations/                   SQL migration files
 │   └── src/
-│       ├── app.js                        Express app setup & middleware
+│       ├── app.js                        Express app + middleware
 │       ├── config/
-│       │   └── supabaseClient.js         Supabase initialization
+│       │   └── supabaseClient.js         Supabase (service role) client
 │       ├── controllers/
-│       │   ├── authController.js         Authentication handlers
-│       │   ├── issueController.js        Issue management handlers
-│       │   ├── commentController.js      Comment management handlers
-│       │   └── assistantController.js    AI Assistant handlers
+│       │   ├── authController.js
+│       │   ├── issueController.js
+│       │   ├── commentController.js
+│       │   ├── teamController.js
+│       │   └── assistantController.js
 │       ├── routes/
-│       │   ├── authRoutes.js             Authentication endpoints
-│       │   ├── issueRoutes.js            Issue management endpoints
-│       │   ├── commentRoutes.js          Comment endpoints
-│       │   └── assistantRoutes.js        Assistant AI endpoints
+│       │   ├── authRoutes.js
+│       │   ├── issueRoutes.js
+│       │   ├── commentRoutes.js
+│       │   ├── teamRoutes.js
+│       │   └── assistantRoutes.js
 │       ├── services/
-│       │   ├── authService.js            Supabase auth logic
-│       │   ├── issueService.js           Issue business logic
-│       │   ├── commentService.js         Comment business logic
-│       │   └── assistantService.js       AI Assistant logic
+│       │   ├── authService.js
+│       │   ├── issueService.js
+│       │   ├── commentService.js
+│       │   ├── teamService.js
+│       │   └── assistantService.js
 │       └── middlewares/
-│           └── authMiddleware.js         JWT verification
+│           └── authMiddleware.js         JWT verification (requireAuth / optionalAuth)
 │
 └── frontend/
     ├── CivicFixApp/                      Mobile app – React Native + Expo
-    │   ├── App.jsx                       Root component
-    │   ├── index.js                      Entry point
-    │   ├── app.json                      Expo configuration
-    │   ├── eas.json                      EAS build configuration
-    │   ├── package.json                  Dependencies & scripts
-    │   ├── assets/                       Static assets
-    │   ├── config/                       Configuration files
+    │   ├── App.jsx
     │   ├── components/
-    │   │   ├── Login.jsx                 Login screen
-    │   │   ├── Signup.jsx                Signup screen
-    │   │   ├── CreatePost.jsx            Create issue component
-    │   │   ├── IssueCard.jsx             Issue card component
-    │   │   ├── Feeds.jsx                 Issues feed
-    │   │   ├── FeedsStyles.js            Feed styling
-    │   │   ├── Post.jsx                  Post/Issue view
-    │   │   ├── CommentForm.jsx           Comment submission
-    │   │   ├── CivicAssistant.jsx        AI Assistant component
-    │   │   └── Notifications.jsx         Notifications
+    │   │   ├── Login.jsx
+    │   │   ├── Signup.jsx
+    │   │   ├── CreatePost.jsx
+    │   │   ├── IssueCard.jsx
+    │   │   ├── Feeds.jsx
+    │   │   ├── Post.jsx
+    │   │   ├── CommentForm.jsx
+    │   │   ├── CivicAssistant.jsx
+    │   │   └── Notifications.jsx
     │   └── utils/
-    │       └── api.js                    API client
+    │       └── api.js
     │
-    └── authority-jira/                   Web dashboard – React + Vite
-        ├── index.html                    HTML entry point
-        ├── package.json                  Dependencies & scripts
-        ├── vite.config.js                Vite configuration
-        ├── eslint.config.js              ESLint configuration
-        ├── README.md                     Dashboard documentation
+    └── authority-jira/                   Web dashboard – React + Vite + Tailwind v4
         └── src/
-            ├── main.jsx                  React entry point
-            ├── App.jsx                   Root component
-            ├── App.css                   Global styles
-            ├── index.css                 Base styles
-            ├── components/
-            │   ├── Navbar.jsx
-            │   ├── Footer.jsx
-            │   ├── Hero.jsx
-            │   ├── Features.jsx
-            │   ├── HowItWorks.jsx
-            │   ├── Stats.jsx
-            │   ├── Testimonials.jsx
-            │   ├── Icon.jsx
-            │   ├── landingData.js
-            │   ├── RequestAccessModal.jsx
-            │   └── ui/
-            │       ├── Button.jsx
-            │       ├── Card.jsx
-            │       ├── Loader.jsx
-            │       ├── StatusBadge.jsx
-            │       └── Table.jsx
             ├── context/
-            │   ├── AuthContext.js
-            │   └── AuthContext.jsx
+            │   └── AuthContext.jsx       Auth state + signIn / signOut
             ├── hooks/
             │   └── useAuth.js
             ├── layouts/
             │   └── AppLayout.jsx
             ├── pages/
-            │   ├── Dashboard.jsx
-            │   ├── Issues.jsx
-            │   ├── IssueDetail.jsx
-            │   ├── Map.jsx
-            │   ├── Reports.jsx
-            │   ├── Team.jsx
-            │   ├── Login.jsx
-            │   ├── Landing.jsx
-            │   └── RequestAccess.jsx
-            ├── services/
-            │   ├── api.js
-            │   ├── issuesService.js
-            │   └── updatesService.js
-            └── utils/
-                └── formatDate.js
+            │   ├── Landing.jsx           Public marketing page
+            │   ├── Login.jsx             Officer login + access-request flow
+            │   ├── RequestAccess.jsx
+            │   ├── Dashboard.jsx         Stats overview
+            │   ├── Issues.jsx            Kanban board + list view
+            │   ├── IssueDetail.jsx       Issue workflow (status + assignee + updates)
+            │   ├── Map.jsx               Geo map of issues
+            │   ├── Reports.jsx           Charts & analytics
+            │   └── Team.jsx              Team management (admin)
+            └── services/
+                ├── api.js                Fetch-based API client
+                ├── issuesService.js
+                ├── teamService.js
+                └── updatesService.js
 ```
 
 ---
@@ -131,44 +86,67 @@ CivicFix/
 | Layer | Technology |
 |---|---|
 | Backend | Node.js (ES Modules), Express 5 |
-| Auth & Database | Supabase (PostgreSQL + JWT Auth) |
+| Auth & Database | Supabase (PostgreSQL + GoTrue JWT) |
 | Mobile App | React Native 0.81, Expo 54 |
-| Web Dashboard | React 19, Vite 8 |
-| API Client (mobile) | Fetch API + AsyncStorage |
-| API Client (web) | Axios |
-| UI (web) | Bootstrap 5 (CDN), lucide-react |
-| Drag & Drop (web) | @hello-pangea/dnd |
+| Web Dashboard | React 19, Vite 8, Tailwind CSS v4 |
+| Drag & Drop | @hello-pangea/dnd |
+| Icons | lucide-react |
+| AI Assistant | Google Gemini (@google/genai) |
 
 ---
 
 ## API Endpoints
 
+### Auth
+
 | Method | Path | Description |
 |---|---|---|
-| POST | `/api/auth/signup` | Register (name, email, phone, password) |
-| POST | `/api/auth/login` | Login with email/password → returns JWT |
-| POST | `/api/issues` | Create an issue with mandatory image proof and coordinates |
-| GET | `/api/issues` | Fetch all issues with pagination |
-| GET | `/api/issues/:id` | Get specific issue details |
-| GET | `/api/issues/nearby?lat=<lat>&lng=<lng>&radius=<meters>&limit=<count>` | Fetch nearby issues sorted by distance |
-| GET | `/api/issues/map?limit=<count>` | Fetch geo points for map, clustering, and heatmap views |
-| POST | `/api/comments` | Add comment to an issue |
-| GET | `/api/comments/:issueId` | Fetch comments for an issue |
-| POST | `/api/assistant` | Query the AI Assistant |
-| GET | `/api/assistant/suggestions` | Get AI suggestions for issues |
+| POST | `/api/auth/signup` | Register citizen or org member |
+| POST | `/api/auth/login` | Login → returns JWT + profile |
+
+### Issues
+
+| Method | Path | Description |
+|---|---|---|
+| GET | `/api/issues` | List issues (pagination, filters) |
+| POST | `/api/issues` | Create issue |
+| GET | `/api/issues/:id` | Get issue detail |
+| PATCH | `/api/issues/:id` | Update status / assignee |
+| DELETE | `/api/issues/:id` | Delete issue (creator only) |
+| GET | `/api/issues/nearby` | Issues within radius of coordinates |
+| GET | `/api/issues/map` | Geo points for map view |
+| POST | `/api/issues/:id/updates` | Add progress update |
+| GET | `/api/issues/:id/updates` | List updates |
+| POST | `/api/issues/:id/votes` | Upvote / downvote |
+| DELETE | `/api/issues/:id/votes` | Remove vote |
+
+### Team (all require JWT except request-access)
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/team/members` | Required | List org members |
+| POST | `/api/team/members` | Admin only | Add member (creates Supabase auth user) |
+| DELETE | `/api/team/members/:id` | Admin only | Remove member |
+| POST | `/api/team/members/:id/request-access` | Public | Member requests access approval |
+| PATCH | `/api/team/members/:id/verify` | Admin only | Approve member access |
+
+### Assistant
+
+| Method | Path | Description |
+|---|---|---|
+| POST | `/api/assistant` | Query AI assistant |
+| GET | `/api/assistant/suggestions` | Get AI suggestions |
 
 ---
 
-## Setup Instructions
+## Setup
 
-### 1. Clone the repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/Civic-Fix/CivicFix.git
 cd CivicFix
 ```
-
----
 
 ### 2. Backend
 
@@ -177,151 +155,140 @@ cd backend
 npm install
 ```
 
-Copy the example env file and fill in your Supabase credentials:
+Create `.env`:
 
-```bash
-cp .env.example .env
-```
-
-`.env` requires:
-
-```
-SUPABASE_URL=https://<your-project>.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
-DEFAULT_ORGANIZATION_ID=<existing-organization-uuid>
+```env
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+DEFAULT_ORGANIZATION_ID=<org-uuid>
+FRONTEND_URL=http://localhost:5174
 PORT=5000
 ```
 
-Run the PostGIS migration in your Supabase SQL editor before creating location-aware issues:
+Run required SQL migrations in Supabase SQL editor:
 
 ```sql
--- file: backend/db/migrations/001_issue_geospatial_setup.sql
+-- Status change logging (RPC + trigger fix)
+CREATE OR REPLACE FUNCTION update_issue_status_by_authority(
+  p_issue_id uuid, p_status text, p_changed_by uuid, p_verification_status text DEFAULT NULL
+) RETURNS json LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  PERFORM set_config('app.current_user_id', p_changed_by::text, true);
+  UPDATE public.issues
+    SET status = p_status::issue_status,
+        verification_status = CASE WHEN p_verification_status IS NOT NULL
+          THEN p_verification_status::verification_status ELSE verification_status END
+  WHERE id = p_issue_id;
+  RETURN json_build_object('success', true);
+END;$$;
+
+-- Access-request column for team approval flow
+ALTER TABLE organization_members ADD COLUMN IF NOT EXISTS access_requested boolean DEFAULT false;
 ```
 
-Start the server:
+Start server:
 
 ```bash
 npm start
+# http://localhost:5000
 ```
 
-Server runs at `http://localhost:5000`.
-
----
-
-### 3. Mobile App (CivicFixApp)
-
-> Requires [Expo Go](https://expo.dev/go) installed on your phone/tablet.
+### 3. Mobile App
 
 ```bash
 cd frontend/CivicFixApp
 npm install
 ```
 
-Copy the example env file and set your machine's local IP:
+`.env`:
 
-```bash
-cp .env.example .env
+```env
+EXPO_PUBLIC_API_BASE_URL=http://<LAN_IP>:5000/api
 ```
-
-`.env` requires:
-
-```
-EXPO_PUBLIC_API_BASE_URL=http://<YOUR_PC_LAN_IP>:5000/api
-```
-
-> Find your LAN IP with `ipconfig` (Windows) or `ifconfig` (Mac/Linux). Your phone and PC must be on the same Wi-Fi network.
-
-Start the Expo dev server:
 
 ```bash
 npx expo start
 ```
 
-| Command | Target |
-|---|---|
-| `npx expo start` | Show QR code (scan with Expo Go) |
-| `npx expo start --android` | Open on Android emulator |
-| `npx expo start --ios` | Open on iOS simulator |
-| `npx expo start --web` | Open in browser |
-
----
-
-### 4. Web Dashboard (authority-jira)
+### 4. Web Dashboard
 
 ```bash
 cd frontend/authority-jira
 npm install
 npm run dev
+# http://localhost:5174
 ```
-
-Dashboard runs at `http://localhost:5173`.
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start Vite dev server |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview build |
+| `npm run lint` | ESLint |
 
 ---
 
-## Features
+## Key Features
 
-- **Issue Reporting**: Citizens can report civic issues with location, images, and detailed descriptions
-- **Geospatial Search**: Find nearby issues using coordinates and radius filtering
-- **Commenting System**: Community discussions and updates on issues
-- **AI Assistant**: Smart suggestions and automated responses via integrated AI
-- **Issue Voting**: Upvote/downvote issues to highlight priority
-- **Role-Based Access**: Separate profiles for citizens and organization members
-- **Real-Time Updates**: Track issue status and receive notifications
-- **Storage Management**: RLS-secured image and document storage via Supabase
+### Citizen Mobile App
+- Report civic issues with location, photos, and description
+- Upvote/downvote issues to surface priority problems
+- AI assistant for smart suggestions and context
+- Track issue status in real-time
+
+### Authority Web Dashboard
+- **Kanban board** – drag issues across status columns (Reported → Verified → In Progress → Review → Completed)
+- **Admin-only statuses** – only admins can move issues to Completed / Blocked / Closed
+- **Assignee workflow** – assign any issue to any team member via dropdown; auto-saves on change
+- **Team management** – admin adds officers/contractors with name, email, password, role, department
+- **Access control** – new members start unverified; they request access from the login page; admin approves from Team page
+- **Issue detail** – status updates, assignee changes, and progress notes in one view
+- **Map view** – geo map of all issues with markers
+- **Reports** – charts and analytics on issue volume and resolution
+
+### Role System
+
+| Role | Can Do |
+|---|---|
+| Admin | Full access: manage team, approve members, move issues to any status, assign issues |
+| Officer | Triage issues, update status (except Completed/Blocked/Closed), assign issues |
+| Contractor | View and update assigned issues |
 
 ---
 
-## Workflow
+## Access Control Flow
 
-1. **Citizen Reporting**: Report complaints with location, images, and detailed descriptions
-2. **Community Engagement**: Other citizens can comment, vote, and discuss the issue
-3. **AI Assistance**: AI Assistant provides suggestions and context for better resolution
-4. **Officer Review**: Municipal officers prioritize based on urgency, impact, and votes
-5. **Task Assignment**: Officers assign to field contractors with full issue details
-6. **Contractor Updates**: Field workers upload proof of completion and track progress
-7. **Citizen Notification**: Real-time updates and resolution notifications to reporters
+1. Admin adds a new officer/contractor via the Team page
+2. New member tries to log in → blocked with "Access not yet approved" screen
+3. Member clicks **Request Access from Admin**
+4. Admin sees "Requested Access" badge in Team page → clicks **Approve Access**
+5. Member can now log in normally
 
 ---
 
-## User Roles
+## Status Workflow
 
-### Citizen
-- Report complaints with location, images, and descriptions
-- Track complaint status in real-time
-- Receive updates and notifications
-
-### Municipal Officer
-- Prioritize complaints by urgency and impact
-- Assign tasks to field contractors
-- Monitor progress and SLA compliance
-
-### Field Contractor
-- View assigned tasks with full details
-- Upload proof of completion (images, notes)
-- Update task status efficiently
+```
+Reported → Verified → In Progress → Review → Completed
+                                           ↓
+                                        Blocked / Closed  (admin only)
+```
 
 ---
 
 ## Contributing
 
 1. Fork the repository
-2. Create a new branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m "Add your feature"`
-4. Push to the branch: `git push origin feature/your-feature`
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Commit: `git commit -m "Add your feature"`
+4. Push: `git push origin feature/your-feature`
 5. Open a Pull Request
 
 ---
 
 ## License
 
-This project is licensed under the MIT License.
+MIT License
 
 ## Team
 

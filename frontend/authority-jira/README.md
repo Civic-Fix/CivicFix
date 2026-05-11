@@ -1,159 +1,115 @@
-# CivicFix
+# CivicFix Authority Dashboard
 
-CivicFix is a modern civic-tech landing page built with React, Vite, and Tailwind CSS. The platform concept helps residents report civic issues such as potholes, garbage, broken streetlights, blocked drains, and public maintenance problems, then track their resolution transparently.
+The web dashboard for municipal officers and administrators to manage civic issues reported by citizens.
 
-## Features
+Built with **React 19 + Vite + Tailwind CSS v4**.
 
-- Modern SaaS-style landing page
-- Responsive navbar with theme toggle
-- Hero section with strong call-to-action buttons
-- Live issue board preview
-- How It Works section
-- Feature cards for reporting, tracking, upvotes, and transparency
-- Impact statistics
-- Testimonials
-- Final CTA and footer
-- Light/dark theme support
-
-## Tech Stack
-
-- React
-- Vite
-- Tailwind CSS
-- JavaScript
-
-## Project Structure
-
-```txt
-src/
-  components/
-    Features.jsx
-    Footer.jsx
-    Hero.jsx
-    HowItWorks.jsx
-    Icon.jsx
-    Navbar.jsx
-    Stats.jsx
-    Testimonials.jsx
-    landingData.js
-  App.css
-  App.jsx
-  index.css
-  main.jsx
-```
+---
 
 ## Getting Started
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
+# http://localhost:5174
 ```
 
-Open the local URL shown in the terminal, usually:
+| Command | Description |
+|---|---|
+| `npm run dev` | Start dev server |
+| `npm run build` | Production build |
+| `npm run preview` | Preview production build |
+| `npm run lint` | Run ESLint |
 
-```bash
-http://localhost:5173/
-```
+The dashboard expects the backend running at `http://localhost:5000`. Set `VITE_API_BASE_URL` in `.env` to override.
 
-## Tailwind Setup
+---
 
-This project uses Tailwind CSS v4 with the Vite plugin.
+## Pages
 
-Make sure `vite.config.js` includes:
+| Route | Page | Description |
+|---|---|---|
+| `/` | Landing | Public marketing page |
+| `/login` | Login | Officer login with access-request flow |
+| `/dashboard` | Dashboard | Stats overview |
+| `/issues` | Issues | Kanban board + list view |
+| `/issues/:id` | IssueDetail | Status, assignee, updates |
+| `/map` | Map | Geo map of all issues |
+| `/reports` | Reports | Charts & analytics |
+| `/team` | Team | Team management (admin only) |
+
+---
+
+## Features
+
+### Issues Board
+- Drag-and-drop Kanban across 7 status columns
+- List view with sortable table
+- Admin-only statuses: **Completed**, **Blocked**, **Closed** — non-admins see these columns as locked
+- Real-time status saves via backend RPC (preserves audit log)
+
+### Issue Detail
+- Update issue status with a single click
+- **Assignee dropdown** — assign to any team member; auto-saves on change
+- Add progress notes/updates
+- View submitted photos
+
+### Team Management (Admin)
+- Add officers and contractors (creates their Supabase auth account)
+- One admin per organization enforced
+- **Access approval flow**: new members are unverified by default and must request access; admin approves from this page
+- Remove members (deletes their auth account)
+
+### Access Control Flow
+1. Admin creates a member via Team page
+2. Member logs in → blocked with "Access not yet approved"
+3. Member clicks **Request Access from Admin**
+4. Admin sees **Requested Access** badge → clicks **Approve Access**
+5. Member can now log in
+
+---
+
+## Role Permissions
+
+| Action | Admin | Officer | Contractor |
+|---|---|---|---|
+| Move to Completed / Blocked / Closed | Yes | No | No |
+| Approve team members | Yes | No | No |
+| Add / remove team members | Yes | No | No |
+| Update status (other) | Yes | Yes | Yes |
+| Assign issues | Yes | Yes | Yes |
+
+---
+
+## Tech Stack
+
+| | |
+|---|---|
+| Framework | React 19 |
+| Build | Vite 8 |
+| Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
+| Routing | React Router v7 |
+| Drag & Drop | @hello-pangea/dnd |
+| Icons | lucide-react |
+| API client | Fetch (`src/services/api.js`) |
+
+---
+
+## Tailwind v4 Notes
+
+This project uses Tailwind CSS v4. Key differences from v3:
+
+- Gradient utilities: `bg-linear-to-r` / `bg-linear-to-br` (not `bg-gradient-to-*`)
+- Spacing: canonical values like `min-w-48`, `max-w-360` instead of arbitrary `[12rem]`, `[90rem]`
+- Config in `vite.config.js` via `@tailwindcss/vite` plugin — no `tailwind.config.js` needed
 
 ```js
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+// vite.config.js
 import tailwindcss from '@tailwindcss/vite'
-
-export default defineConfig({
-  plugins: [react(), tailwindcss()],
-})
+export default defineConfig({ plugins: [react(), tailwindcss()] })
 ```
-
-Make sure `src/index.css` includes:
 
 ```css
+/* src/index.css */
 @import "tailwindcss";
 ```
-
-## Available Scripts
-
-Run the development server:
-
-```bash
-npm run dev
-```
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-Preview the production build:
-
-```bash
-npm run preview
-```
-
-Run linting:
-
-```bash
-npm run lint
-```
-
-## Git Workflow
-
-Before starting new work, update your local `main` branch:
-
-```bash
-git checkout main
-git pull origin main
-```
-
-Create a new branch:
-
-```bash
-git checkout -b civicfix-landing-page
-```
-
-After making changes, check the files:
-
-```bash
-git status
-```
-
-Stage your changes:
-
-```bash
-git add src/App.jsx src/App.css src/index.css src/components
-```
-
-Commit your changes:
-
-```bash
-git commit -m "Build CivicFix landing page"
-```
-
-Push your branch:
-
-```bash
-git push origin civicfix-landing-page
-```
-
-Then open a pull request on GitHub from your branch into `main`.
-
-## Notes
-
-- The landing page is currently frontend-only.
-- The issue data is stored in `src/components/landingData.js`.
-- The theme toggle stores the selected theme in `localStorage`.
-- Future work can include real issue submission, authentication, maps, dashboards, and backend API integration.
