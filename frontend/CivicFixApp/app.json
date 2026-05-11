@@ -4,34 +4,46 @@
     "slug": "CivicFixApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow CivicFix to access your location to tag civic issues."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow CivicFix to access your photos to attach issue proof."
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "106573a1-d435-4c86-9ae8-df9c31deca35"
       }
     },
-    "android": {
-      "package": "com.khcoder.CivicFixApp"
-    }
-  },
-  "ios": {
-    "supportsTablet": true
-  },
-  "android": {
-    "adaptiveIcon": {
-      "foregroundImage": "./assets/adaptive-icon.png",
-      "backgroundColor": "#ffffff"
+    "ios": {
+      "supportsTablet": true
     },
-    "edgeToEdgeEnabled": true
-  },
-  "web": {
-    "favicon": "./assets/favicon.png"
+    "android": {
+      "package": "com.khcoder.CivicFixApp",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/logo.png"
+    }
   }
 }
