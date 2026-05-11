@@ -106,14 +106,14 @@ function Map() {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">ðŸ—ºï¸ Map</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">Map</p>
             <h1 className="bg-linear-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-4xl font-black tracking-tight text-transparent">
               Issue Locations
             </h1>
             <p className="text-base font-semibold text-slate-600">Click a marker to view issue details and take action</p>
           </div>
           <Button variant="secondary" onClick={refresh}>
-            ðŸ”„ Refresh
+          Refresh
           </Button>
         </div>
         <div className="h-1 w-16 rounded-full bg-linear-to-r from-emerald-500 to-emerald-600"></div>
@@ -134,7 +134,7 @@ function Map() {
       {/* Legend and Info */}
       <div className="rounded-xl border border-slate-200 bg-linear-to-r from-white to-slate-50 p-5 shadow-sm">
         <div className="flex items-center gap-3 text-sm font-semibold text-slate-700">
-          <span className="text-lg">â„¹ï¸</span>
+          
           <span>Showing <span className="font-black text-emerald-600">{issues.length}</span> civic issues on the map</span>
         </div>
       </div>
