@@ -16,8 +16,13 @@ const getStatusStyle = (status) =>
 const AVATAR_COLORS = ['#4F46E5', '#0891B2', '#DC2626', '#7C3AED', '#C2410C', '#15803D'];
 const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 
+const runAction = (event, callback) => {
+  event?.stopPropagation?.();
+  callback?.();
+};
+
 const VoteButton = ({ icon, count, active, activeColor, onPress }) => (
-  <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.voteBtn}>
+  <TouchableOpacity activeOpacity={0.7} onPress={(event) => runAction(event, onPress)} style={styles.voteBtn}>
     <View style={[styles.voteBtnInner, active && { backgroundColor: activeColor + '20' }]}>
       <Feather name={icon} size={16} color={active ? activeColor : '#9CA3AF'} />
       {typeof count === 'number' && count > 0 ? (
@@ -27,7 +32,7 @@ const VoteButton = ({ icon, count, active, activeColor, onPress }) => (
   </TouchableOpacity>
 );
 
-const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentPress }) => {
+const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentPress, onShare }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const isOwner = typeof issue.isOwner === 'boolean' ? issue.isOwner : issue.handle === currentHandle;
   const avatarColor = getAvatarColor(issue.author);
@@ -92,7 +97,7 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
         {issue.brief.length > 150 && (
           <TouchableOpacity 
             style={styles.seeMoreButton} 
-            onPress={() => setIsExpanded(!isExpanded)}
+            onPress={(event) => runAction(event, () => setIsExpanded(!isExpanded))}
             activeOpacity={0.7}
           >
             <Text style={styles.seeMoreText}>
@@ -121,7 +126,7 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
               <TouchableOpacity
               style={styles.actionBtn}
               activeOpacity={0.7}
-              onPress={onCommentPress ? () => onCommentPress(issue) : undefined}
+              onPress={(event) => runAction(event, () => onCommentPress?.(issue))}
             >
               <Feather name="message-circle" size={14} color="#9CA3AF" />
             </TouchableOpacity>
@@ -131,7 +136,7 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
               count={issue.upvotes}
               active={Boolean(issue.currentUserUpvoteId)}
               activeColor="#16A34A"
-              onPress={() => onVote(issue.id, 'upvote')}
+              onPress={() => onVote?.(issue.id, 'upvote')}
             />
 
             <VoteButton
@@ -139,10 +144,14 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
               count={issue.downvotes}
               active={Boolean(issue.currentUserDownvoteId)}
               activeColor="#DC2626"
-              onPress={() => onVote(issue.id, 'downvote')}
+              onPress={() => onVote?.(issue.id, 'downvote')}
             />
 
-            <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.actionBtn}
+              activeOpacity={0.7}
+              onPress={(event) => runAction(event, () => onShare?.(issue))}
+            >
               <Feather name="share-2" size={14} color="#9CA3AF" />
             </TouchableOpacity>
           </View>
@@ -151,7 +160,7 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
             {isOwner ? (
               <TouchableOpacity
                 style={[styles.actionBtn, styles.deleteBtn]}
-                onPress={() => onDelete?.(issue.id)}
+                onPress={(event) => runAction(event, () => onDelete?.(issue.id))}
                 activeOpacity={0.7}
               >
                 <Feather name="trash-2" size={13} color="#EF4444" />
