@@ -98,6 +98,12 @@ export const signIn = async (
     normalizedAccountType
   );
 
+  if (normalizedAccountType === ACCOUNT_TYPES.ORGANIZATION_MEMBER && !profile.is_verified) {
+    const notVerifiedError = new Error("NOT_VERIFIED");
+    notVerifiedError.memberId = profile.id;
+    throw notVerifiedError;
+  }
+
   return {
     user: {
       ...data.user,
