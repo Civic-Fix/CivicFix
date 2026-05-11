@@ -14,8 +14,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 
-//const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-const API_BASE_URL="http://localhost:5000/api";
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+// const API_BASE_URL="http://localhost:5000/api";
 
 
 const CIVIC_BLUE = '#1D4ED8';
