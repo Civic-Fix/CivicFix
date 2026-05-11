@@ -11,6 +11,7 @@ import {
   getIssueMapPoints,
   getNearbyIssues,
   removeIssueVote,
+  searchIssues,
   updateIssue,
   uploadIssueAttachmentAsset,
 } from "../controllers/issueController.js";
@@ -19,6 +20,7 @@ import { optionalAuth, requireAuth } from "../middlewares/authMiddleware.js";
 const router = express.Router();
 
 router.get("/", requireAuth, getIssues);
+router.get("/search", requireAuth, searchIssues);
 router.get("/nearby", optionalAuth, getNearbyIssues);
 router.get("/map", getIssueMapPoints);
 router.post("/attachments/upload", requireAuth, uploadIssueAttachmentAsset);

@@ -28,7 +28,9 @@ app.use((req, res, next) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/assistant", assistantRoutes);
+console.log('Mounting issue routes...');
 app.use("/api/issues", issueRoutes);
+console.log('Mounted issue routes');
 app.use("/api/comments", commentRoutes);
 
 app.get("/", (req, res) => {
