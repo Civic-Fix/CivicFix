@@ -4,6 +4,8 @@ import {
   AlertCircle,
   CalendarClock,
   Camera,
+  ChevronLeft,
+  ChevronRight,
   ExternalLink,
   FileText,
   MapPin,
@@ -20,6 +22,7 @@ function PublicIssue() {
   const [issue, setIssue] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [activeImageIndex, setActiveImageIndex] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -44,14 +47,23 @@ function PublicIssue() {
   }, [issueId])
 
   const images = useMemo(() => (Array.isArray(issue?.images) ? issue.images : []), [issue])
+  const imageCount = images.length
+
+  useEffect(() => {
+    setActiveImageIndex(0)
+  }, [issueId, imageCount])
+
   const createdBy = issue?.created_by_user?.name || issue?.created_by_user?.phone || 'CivicFix user'
   const coordinates =
     issue?.latitude != null && issue?.longitude != null
       ? `${Number(issue.latitude).toFixed(5)}, ${Number(issue.longitude).toFixed(5)}`
       : ''
-  const imageCount = images.length
-  const heroImage = images[0]
-  const secondaryImages = images.slice(1, 4)
+  const activeImage = images[activeImageIndex]
+  const canShowImageControls = imageCount > 1
+  const goToImage = (nextIndex) => {
+    if (!imageCount) return
+    setActiveImageIndex((nextIndex + imageCount) % imageCount)
+  }
 
   return (
     <main className="min-h-screen overflow-x-hidden bg-slate-100 text-slate-950">
@@ -169,42 +181,87 @@ function PublicIssue() {
                     </span>
                   </div>
 
-                  {heroImage ? (
-                    <div className="grid gap-3 bg-slate-50 p-3 sm:p-4 lg:grid-cols-[1fr_14rem]">
-                      <a
-                        href={heroImage}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group flex h-72 items-center justify-center overflow-hidden border border-slate-200 bg-white sm:h-96"
-                      >
-                        <img
-                          src={heroImage}
-                          alt="Primary issue proof"
-                          className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.02]"
-                        />
-                      </a>
-                      <div className="grid grid-cols-3 gap-3 lg:grid-cols-1">
-                        {secondaryImages.map((src, index) => (
-                          <a
-                            key={`${src}-${index}`}
-                            href={src}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="group flex h-24 items-center justify-center overflow-hidden border border-slate-200 bg-white lg:h-28"
-                          >
-                            <img
-                              src={src}
-                              alt={`Issue proof ${index + 2}`}
-                              className="h-full w-full object-cover object-center transition duration-300 group-hover:scale-[1.04]"
-                            />
-                          </a>
-                        ))}
-                        {imageCount > 4 ? (
-                          <div className="grid h-24 place-items-center border border-slate-200 bg-white px-3 text-center text-xs font-black text-slate-500 lg:h-28">
-                            +{imageCount - 4} more
-                          </div>
+                  {activeImage ? (
+                    <div className="bg-slate-50 p-3 sm:p-4">
+                      <div className="relative overflow-hidden border border-slate-200 bg-slate-950">
+                        <a
+                          href={activeImage}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group flex h-72 items-center justify-center bg-slate-950 sm:h-96 lg:h-[30rem]"
+                        >
+                          <img
+                            key={activeImage}
+                            src={activeImage}
+                            alt={`Issue proof ${activeImageIndex + 1} of ${imageCount}`}
+                            className="h-full w-full object-contain object-center opacity-100 transition duration-300 ease-out group-hover:scale-[1.01]"
+                          />
+                        </a>
+
+                        <span className="absolute right-3 top-3 rounded-full bg-slate-950/75 px-3 py-1 text-xs font-black text-white shadow-sm">
+                          {activeImageIndex + 1}/{imageCount}
+                        </span>
+
+                        {canShowImageControls ? (
+                          <>
+                            <button
+                              type="button"
+                              aria-label="Previous image"
+                              onClick={() => goToImage(activeImageIndex - 1)}
+                              className="absolute left-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-slate-950/65 text-white shadow-sm transition hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            >
+                              <ChevronLeft className="h-5 w-5" />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label="Next image"
+                              onClick={() => goToImage(activeImageIndex + 1)}
+                              className="absolute right-3 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-slate-950/65 text-white shadow-sm transition hover:bg-slate-950 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            >
+                              <ChevronRight className="h-5 w-5" />
+                            </button>
+                          </>
                         ) : null}
                       </div>
+
+                      {canShowImageControls ? (
+                        <div className="mt-3 grid gap-3">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {images.map((src, index) => (
+                              <button
+                                key={`${src}-dot-${index}`}
+                                type="button"
+                                aria-label={`Show image ${index + 1}`}
+                                onClick={() => goToImage(index)}
+                                className={`h-2 rounded-full transition-all ${
+                                  index === activeImageIndex ? 'w-6 bg-blue-600' : 'w-2 bg-slate-300 hover:bg-slate-400'
+                                }`}
+                              />
+                            ))}
+                          </div>
+
+                          <div className="flex gap-2 overflow-x-auto pb-1">
+                            {images.map((src, index) => (
+                              <button
+                                key={`${src}-thumb-${index}`}
+                                type="button"
+                                onClick={() => goToImage(index)}
+                                className={`h-16 w-20 shrink-0 overflow-hidden border bg-white transition sm:h-20 sm:w-28 ${
+                                  index === activeImageIndex
+                                    ? 'border-blue-600 ring-2 ring-blue-200'
+                                    : 'border-slate-200 hover:border-slate-400'
+                                }`}
+                              >
+                                <img
+                                  src={src}
+                                  alt={`Issue proof thumbnail ${index + 1}`}
+                                  className="h-full w-full object-cover object-center"
+                                />
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                   ) : (
                     <div className="bg-slate-50 p-4">

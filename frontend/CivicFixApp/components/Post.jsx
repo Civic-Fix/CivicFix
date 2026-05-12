@@ -1,7 +1,8 @@
 import React from 'react';
-import { ActivityIndicator, Image, StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import ImageCarousel from './ImageCarousel';
 
 const STATUS_COLORS = {
   Reported: { bg: '#EAF2FF', border: '#B8CEF3', text: '#0B2D5C' },
@@ -17,7 +18,7 @@ const AVATAR_COLORS = ['#4F46E5', '#0891B2', '#DC2626', '#7C3AED', '#C2410C', '#
 const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 
 const VoteButton = ({ icon, count, active, activeColor, onPress }) => (
-  <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.voteBtn}>
+  <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.voteBtn} disabled={!onPress}>
     <View style={[styles.voteBtnInner, active && { backgroundColor: activeColor + '20' }]}>
       <Feather name={icon} size={16} color={active ? activeColor : '#9CA3AF'} />
       {typeof count === 'number' && count > 0 ? (
@@ -40,7 +41,9 @@ const formatCommentTime = (timestamp) => {
   });
 };
 
-const Post = ({ issue, comments = [], isLoadingComments, onVote, onDelete, currentHandle, onBack, onOpenCommentForm, onDeleteComment, onVoteComment }) => {
+const Post = ({ issue, comments = [], isLoadingComments, onVote, onDelete, currentHandle, onBack, onOpenCommentForm, onDeleteComment, onVoteComment, onShare }) => {
+  if (!issue) return null;
+
   const isOwner = typeof issue.isOwner === 'boolean' ? issue.isOwner : issue.handle === currentHandle;
   const avatarColor = getAvatarColor(issue.author);
   const statusStyle = getStatusStyle(issue.status);
@@ -55,6 +58,7 @@ const Post = ({ issue, comments = [], isLoadingComments, onVote, onDelete, curre
   const locationText = [issue.locality || issue.location, issue.coordinateLocation]
     .filter(Boolean)
     .join(' - ');
+  const carouselImages = issue.images?.length ? issue.images : issue.image ? [{ uri: issue.image }] : [];
 
   return (
     <View style={styles.container}>
@@ -93,8 +97,8 @@ const Post = ({ issue, comments = [], isLoadingComments, onVote, onDelete, curre
           </View>
 
           {/* Image */}
-          {issue.image ? (
-            <Image source={{ uri: issue.image }} style={styles.issueImage} resizeMode="cover" />
+          {carouselImages.length ? (
+            <ImageCarousel images={carouselImages} height={240} />
           ) : null}
 
           {/* Body */}
@@ -143,7 +147,7 @@ const Post = ({ issue, comments = [], isLoadingComments, onVote, onDelete, curre
                   count={issue.upvotes}
                   active={Boolean(issue.currentUserUpvoteId)}
                   activeColor="#16A34A"
-                  onPress={() => onVote(issue.id, 'upvote')}
+                  onPress={onVote ? () => onVote(issue.id, 'upvote') : undefined}
                 />
 
                 <VoteButton
@@ -151,10 +155,15 @@ const Post = ({ issue, comments = [], isLoadingComments, onVote, onDelete, curre
                   count={issue.downvotes}
                   active={Boolean(issue.currentUserDownvoteId)}
                   activeColor="#DC2626"
-                  onPress={() => onVote(issue.id, 'downvote')}
+                  onPress={onVote ? () => onVote(issue.id, 'downvote') : undefined}
                 />
 
-                <TouchableOpacity style={styles.actionBtn} activeOpacity={0.7}>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  activeOpacity={0.7}
+                  onPress={onShare ? () => onShare(issue) : undefined}
+                  disabled={!onShare}
+                >
                   <Feather name="share-2" size={14} color="#9CA3AF" />
                 </TouchableOpacity>
               </View>
@@ -342,10 +351,6 @@ const styles = StyleSheet.create({
   badgeLabel: {
     fontSize: 11,
     fontWeight: '600',
-  },
-  issueImage: {
-    width: '100%',
-    height: 240, // Larger image for post detail
   },
   body: {
     paddingHorizontal: 12,

@@ -15,6 +15,10 @@ const getPublicAssistantError = (error) => {
     return "CivicBot could not authenticate with the AI service.";
   }
 
+  if (message.toLowerCase().includes("not found") || error?.status === 404) {
+    return "CivicBot is using an unavailable AI model. Update GEMINI_MODEL on the server.";
+  }
+
   return "Unable to generate assistant response right now.";
 };
 

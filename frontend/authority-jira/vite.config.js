@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
     server: {
       host: '0.0.0.0',
       proxy: {
-        '/api': env.VITE_BACKEND_URL || 'http://localhost:5000',
+        '/api': env.VITE_BACKEND_URL || 'http://localhost:5001',
       },
     },
   }
