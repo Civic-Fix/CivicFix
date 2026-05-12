@@ -566,6 +566,10 @@ const styles = StyleSheet.create({
   imagePreviewLabel: {
     color: '#6B7280',
     fontSize: 12,
+    marginTop: 8,
+  },
+  imagePreviewCarousel: {
+    marginBottom: 12,
   },
   removeImageButton: {
     position: 'absolute',
@@ -708,6 +712,9 @@ const styles = StyleSheet.create({
     height: 180,
     borderRadius: 12,
     backgroundColor: '#E5E7EB',
+    marginBottom: 12,
+  },
+  previewCarousel: {
     marginBottom: 12,
   },
   previewEmptyState: {
