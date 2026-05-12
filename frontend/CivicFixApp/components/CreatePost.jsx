@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -16,9 +15,8 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import Feather from '@expo/vector-icons/Feather';
 import styles from './FeedsStyles';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-// const API_BASE_URL ='http://localhost:5000/api';
+import { API_BASE_URL } from '../config';
+import ImageCarousel from './ImageCarousel';
 const MAX_IMAGES = 6;
 
 const formatCoordinates = ({ lat, lng }) => `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -310,6 +308,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
       author: displayNameToUse,
       handle: `@${displayNameToUse.replace(/\s+/g, '').toLowerCase()}`,
       anonymous: isAnonymous,
+      isAnonymous,
       time: 'Just now',
       title: titleText.trim(),
       brief: issueText.trim(),
@@ -371,6 +370,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
             lat: issueCoordinates?.lat ?? null,
             lng: issueCoordinates?.lng ?? null,
             status: 'reported',
+            is_anonymous: isAnonymous,
             attachments: buildAttachmentPayload(
               uploadResponses.map((asset) => ({
                 uri: asset.file_url,
@@ -411,7 +411,8 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           upvotes: createdIssue?.vote_count ?? localPost.upvotes,
           lat: createdIssue?.lat ?? localPost.lat,
           lng: createdIssue?.lng ?? localPost.lng,
-          anonymous: isAnonymous,
+          anonymous: createdIssue?.is_anonymous ?? isAnonymous,
+          isAnonymous: createdIssue?.is_anonymous ?? isAnonymous,
         };
       } else {
         setInfoMessage('Posted locally. Log in again if you want it synced to the server.');
@@ -613,19 +614,17 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
               </View>
 
               {selectedImages.length ? (
-                <View style={styles.imagePreviewGrid}>
-                  {selectedImages.map((image, index) => (
-                    <View key={image.uri} style={styles.imagePreviewCard}>
-                      <Image source={{ uri: image.uri }} style={styles.imagePreview} />
-                      <TouchableOpacity
-                        style={styles.removeImageButton}
-                        onPress={() => handleRemoveImage(image.uri)}
-                      >
-                        <Text style={styles.removeImageButtonText}>Remove</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.imagePreviewLabel}>Image {index + 1}</Text>
-                    </View>
-                  ))}
+                <View style={styles.imagePreviewCarousel}>
+                  <ImageCarousel
+                    images={selectedImages}
+                    height={220}
+                    borderRadius={14}
+                    showRemove
+                    onRemove={handleRemoveImage}
+                  />
+                  <Text style={styles.imagePreviewLabel}>
+                    Swipe through {selectedImages.length} selected photo{selectedImages.length === 1 ? '' : 's'}.
+                  </Text>
                 </View>
               ) : null}
 
@@ -642,8 +641,10 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
                   <Text style={styles.previewHelper}>How the report will read in the feed.</Text>
                 </View>
               </View>
-              {selectedImages[0] ? (
-                <Image source={{ uri: selectedImages[0].uri }} style={styles.previewImage} />
+              {selectedImages.length ? (
+                <View style={styles.previewCarousel}>
+                  <ImageCarousel images={selectedImages} height={180} borderRadius={12} />
+                </View>
               ) : (
                 <View style={styles.previewEmptyState}>
                   <Text style={styles.previewEmptyStateText}>Add an image to preview your report.</Text>

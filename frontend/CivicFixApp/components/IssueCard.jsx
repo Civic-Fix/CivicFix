@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Image, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import ImageCarousel from './ImageCarousel';
 
 const STATUS_COLORS = {
   Reported: { bg: '#EAF2FF', border: '#B8CEF3', text: '#0B2D5C' },
@@ -48,6 +49,7 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
   const locationText = [issue.locality || issue.location, issue.coordinateLocation]
     .filter(Boolean)
     .join(' - ');
+  const carouselImages = issue.images?.length ? issue.images : issue.image ? [{ uri: issue.image }] : [];
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.card}>
@@ -75,8 +77,8 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
       </View>
 
       {/* Image */}
-      {issue.image ? (
-        <Image source={{ uri: issue.image }} style={styles.issueImage} resizeMode="cover" />
+      {carouselImages.length ? (
+        <ImageCarousel images={carouselImages} height={160} />
       ) : null}
 
       {/* Body */}
@@ -252,10 +254,6 @@ const styles = StyleSheet.create({
   badgeLabel: {
     fontSize: 11,
     fontWeight: '600',
-  },
-  issueImage: {
-    width: '100%',
-    height: 160,
   },
   body: {
     paddingHorizontal: 12,

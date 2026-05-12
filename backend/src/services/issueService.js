@@ -53,6 +53,7 @@ const issueSelect = `
   lng,
   status,
   verification_status,
+  is_anonymous,
   created_by,
   assigned_to,
   organization_id,
@@ -417,9 +418,15 @@ const attachRelatedData = async (issues, currentUserId = null) => {
 
   return issues.map((issue) => {
     const s = voteSummaryMap.get(issue.id);
+    const isAnonymous = Boolean(issue.is_anonymous);
+    const isOwner = Boolean(currentUserId && issue.created_by === currentUserId);
+    const shouldHideReporter = isAnonymous && !isOwner;
+
     return {
       ...issue,
-      created_by_user: usersMap.get(issue.created_by) || null,
+      created_by: shouldHideReporter ? null : issue.created_by,
+      created_by_user: shouldHideReporter ? null : usersMap.get(issue.created_by) || null,
+      is_owner: isOwner,
       assigned_to_user: membersMap.get(issue.assigned_to) || null,
       organization: organizationsMap.get(issue.organization_id) || null,
       attachments: attachmentsMap.get(issue.id) || [],
@@ -528,6 +535,8 @@ export const createIssue = async (issueData, userId) => {
     assigned_to,
     status,
     verification_status,
+    is_anonymous,
+    isAnonymous,
     attachments,
   } = issueData;
 
@@ -556,6 +565,7 @@ export const createIssue = async (issueData, userId) => {
     assigned_to: assigned_to || null,
     status: status || "reported",
     verification_status: verification_status || "pending",
+    is_anonymous: Boolean(is_anonymous ?? isAnonymous),
   };
 
   const { data, error } = await supabase
@@ -690,8 +700,29 @@ export const searchIssues = async (searchTerm, currentUserId = null) => {
     throw new IssueServiceError(error.message || "Unable to search issues", 500);
   }
 
-  const issues = Array.isArray(data) ? data : [];
-  return attachRelatedData(issues, currentUserId);
+  const issueIds = Array.isArray(data) ? data.map((issue) => issue.id).filter(Boolean) : [];
+
+  if (!issueIds.length) {
+    return [];
+  }
+
+  const { data: fullIssues, error: fullIssueError } = await supabase
+    .from("issues")
+    .select(issueSelect)
+    .in("id", issueIds);
+
+  if (fullIssueError) {
+    console.error("[IssueService] searchIssues full issue fetch failed", {
+      issueIds,
+      error: fullIssueError,
+    });
+    throw new IssueServiceError(fullIssueError.message || "Unable to search issues", 500);
+  }
+
+  const issueById = new Map((fullIssues || []).map((issue) => [issue.id, issue]));
+  const orderedIssues = issueIds.map((id) => issueById.get(id)).filter(Boolean);
+
+  return attachRelatedData(orderedIssues, currentUserId);
 };
 
 export const getIssueById = async (issueId, currentUserId = null) => {
