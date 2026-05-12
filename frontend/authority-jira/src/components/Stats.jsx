@@ -43,12 +43,7 @@ function Stats() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-            <a
-              className="rounded-xl bg-white px-6 py-4 text-center font-black text-emerald-700 transition duration-300 hover:-translate-y-1"
-              href="/request-access"
-            >
-              Request Access
-            </a>
+            
             <a
               className="rounded-xl border border-white/30 px-6 py-4 text-center font-black text-white transition hover:-translate-y-1 hover:bg-white/10"
               href="/login"
