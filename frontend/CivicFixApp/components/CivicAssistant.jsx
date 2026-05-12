@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Feather from '@expo/vector-icons/Feather';
+import { API_BASE_URL } from '../config';
 
 const starterMessages = [
   {
@@ -17,8 +18,6 @@ const SUGGESTIONS = [
   'Garbage not collected',
   'Water supply issue',
 ];
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL ;
 
 const getFallbackReply = (question) => {
   const q = question.toLowerCase();

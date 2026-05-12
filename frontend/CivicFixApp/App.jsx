@@ -14,11 +14,7 @@ import Notifications from './components/Notifications';
 import CivicAssistant from './components/CivicAssistant';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
-
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-// const API_BASE_URL ='http://localhost:5000/api';
-
-const ISSUE_SHARE_BASE_URL = process.env.EXPO_PUBLIC_ISSUE_SHARE_BASE_URL;
+import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
 
 
 const formatStatus = (status) =>
@@ -112,11 +108,16 @@ const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = [])
   // If name still looks like an email (migration not yet run), split at @ for the handle
   const isEmail = authorName.includes('@');
   const displayName = isEmail ? authorName.split('@')[0] : authorName;
-  const isAnonymous = Boolean(issue?.isAnonymous || anonymousIssueIds.includes(issue?.id));
+  const isAnonymous = Boolean(
+    issue?.is_anonymous ||
+      issue?.isAnonymous ||
+      issue?.anonymous ||
+      anonymousIssueIds.includes(issue?.id)
+  );
   const author = isAnonymous ? 'Anonymous' : displayName;
   const handle = isAnonymous ? '@anonymous' : `@${displayName.replace(/\s+/g, '').toLowerCase()}`;
   const primaryImage = issue?.attachments?.[0]?.file_url || null;
-  const isOwner = currentUserId ? issue?.created_by === currentUserId : false;
+  const isOwner = Boolean(issue?.is_owner || (currentUserId && issue?.created_by === currentUserId));
 
   return {
     id: issue.id,
@@ -140,6 +141,7 @@ const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = [])
     lat: issue.lat,
     lng: issue.lng,
     createdBy: issue.created_by,
+    isAnonymous,
     currentUserUpvoteId: issue.current_user_upvote_id || null,
     currentUserDownvoteId: issue.current_user_downvote_id || null,
     isOwner,
@@ -309,11 +311,18 @@ export default function App() {
     await loadIssues(user);
   };
 
+  const updateIssueEverywhere = (id, updater) => {
+    setIssues((prev) =>
+      prev.map((issue) => (issue.id === id ? updater(issue) : issue))
+    );
+    setSelectedIssue((prev) => (prev?.id === id ? updater(prev) : prev));
+  };
+
   const handleVote = async (id, voteType) => {
     const authToken = await AsyncStorage.getItem('authToken');
     if (!authToken) return;
 
-    const targetIssue = issues.find((issue) => issue.id === id);
+    const targetIssue = issues.find((issue) => issue.id === id) || (selectedIssue?.id === id ? selectedIssue : null);
     if (!targetIssue) return;
 
     const oppositeType = voteType === 'upvote' ? 'downvote' : 'upvote';
@@ -322,27 +331,30 @@ export default function App() {
     const isRemoving = Boolean(sameVoteId);
     const removingOpposite = Boolean(oppositeVoteId);
 
-    // Optimistic update — handle same-vote toggle and opposite-vote swap
-    setIssues((prev) =>
-      prev.map((issue) => {
-        if (issue.id !== id) return issue;
-        return {
-          ...issue,
-          upvotes: issue.upvotes
-            + (voteType === 'upvote' ? (isRemoving ? -1 : 1) : 0)
-            + (oppositeType === 'upvote' && removingOpposite ? -1 : 0),
-          downvotes: issue.downvotes
-            + (voteType === 'downvote' ? (isRemoving ? -1 : 1) : 0)
-            + (oppositeType === 'downvote' && removingOpposite ? -1 : 0),
-          currentUserUpvoteId: voteType === 'upvote'
-            ? (isRemoving ? null : 'optimistic')
-            : null,
-          currentUserDownvoteId: voteType === 'downvote'
-            ? (isRemoving ? null : 'optimistic')
-            : null,
-        };
-      })
-    );
+    const applyOptimisticVote = (issue) => ({
+      ...issue,
+      upvotes: Math.max(
+        0,
+        issue.upvotes
+          + (voteType === 'upvote' ? (isRemoving ? -1 : 1) : 0)
+          + (oppositeType === 'upvote' && removingOpposite ? -1 : 0)
+      ),
+      downvotes: Math.max(
+        0,
+        issue.downvotes
+          + (voteType === 'downvote' ? (isRemoving ? -1 : 1) : 0)
+          + (oppositeType === 'downvote' && removingOpposite ? -1 : 0)
+      ),
+      currentUserUpvoteId: voteType === 'upvote'
+        ? (isRemoving ? null : 'optimistic')
+        : null,
+      currentUserDownvoteId: voteType === 'downvote'
+        ? (isRemoving ? null : 'optimistic')
+        : null,
+    });
+
+    // Optimistic update — handle same-vote toggle and opposite-vote swap.
+    updateIssueEverywhere(id, applyOptimisticVote);
 
     try {
       // Remove opposite vote first if it exists
@@ -368,7 +380,10 @@ export default function App() {
           throw new Error(r.error || 'Unable to remove vote');
         }
         const r = await res.json();
-        if (r.issue) setIssues((prev) => prev.map((issue) => issue.id === id ? mapIssueToFeedItem(r.issue, user?.id || null) : issue));
+        if (r.issue) {
+          const updatedIssue = mapIssueToFeedItem(r.issue, user?.id || null, anonymousIssueIds);
+          updateIssueEverywhere(id, () => updatedIssue);
+        }
       } else {
         const res = await fetch(`${API_BASE_URL}/issues/${id}/votes`, {
           method: 'POST',
@@ -377,11 +392,14 @@ export default function App() {
         });
         const r = await res.json();
         if (!res.ok) throw new Error(r.error || 'Unable to add vote');
-        if (r.issue) setIssues((prev) => prev.map((issue) => issue.id === id ? mapIssueToFeedItem(r.issue, user?.id || null) : issue));
+        if (r.issue) {
+          const updatedIssue = mapIssueToFeedItem(r.issue, user?.id || null, anonymousIssueIds);
+          updateIssueEverywhere(id, () => updatedIssue);
+        }
       }
     } catch (error) {
       console.warn('[App] handleVote failed', error.message);
-      setIssues((prev) => prev.map((issue) => (issue.id === id ? targetIssue : issue)));
+      updateIssueEverywhere(id, () => targetIssue);
     }
   };
 
@@ -655,6 +673,7 @@ export default function App() {
             isLoadingComments={isLoadingComments}
             onVote={handleVote}
             onDelete={handleDeletePost}
+            onShare={handleShareIssue}
             currentHandle={user ? `@${user.name?.replace(/\s+/g, '').toLowerCase()}` : ''}
             onBack={() => setScreen('feeds')}
             onOpenCommentForm={() => handleOpenCommentForm(selectedIssue)}

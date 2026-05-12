@@ -21,7 +21,7 @@ npm run dev
 | `npm run preview` | Preview production build |
 | `npm run lint` | Run ESLint |
 
-The dashboard expects the backend running at `http://localhost:5000`. Set `VITE_API_BASE_URL` in `.env` to override.
+The dashboard expects the backend running at `http://localhost:5001`. Set `VITE_API_BASE_URL` in `.env` to override.
 
 ---
 

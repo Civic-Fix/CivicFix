@@ -162,7 +162,7 @@ SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 DEFAULT_ORGANIZATION_ID=<org-uuid>
 FRONTEND_URL=http://localhost:5174
-PORT=5000
+PORT=5001
 ```
 
 Run required SQL migrations in Supabase SQL editor:
@@ -190,7 +190,7 @@ Start server:
 
 ```bash
 npm start
-# http://localhost:5000
+# http://localhost:5001
 ```
 
 ### 3. Mobile App
@@ -203,8 +203,10 @@ npm install
 `.env`:
 
 ```env
-EXPO_PUBLIC_API_BASE_URL=http://<LAN_IP>:5000/api
+EXPO_PUBLIC_API_BASE_URL=http://<LAN_IP>:5001/api
 ```
+
+On Mac, Expo web and the iOS simulator work without a `.env` because the app falls back to `http://localhost:5001/api`. Use your Mac LAN IP instead of `localhost` only when testing from a physical phone.
 
 ```bash
 npx expo start
