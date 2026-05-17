@@ -4,14 +4,6 @@ const trimTrailingSlash = (value) => value.replace(/\/+$/, '');
 const DEFAULT_ISSUE_SHARE_BASE_URL = 'https://civicfixcoderz.netlify.app';
 
 const getLocalApiBaseUrl = () => {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `${window.location.protocol}//${window.location.hostname}:5001/api`;
-  }
-
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:5001/api';
-  }
-
   return 'http://localhost:5001/api';
 };
 

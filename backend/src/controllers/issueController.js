@@ -9,6 +9,7 @@ import {
   searchIssues as searchIssuesRecord,
   getIssueMapPoints as getIssueMapPointsRecords,
   listIssueUpdates as listIssueUpdatesRecords,
+  listAllUpdates as listAllUpdateRecords,
   getNearbyIssues as getNearbyIssueRecord,
   IssueServiceError,
   removeIssueVote as removeIssueVoteRecord,
@@ -135,6 +136,27 @@ export const getIssueUpdates = async (req, res) => {
       .status(err instanceof IssueServiceError ? err.statusCode : 500)
       .json({
         error: err.message || "Unable to fetch issue updates",
+      });
+  }
+};
+
+export const getUpdates = async (req, res) => {
+  try {
+    const updates = await listAllUpdateRecords();
+
+    return res.status(200).json({
+      updates,
+    });
+  } catch (err) {
+    console.error("[IssueController] getUpdates error", {
+      userId: req.userId,
+      error: err,
+    });
+
+    return res
+      .status(err instanceof IssueServiceError ? err.statusCode : 500)
+      .json({
+        error: err.message || "Unable to fetch updates",
       });
   }
 };
