@@ -41,7 +41,7 @@ const formatCommentTime = (timestamp) => {
   });
 };
 
-const Post = ({ issue, comments = [], isLoadingComments, onVote, onDelete, currentHandle, onBack, onOpenCommentForm, onDeleteComment, onVoteComment, onShare }) => {
+const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLoadingIssueUpdates, onVote, onDelete, currentHandle, onBack, onOpenCommentForm, onDeleteComment, onVoteComment, onShare }) => {
   if (!issue) return null;
 
   const isOwner = typeof issue.isOwner === 'boolean' ? issue.isOwner : issue.handle === currentHandle;
@@ -128,7 +128,43 @@ const Post = ({ issue, comments = [], isLoadingComments, onVote, onDelete, curre
               ) : (
                 <View style={styles.locationPlaceholder} />
               )}
+            </View>
 
+            <View style={styles.updatesSection}>
+              <View style={styles.updatesHeader}>
+                <Text style={styles.updatesTitle}>Issue Timeline</Text>
+                <Text style={styles.updatesSubtitle}>Recent progress updates and status changes</Text>
+              </View>
+
+              {isLoadingIssueUpdates ? (
+                <View style={styles.updatesLoading}>
+                  <ActivityIndicator size="small" color="#16A34A" />
+                  <Text style={styles.updatesLoadingText}>Loading updates...</Text>
+                </View>
+              ) : issueUpdates.length > 0 ? (
+                issueUpdates.map((update) => (
+                  <View key={update.id} style={styles.issueUpdateItem}>
+                    <View style={styles.issueUpdateMarker} />
+                    <View style={styles.issueUpdateItemCard}>
+                      <View style={styles.issueUpdateHeader}>
+                        <Text style={styles.issueUpdateTitle}>{update.type ? `${update.type.replace(/_/g, ' ')} update` : 'Update'}</Text>
+                        {update.issueStatus ? (
+                          <View style={styles.issueUpdateBadge}>
+                            <Text style={styles.issueUpdateBadgeText}>{update.issueStatus}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={styles.issueUpdateDescription}>{update.content}</Text>
+                      <Text style={styles.issueUpdateTime}>{formatCommentTime(update.created_at || update.time)}</Text>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <View style={styles.updatesEmptyState}>
+                  <Text style={styles.updatesEmptyTitle}>No updates yet</Text>
+                  <Text style={styles.updatesEmptyText}>This issue has not received any progress reports.</Text>
+                </View>
+              )}
             </View>
 
             {/* Actions */}
@@ -425,6 +461,111 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  updatesSection: {
+    marginTop: 16,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  updatesHeader: {
+    marginBottom: 12,
+  },
+  updatesTitle: {
+    color: '#0F172A',
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  updatesSubtitle: {
+    color: '#64748B',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  updatesLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  updatesLoadingText: {
+    color: '#334155',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  issueUpdateItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 14,
+  },
+  issueUpdateMarker: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#0B2D5C',
+    marginTop: 10,
+    marginRight: 12,
+  },
+  issueUpdateItemCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  issueUpdateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  issueUpdateTitle: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  issueUpdateBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+  },
+  issueUpdateBadgeText: {
+    color: '#1D4ED8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  issueUpdateDescription: {
+    color: '#334155',
+    fontSize: 13,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  issueUpdateTime: {
+    color: '#64748B',
+    fontSize: 12,
+  },
+  updatesEmptyState: {
+    paddingVertical: 18,
+  },
+  updatesEmptyTitle: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  updatesEmptyText: {
+    color: '#64748B',
+    fontSize: 13,
+    lineHeight: 18,
   },
   actions: {
     flexDirection: 'row',

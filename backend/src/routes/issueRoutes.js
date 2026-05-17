@@ -10,6 +10,7 @@ import {
   getIssues,
   getIssueMapPoints,
   getNearbyIssues,
+  getUpdates,
   removeIssueVote,
   searchIssues,
   updateIssue,
@@ -25,6 +26,7 @@ router.get("/nearby", optionalAuth, getNearbyIssues);
 router.get("/map", getIssueMapPoints);
 router.post("/attachments/upload", requireAuth, uploadIssueAttachmentAsset);
 router.post("/", requireAuth, createIssue);
+router.get("/updates", requireAuth, getUpdates);
 router.get("/:id", optionalAuth, getIssueById);
 router.patch("/:id", requireAuth, updateIssue);
 router.get("/:id/updates", requireAuth, getIssueUpdates);

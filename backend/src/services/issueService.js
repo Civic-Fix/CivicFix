@@ -846,6 +846,54 @@ export const listIssueUpdates = async (issueId) => {
   }));
 };
 
+export const listAllUpdates = async () => {
+  const { data, error } = await supabase
+    .from("updates")
+    .select("id, issue_id, message, image_url, type, created_by, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("[IssueService] listAllUpdates failed", {
+      error,
+    });
+    throw new IssueServiceError(error.message || "Unable to fetch issue updates", 500);
+  }
+
+  const updates = (data || []).map((update) => ({
+    ...update,
+    content: update.message,
+    author_id: update.created_by,
+  }));
+
+  const issueIds = [...new Set(updates.map((update) => update.issue_id).filter(Boolean))];
+
+  if (issueIds.length === 0) {
+    return updates;
+  }
+
+  const { data: issues, error: issueError } = await supabase
+    .from("issues")
+    .select("id, title, locality, status")
+    .in("id", issueIds);
+
+  if (issueError) {
+    console.error("[IssueService] listAllUpdates issue lookup failed", {
+      issueError,
+    });
+    throw new IssueServiceError(issueError.message || "Unable to fetch issue metadata", 500);
+  }
+
+  const issueMap = (issues || []).reduce((acc, issue) => {
+    acc[issue.id] = issue;
+    return acc;
+  }, {});
+
+  return updates.map((update) => ({
+    ...update,
+    issue: issueMap[update.issue_id] || null,
+  }));
+};
+
 export const addIssueUpdate = async (issueId, content, userId) => {
   await getIssueRecordById(issueId);
 

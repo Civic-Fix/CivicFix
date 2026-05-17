@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,6 +15,7 @@ import CivicAssistant from './components/CivicAssistant';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
+import { listAllUpdates, listIssueUpdates } from './services/updatesService';
 
 
 const formatStatus = (status) =>
@@ -154,16 +155,21 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [selectedIssueComments, setSelectedIssueComments] = useState([]);
+  const [selectedIssueUpdates, setSelectedIssueUpdates] = useState([]);
+  const [isLoadingIssueUpdates, setIsLoadingIssueUpdates] = useState(false);
   const [issues, setIssues] = useState([]);
+  const [updates, setUpdates] = useState([]);
   const [anonymousIssueIds, setAnonymousIssueIds] = useState([]);
   const [activeTab, setActiveTab] = useState('home');
+  const [isNavigatingIssue, setIsNavigatingIssue] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoadingUpdates, setIsLoadingUpdates] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
 
-  const loadIssues = async (activeUser = user) => {
+  const loadIssues = useCallback(async (activeUser = user) => {
     setIsLoadingIssues(true);
 
     try {
@@ -196,7 +202,7 @@ export default function App() {
     } finally {
       setIsLoadingIssues(false);
     }
-  };
+  }, [user, anonymousIssueIds]);
 
   const loadSearchResults = async (query) => {
     const trimmedQuery = typeof query === 'string' ? query.trim() : '';
@@ -276,6 +282,7 @@ export default function App() {
   useEffect(() => {
     if (screen === 'feeds' && activeTab === 'home') {
       loadIssues();
+      loadUpdates();
     }
 
     if (screen === 'feeds' && activeTab === 'search' && !searchQuery.trim()) {
@@ -310,6 +317,31 @@ export default function App() {
     setActiveTab('home');
     await loadIssues(user);
   };
+
+  const loadUpdates = useCallback(async () => {
+    setIsLoadingUpdates(true);
+
+    try {
+      const result = await listAllUpdates();
+      const mappedUpdates = Array.isArray(result)
+        ? result.map((update) => ({
+            ...update,
+            issueTitle: update.issue_title || update.issue?.title || `Issue ${update.issue_id}`,
+            issueLocality: update.issue?.locality || '',
+            issueStatus: update.issue?.status || '',
+            time: formatRelativeTime(update.created_at),
+            content: update.content || update.message,
+          }))
+        : [];
+
+      setUpdates(mappedUpdates);
+    } catch (error) {
+      console.error('[App] loadUpdates failed', error.message || error);
+      setUpdates([]);
+    } finally {
+      setIsLoadingUpdates(false);
+    }
+  }, []);
 
   const updateIssueEverywhere = (id, updater) => {
     setIssues((prev) =>
@@ -498,10 +530,74 @@ export default function App() {
     }
   };
 
+  const loadIssueUpdates = async (issueId) => {
+    if (!issueId) {
+      setSelectedIssueUpdates([]);
+      return;
+    }
+
+    setIsLoadingIssueUpdates(true);
+
+    try {
+      const result = await listIssueUpdates(issueId);
+      const items = Array.isArray(result)
+        ? result.map((update) => ({
+            ...update,
+            time: formatRelativeTime(update.created_at),
+            content: update.content || update.message,
+          }))
+        : [];
+      setSelectedIssueUpdates(items);
+    } catch (error) {
+      console.error('[App] loadIssueUpdates failed', issueId, error.message || error);
+      setSelectedIssueUpdates([]);
+    } finally {
+      setIsLoadingIssueUpdates(false);
+    }
+  };
+
+  const loadIssueById = async (issueId) => {
+    if (!issueId) return null;
+
+    try {
+      const authToken = await AsyncStorage.getItem('authToken');
+      const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
+      const response = await fetch(`${API_BASE_URL}/issues/${issueId}`, { headers });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to fetch issue');
+      }
+
+      return mapIssueToFeedItem(result.issue, user?.id || null, anonymousIssueIds);
+    } catch (error) {
+      console.error('[App] loadIssueById failed', issueId, error.message || error);
+      return null;
+    }
+  };
+
+  const handleOpenIssueFromUpdate = async (update) => {
+    const issueId = update?.issue?.id || update?.issue_id;
+    if (!issueId) return;
+
+    const issue = await loadIssueById(issueId);
+    if (!issue) return;
+
+    await handleOpenPostDetail(issue);
+  };
+
   const handleOpenPostDetail = async (issue) => {
+    if (!issue) return;
+
+    setIsNavigatingIssue(true);
     setSelectedIssue(issue);
     setScreen('postDetail');
-    await loadCommentsForIssue(issue.id);
+
+    try {
+      await Promise.all([loadCommentsForIssue(issue.id), loadIssueUpdates(issue.id)]);
+    } finally {
+      setIsNavigatingIssue(false);
+    }
   };
 
   const handleOpenCommentForm = (issue) => {
@@ -636,14 +732,16 @@ export default function App() {
       <Feeds
         user={user}
         issues={issues}
+        updates={updates}
+        isLoadingUpdates={isLoadingUpdates}
         isLoading={isLoadingIssues}
         onVote={handleVote}
         onDeletePost={handleDeletePost}
         onLogout={handleLogout}
         onOpenCreatePost={() => setScreen('createPost')}
-        onOpenPostDetail={handleOpenPostDetail}
-        onOpenCommentForm={handleOpenCommentForm}
+        onOpenPostDetail={handleOpenPostDetail}        onOpenUpdateIssue={handleOpenIssueFromUpdate}        onOpenCommentForm={handleOpenCommentForm}
         onRefresh={loadIssues}
+        onLoadUpdates={loadUpdates}
         onShareIssue={handleShareIssue}
       />
     );
@@ -653,6 +751,14 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <StatusBar style="dark" />
+        {isNavigatingIssue ? (
+          <View style={styles.loadingOverlay} pointerEvents="auto">
+            <View style={styles.loadingOverlayContent}>
+              <ActivityIndicator size="large" color="#FFFFFF" />
+              <Text style={styles.loadingOverlayText}>Opening issue...</Text>
+            </View>
+          </View>
+        ) : null}
         {screen === 'login' ? (
           <Login
             onSignupPress={() => setScreen('signup')}
@@ -670,7 +776,9 @@ export default function App() {
           <Post
             issue={selectedIssue}
             comments={selectedIssueComments}
+            issueUpdates={selectedIssueUpdates}
             isLoadingComments={isLoadingComments}
+            isLoadingIssueUpdates={isLoadingIssueUpdates}
             onVote={handleVote}
             onDelete={handleDeletePost}
             onShare={handleShareIssue}
@@ -840,5 +948,26 @@ const styles = StyleSheet.create({
   },
   bottomLabelActive: {
     color: '#0B2D5C',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.64)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+  },
+  loadingOverlayContent: {
+    width: '80%',
+    maxWidth: 320,
+    padding: 20,
+    borderRadius: 18,
+    backgroundColor: 'rgba(15, 23, 42, 0.92)',
+    alignItems: 'center',
+  },
+  loadingOverlayText: {
+    marginTop: 12,
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
