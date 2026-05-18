@@ -1,3 +1,7 @@
+// fix the overflow of the updatee address and data on the my updates section ofthe vapp
+// the update box on the dedicated post page 
+// isnide the issue timeline only shows the comment update heading and then the comment replac ethe comment update text with the assigned_id organixationd id's name of the issue for whcih the comment is present and make the name of the organization stand out with a facebook like blue tick beside or some kind of authority indicator beside the name
+
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -14,6 +18,7 @@ import Notifications from './components/Notifications';
 import CivicAssistant from './components/CivicAssistant';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
+import MapScreen from './components/MapScreen';
 import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
 import { listAllUpdates, listIssueUpdates } from './services/updatesService';
 
@@ -283,6 +288,10 @@ export default function App() {
     if (screen === 'feeds' && activeTab === 'home') {
       loadIssues();
       loadUpdates();
+    }
+
+    if (screen === 'feeds' && activeTab === 'map') {
+      loadIssues();
     }
 
     if (screen === 'feeds' && activeTab === 'search' && !searchQuery.trim()) {
@@ -686,6 +695,10 @@ export default function App() {
   };
 
   const renderMainScreen = () => {
+    if (activeTab === 'map') {
+      return <MapScreen issues={issues} onOpenPostDetail={handleOpenPostDetail} />;
+    }
+
     if (activeTab === 'notifications') {
       return <Notifications issues={issues} />;
     }
@@ -838,6 +851,19 @@ export default function App() {
                 </Text>
               </TouchableOpacity>
 
+              <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('map')}>
+                <View style={[styles.tabIconWrap, activeTab === 'map' && styles.tabIconWrapActive]}>
+                  <Feather
+                    name="map"
+                    size={20}
+                    color={activeTab === 'map' ? '#0B2D5C' : '#9CA3AF'}
+                  />
+                </View>
+                <Text style={[styles.bottomLabel, activeTab === 'map' && styles.bottomLabelActive]}>
+                  Map
+                </Text>
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('notifications')}>
                 <View style={[styles.tabIconWrap, activeTab === 'notifications' && styles.tabIconWrapActive]}>
                   <Feather
@@ -968,6 +994,102 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: '#FFFFFF',
     fontSize: 15,
+    fontWeight: '700',
+  },
+  mapScreenContainer: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+  },
+  mapHeader: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 12,
+  },
+  mapTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  mapSubtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    color: '#475569',
+  },
+  mapContainer: {
+    flex: 1,
+    marginHorizontal: 16,
+    borderRadius: 24,
+    overflow: 'hidden',
+    backgroundColor: '#E2E8F0',
+  },
+  webView: {
+    flex: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  mapLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(248, 250, 252, 0.86)',
+  },
+  mapLoadingText: {
+    marginTop: 12,
+    color: '#334155',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  mapModal: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 86,
+    borderRadius: 22,
+    backgroundColor: '#FFFFFF',
+    padding: 18,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+    elevation: 14,
+  },
+  mapModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  mapModalTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#0F172A',
+    marginRight: 10,
+  },
+  mapModalClose: {
+    color: '#475569',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  mapModalLocation: {
+    marginTop: 10,
+    fontSize: 13,
+    color: '#64748B',
+  },
+  mapModalDescription: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#334155',
+    lineHeight: 20,
+  },
+  mapModalButton: {
+    marginTop: 16,
+    backgroundColor: '#0F766E',
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  mapModalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: '700',
   },
 });

@@ -1,4 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import { useNavigate } from 'react-router-dom'
 import {
   AlertCircle,
   ArrowUpRight,
@@ -14,7 +17,8 @@ import {
   Users,
 } from 'lucide-react'
 import Loader from '../components/ui/Loader'
-import { getIssueStats, issueStatusOptions } from '../services/issuesService'
+import Button from '../components/ui/Button'
+import { getIssueStats, issueStatusOptions, listIssues } from '../services/issuesService'
 
 const statusMeta = {
   reported: {
@@ -85,6 +89,134 @@ const queueCards = [
 function pct(value, total) {
   if (!total) return 0
   return Math.round((value / total) * 100)
+}
+
+const OPEN_ISSUE_STATUSES = ['reported', 'verified', 'in_progress', 'review']
+
+function LiveMapPreview() {
+  const navigate = useNavigate()
+  const containerRef = useRef(null)
+  const mapRef = useRef(null)
+  const layerRef = useRef(null)
+  const [issues, setIssues] = useState([])
+  const [selectedIssue, setSelectedIssue] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  async function refresh() {
+    setError('')
+    setLoading(true)
+    try {
+      const data = await listIssues()
+      setIssues(data.filter((issue) => OPEN_ISSUE_STATUSES.includes(issue.status)))
+    } catch (err) {
+      setError(err?.message || 'Failed to load live map issues')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    refresh()
+    const interval = window.setInterval(refresh, 15000)
+    return () => window.clearInterval(interval)
+  }, [])
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    if (mapRef.current) return
+
+    const map = L.map(containerRef.current, { zoomControl: true }).setView([22.5726, 88.3639], 12)
+    mapRef.current = map
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19,
+    }).addTo(map)
+
+    layerRef.current = L.layerGroup().addTo(map)
+
+    return () => {
+      map.remove()
+      mapRef.current = null
+      layerRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!layerRef.current) return
+    layerRef.current.clearLayers()
+
+    const markers = []
+
+    for (const issue of issues) {
+      const lat = Number(issue.latitude)
+      const lng = Number(issue.longitude)
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
+
+      const marker = L.marker([lat, lng])
+      marker.bindTooltip(issue.title || `Issue #${issue.id}`, { direction: 'top', offset: [0, -10] })
+      marker.on('click', () => setSelectedIssue(issue))
+      marker.addTo(layerRef.current)
+      markers.push(marker)
+    }
+
+    if (markers.length && mapRef.current) {
+      const group = L.featureGroup(markers)
+      mapRef.current.fitBounds(group.getBounds().pad(0.2))
+    }
+  }, [issues])
+
+  return (
+    <section className="border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-base font-black tracking-tight text-slate-950">Live map</h2>
+          <p className="mt-1 text-sm font-semibold text-slate-500">Open issue pins update automatically so you always see the latest open cases.</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="secondary" onClick={refresh}>Refresh now</Button>
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Real time</span>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="border-b border-slate-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-800">{error}</div>
+      ) : null}
+
+      {loading ? (
+        <div className="border-b border-slate-200 px-5 py-8 text-center">
+          <Loader label="Loading live map" />
+        </div>
+      ) : null}
+
+      <div className="relative">
+        <div ref={containerRef} className="h-80 w-full bg-slate-100" />
+        {issues.length ? (
+          <div className="absolute left-4 top-4 rounded-full bg-white/90 px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm ring-1 ring-slate-200">
+            {issues.length} open issues shown
+          </div>
+        ) : null}
+      </div>
+
+      {selectedIssue ? (
+        <div className="rounded-b-3xl border-t border-slate-200 bg-slate-50 p-5">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-500">Selected issue</p>
+              <p className="mt-1 text-base font-black text-slate-950">{selectedIssue.title || `Issue #${selectedIssue.id}`}</p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{selectedIssue.locality || 'No location available'}</p>
+            </div>
+            <Button onClick={() => navigate(`/issues/${selectedIssue.id}`)}>Go to issue</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-b-3xl border-t border-slate-200 bg-slate-50 px-5 py-4 text-sm font-semibold text-slate-500">
+          Click any open issue pin to preview it and open its detail page.
+        </div>
+      )}
+    </section>
+  )
 }
 
 function Dashboard() {
@@ -356,6 +488,10 @@ function Dashboard() {
                   </a>
                 )
               })}
+            </div>
+
+            <div className="mt-4">
+              <LiveMapPreview />
             </div>
           </>
         )}
