@@ -550,11 +550,24 @@ export default function App() {
     try {
       const result = await listIssueUpdates(issueId);
       const items = Array.isArray(result)
-        ? result.map((update) => ({
-            ...update,
-            time: formatRelativeTime(update.created_at),
-            content: update.content || update.message,
-          }))
+        ? result.map((update) => {
+            // Extract author information
+            const authorName = update?.created_by_user?.name || update?.created_by_user?.email || 'Unknown User';
+            const isEmail = authorName.includes('@');
+            const displayName = isEmail ? authorName.split('@')[0] : authorName;
+            
+            // Check if this is the issue author (original reporter)
+            const isIssueAuthor = selectedIssue?.createdBy === update.created_by;
+            
+            return {
+              ...update,
+              time: formatRelativeTime(update.created_at),
+              content: update.content || update.message,
+              authorName: displayName,
+              authorId: update.created_by,
+              isIssueAuthor,
+            };
+          })
         : [];
       setSelectedIssueUpdates(items);
     } catch (error) {
