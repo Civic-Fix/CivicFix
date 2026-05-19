@@ -147,7 +147,19 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
                     <View style={styles.issueUpdateMarker} />
                     <View style={styles.issueUpdateItemCard}>
                       <View style={styles.issueUpdateHeader}>
-                        <Text style={styles.issueUpdateTitle}>{update.type ? `${update.type.replace(/_/g, ' ')} update` : 'Update'}</Text>
+                        <View style={styles.issueUpdateTitleRow}>
+                          <Text style={styles.issueUpdateTitle}>{update.type ? `${update.type.replace(/_/g, ' ')} update` : 'Update'}</Text>
+                          {update.authorName && (
+                            <View style={[styles.issueAuthorBadge, update.isIssueAuthor && styles.issueAuthorBadgeOfficial]}>
+                              {update.isIssueAuthor && (
+                                <MaterialCommunityIcons name="crown" size={11} color="#F59E0B" />
+                              )}
+                              <Text style={[styles.issueAuthorName, update.isIssueAuthor && styles.issueAuthorNameOfficial]}>
+                                {update.authorName}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
                         {update.issueStatus ? (
                           <View style={styles.issueUpdateBadge}>
                             <Text style={styles.issueUpdateBadgeText}>{update.issueStatus}</Text>
@@ -537,10 +549,40 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
+  issueUpdateTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    flexWrap: 'wrap',
+  },
   issueUpdateTitle: {
     color: '#0F172A',
     fontSize: 14,
     fontWeight: '700',
+  },
+  issueAuthorBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  issueAuthorBadgeOfficial: {
+    backgroundColor: '#FEF3C7',
+    borderColor: '#FCD34D',
+  },
+  issueAuthorName: {
+    color: '#475569',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  issueAuthorNameOfficial: {
+    color: '#B45309',
   },
   issueUpdateBadge: {
     paddingVertical: 4,
