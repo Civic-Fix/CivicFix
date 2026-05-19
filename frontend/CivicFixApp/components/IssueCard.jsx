@@ -111,9 +111,9 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
         <View style={styles.metaRow}>
           {locationText ? (
             <View style={styles.locationBlock}>
-              <Feather name="map-pin" size={13} color="#0F766E" />
+              <Feather name="map-pin" size={13} color="#0F766E" style={{ marginTop: 2, flexShrink: 0 }} />
               <View style={styles.locationContent}>
-                <Text style={styles.locationText}>{locationText}</Text>
+                <Text style={styles.locationText} numberOfLines={2} ellipsizeMode="tail">{locationText}</Text>
               </View>
             </View>
           ) : (
@@ -315,6 +315,8 @@ const styles = StyleSheet.create({
     color: '#334155',
     fontWeight: '600',
     lineHeight: 16,
+    overflow: 'hidden',
+    marginRight: 4,
   },
   locationPlaceholder: {
     flex: 1,
