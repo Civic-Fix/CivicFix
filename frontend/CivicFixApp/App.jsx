@@ -492,6 +492,12 @@ export default function App() {
     const authorName = comment?.created_by_user?.name || comment?.created_by_user?.email || 'CivicFix User';
     const isEmail = authorName.includes('@');
     const displayName = isEmail ? authorName.split('@')[0] : authorName;
+    
+    // Get organization name and verification status
+    const organizationName = comment?.organization?.name || null;
+    const organizationId = comment?.organization?.id || comment?.assigned_organization_id || null;
+    const isAuthorityVerified = Boolean(comment?.organization?.is_verified || comment?.is_authority_verified);
+    
     return {
       id: comment.id,
       description: comment.description,
@@ -501,6 +507,9 @@ export default function App() {
       handle: `@${displayName.replace(/\s+/g, '').toLowerCase()}`,
       createdBy: comment.created_by,
       isOwner: user?.id ? comment.created_by === user.id : false,
+      organizationName,
+      organizationId,
+      isAuthorityVerified,
     };
   };
 

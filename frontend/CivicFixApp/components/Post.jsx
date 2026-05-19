@@ -119,10 +119,10 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
             <View style={styles.metaRow}>
               {locationText ? (
                 <View style={styles.locationBlock}>
-                  <Feather name="map-pin" size={15} color="#0F766E" />
+                  <Feather name="map-pin" size={15} color="#0F766E" style={{ marginTop: 2, flexShrink: 0 }} />
                   <View style={styles.locationContent}>
                     <Text style={styles.locationLabel}>Locality</Text>
-                    <Text style={styles.locationText}>{locationText}</Text>
+                    <Text style={styles.locationText} numberOfLines={2} ellipsizeMode="tail">{locationText}</Text>
                   </View>
                 </View>
               ) : (
@@ -232,8 +232,16 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
             comments.map((comment) => (
               <View key={comment.id} style={styles.commentCard}>
                 <View style={styles.commentHeader}>
-                  <View>
-                    <Text style={styles.commentAuthor}>{comment.author}</Text>
+                  <View style={styles.commentAuthorSection}>
+                    <View style={styles.commentAuthorLine}>
+                      <Text style={styles.commentAuthor}>{comment.author}</Text>
+                      {comment.organizationName && (
+                        <View style={styles.organizationBadge}>
+                          <MaterialCommunityIcons name="shield-check" size={12} color="#1D4ED8" />
+                          <Text style={styles.organizationName}>{comment.organizationName}</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.commentHandle}>{comment.handle}</Text>
                   </View>
                   <Text style={styles.commentTime}>{formatCommentTime(comment.createdAt)}</Text>
@@ -447,6 +455,8 @@ const styles = StyleSheet.create({
     color: '#334155',
     fontWeight: '600',
     lineHeight: 18,
+    overflow: 'hidden',
+    marginRight: 4,
   },
   locationPlaceholder: {
     flex: 1,
@@ -668,10 +678,37 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 8,
   },
+  commentAuthorSection: {
+    flex: 1,
+    marginRight: 8,
+  },
+  commentAuthorLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+    flexWrap: 'wrap',
+  },
   commentAuthor: {
     fontSize: 14,
     fontWeight: '700',
     color: '#0F172A',
+  },
+  organizationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  organizationName: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1D4ED8',
   },
   commentHandle: {
     fontSize: 12,
