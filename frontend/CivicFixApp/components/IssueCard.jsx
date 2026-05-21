@@ -17,6 +17,23 @@ const getStatusStyle = (status) =>
 const AVATAR_COLORS = ['#4F46E5', '#0891B2', '#DC2626', '#7C3AED', '#C2410C', '#15803D'];
 const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 
+const formatCategoryLabel = (category) =>
+  category
+    ? category
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : '';
+
+const formatConfidence = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? `${Math.round(numericValue * 100)}%` : '';
+};
+
 const runAction = (event, callback) => {
   event?.stopPropagation?.();
   callback?.();
@@ -50,6 +67,8 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
     .filter(Boolean)
     .join(' - ');
   const carouselImages = issue.images?.length ? issue.images : issue.image ? [{ uri: issue.image }] : [];
+  const aiCategoryLabel = issue.aiCategoryLabel || formatCategoryLabel(issue.aiCategory);
+  const aiConfidence = formatConfidence(issue.aiCategoryConfidence);
 
   return (
     <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.card}>
@@ -91,6 +110,28 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
             </View>
           ) : null}
         </View>
+
+        {issue.aiPending || aiCategoryLabel || issue.aiDuplicateOf ? (
+          <View style={styles.aiInsightRow}>
+            <View style={styles.aiChip}>
+              <MaterialCommunityIcons name="robot-outline" size={13} color="#1D4ED8" />
+              <Text style={styles.aiChipText}>
+                {issue.aiPending ? 'AI checking' : `AI: ${aiCategoryLabel}${aiConfidence ? ` ${aiConfidence}` : ''}`}
+              </Text>
+            </View>
+            {issue.aiSeverity ? (
+              <View style={styles.aiSeverityChip}>
+                <Text style={styles.aiSeverityText}>{issue.aiSeverity}</Text>
+              </View>
+            ) : null}
+            {issue.aiDuplicateOf ? (
+              <View style={styles.aiDuplicateChip}>
+                <Feather name="copy" size={12} color="#B45309" />
+                <Text style={styles.aiDuplicateText}>Possible duplicate</Text>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
         
         <Text style={styles.brief} numberOfLines={isExpanded ? 0 : 3}>
           {issue.brief}
@@ -278,6 +319,59 @@ const styles = StyleSheet.create({
     color: '#334155',
     lineHeight: 20,
     marginBottom: 10,
+  },
+  aiInsightRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 10,
+  },
+  aiChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+  },
+  aiChipText: {
+    color: '#1D4ED8',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  aiSeverityChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: '#F8FAFC',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  aiSeverityText: {
+    color: '#475569',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'capitalize',
+  },
+  aiDuplicateChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 10,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+  },
+  aiDuplicateText: {
+    color: '#B45309',
+    fontSize: 11,
+    fontWeight: '800',
   },
   seeMoreButton: {
     marginBottom: 10,
