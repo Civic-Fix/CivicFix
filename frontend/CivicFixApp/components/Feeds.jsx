@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Text, View, Pressable, TouchableOpacity, ScrollView, ActivityIndicator, RefreshControl } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import IssueCard from './IssueCard';
 import styles from './FeedsStyles';
 
@@ -11,6 +12,13 @@ const formatStatus = (status) =>
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
         .join(' ')
     : '';
+
+const getUpdateOrganizationName = (update) =>
+  update?.organizationName ||
+  update?.organization_name ||
+  update?.organization?.name ||
+  update?.issue?.organization?.name ||
+  'Assigned organization';
 
 const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDeletePost, onOpenCreatePost, isLoading, onRefresh, onLoadUpdates, onOpenPostDetail, onOpenUpdateIssue, onOpenCommentForm, onShareIssue }) => {
   const [displayName, setDisplayName] = useState('CivicFix User');
@@ -121,45 +129,61 @@ const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDe
               <Text style={styles.emptyStateTitle}>Loading updates...</Text>
             </View>
           ) : activeUpdateList.length > 0 ? (
-            activeUpdateList.map((update) => (
-              <Pressable
-                key={update.id}
-                onPress={() => onOpenUpdateIssue?.(update)}
-                android_ripple={{ color: '#E2E8F0' }}
-                style={({ pressed, hovered }) => [
-                  styles.updateCard,
-                  pressed && styles.updateCardPressed,
-                  hovered && styles.updateCardHover,
-                ]}
-              >
-                <View style={styles.updateCardHeader}>
-                  <Text style={styles.updateTitle}>{update.issueTitle}</Text>
-                  {update.issueStatus ? (
-                    <View style={styles.updateStatusBadge}>
-                      <Text style={styles.updateStatusText}>{formatStatus(update.issueStatus)}</Text>
+            activeUpdateList.map((update) => {
+              const organizationName = getUpdateOrganizationName(update);
+
+              return (
+                <Pressable
+                  key={update.id}
+                  onPress={() => onOpenUpdateIssue?.(update)}
+                  android_ripple={{ color: '#E2E8F0' }}
+                  style={({ pressed, hovered }) => [
+                    styles.updateCard,
+                    pressed && styles.updateCardPressed,
+                    hovered && styles.updateCardHover,
+                  ]}
+                >
+                  <View style={styles.updateOfficialHeader}>
+                    <View style={styles.updateOfficialAvatar}>
+                      <MaterialCommunityIcons name="office-building-marker" size={13} color="#2563EB" />
                     </View>
-                  ) : null}
-                </View>
-                <Text style={styles.updateBody}>{update.content}</Text>
-                <View style={styles.updateMetaRow}>
-                  <View style={styles.updateMetaItem}>
-                    <Feather name="map-pin" size={12} color="#64748B" />
-                    <Text style={styles.updateMetaText}>{update.issueLocality || 'Unknown area'}</Text>
+                    <View style={styles.updateOfficialTextBlock}>
+                      <View style={styles.updateOfficialNameRow}>
+                        <Text style={styles.updateOfficialName} numberOfLines={1}>
+                          {organizationName}
+                        </Text>
+                        <MaterialCommunityIcons name="check-decagram" size={13} color="#2563EB" />
+                      </View>
+                      <Text style={styles.updateOfficialMeta}>Official source</Text>
+                    </View>
+                    {update.issueStatus ? (
+                      <View style={styles.updateStatusBadge}>
+                        <Text style={styles.updateStatusText}>{formatStatus(update.issueStatus)}</Text>
+                      </View>
+                    ) : null}
                   </View>
-                  <View style={styles.updateMetaItem}>
-                    <Feather name="clock" size={12} color="#64748B" />
-                    <Text style={styles.updateMetaText}>{update.time}</Text>
+                  <Text style={styles.updateTitle} numberOfLines={2}>{update.issueTitle}</Text>
+                  <Text style={styles.updateBody} numberOfLines={3}>{update.content}</Text>
+                  <View style={styles.updateMetaRow}>
+                    <View style={[styles.updateMetaItem, styles.updateMetaLocation]}>
+                      <Feather name="map-pin" size={12} color="#64748B" />
+                      <Text style={styles.updateMetaText} numberOfLines={1}>{update.issueLocality || 'Unknown area'}</Text>
+                    </View>
+                    <View style={styles.updateMetaTime}>
+                      <Feather name="clock" size={12} color="#64748B" />
+                      <Text style={styles.updateMetaText}>{update.time}</Text>
+                    </View>
                   </View>
-                </View>
-              </Pressable>
-            ))
+                </Pressable>
+              );
+            })
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyStateTitle}>No updates yet</Text>
               <Text style={styles.emptyStateText}>
                 {feedTab === 'myUpdates'
-                  ? 'Updates for your reports will appear here once there is progress.'
-                  : 'Progress updates from issues will appear here.'}
+                  ? 'Official notes for your reports will appear here once there is progress.'
+                  : 'Official notes from issues will appear here.'}
               </Text>
             </View>
           )

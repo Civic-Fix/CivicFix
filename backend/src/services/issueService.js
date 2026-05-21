@@ -463,6 +463,30 @@ const getIssueRecordById = async (issueId) => {
   return data;
 };
 
+const formatUpdateRecord = (update, issue = null) => {
+  const organization = issue?.organization || null;
+
+  return {
+    ...update,
+    content: update.message,
+    author_id: update.created_by,
+    display_type: update.type === "comment" ? "progress" : update.type,
+    organization,
+    organization_id: organization?.id || issue?.organization_id || null,
+    organization_name: organization?.name || null,
+    issue: issue
+      ? {
+          id: issue.id,
+          title: issue.title,
+          locality: issue.locality,
+          status: issue.status,
+          organization_id: issue.organization_id,
+          organization,
+        }
+      : null,
+  };
+};
+
 const uploadBufferToStorage = async ({
   buffer,
   fileName,
@@ -823,7 +847,7 @@ export const updateIssue = async (issueId, patch = {}, userId = null, accessToke
 };
 
 export const listIssueUpdates = async (issueId) => {
-  await getIssueRecordById(issueId);
+  const issue = await getIssueRecordById(issueId);
 
   const { data, error } = await supabase
     .from("updates")
@@ -839,11 +863,18 @@ export const listIssueUpdates = async (issueId) => {
     throw new IssueServiceError(error.message || "Unable to fetch issue updates", 500);
   }
 
-  return (data || []).map((update) => ({
-    ...update,
-    content: update.message,
-    author_id: update.created_by,
-  }));
+  const organizationsMap = await fetchOrganizationsByIds([issue.organization_id]);
+  const organization = organizationsMap.get(issue.organization_id) || null;
+  const issueSummary = {
+    id: issue.id,
+    title: issue.title,
+    locality: issue.locality,
+    status: issue.status,
+    organization_id: issue.organization_id,
+    organization,
+  };
+
+  return (data || []).map((update) => formatUpdateRecord(update, issueSummary));
 };
 
 export const listAllUpdates = async () => {
@@ -859,21 +890,17 @@ export const listAllUpdates = async () => {
     throw new IssueServiceError(error.message || "Unable to fetch issue updates", 500);
   }
 
-  const updates = (data || []).map((update) => ({
-    ...update,
-    content: update.message,
-    author_id: update.created_by,
-  }));
+  const updates = data || [];
 
   const issueIds = [...new Set(updates.map((update) => update.issue_id).filter(Boolean))];
 
   if (issueIds.length === 0) {
-    return updates;
+    return updates.map((update) => formatUpdateRecord(update));
   }
 
   const { data: issues, error: issueError } = await supabase
     .from("issues")
-    .select("id, title, locality, status")
+    .select("id, title, locality, status, organization_id")
     .in("id", issueIds);
 
   if (issueError) {
@@ -883,19 +910,25 @@ export const listAllUpdates = async () => {
     throw new IssueServiceError(issueError.message || "Unable to fetch issue metadata", 500);
   }
 
+  const organizationsMap = await fetchOrganizationsByIds(
+    (issues || []).map((issue) => issue.organization_id)
+  );
+
   const issueMap = (issues || []).reduce((acc, issue) => {
-    acc[issue.id] = issue;
+    acc[issue.id] = {
+      ...issue,
+      organization: organizationsMap.get(issue.organization_id) || null,
+    };
     return acc;
   }, {});
 
   return updates.map((update) => ({
-    ...update,
-    issue: issueMap[update.issue_id] || null,
+    ...formatUpdateRecord(update, issueMap[update.issue_id] || null),
   }));
 };
 
 export const addIssueUpdate = async (issueId, content, userId) => {
-  await getIssueRecordById(issueId);
+  const issue = await getIssueRecordById(issueId);
 
   const normalizedContent = typeof content === "string" ? content.trim() : "";
 
@@ -923,11 +956,17 @@ export const addIssueUpdate = async (issueId, content, userId) => {
     throw new IssueServiceError(error?.message || "Unable to add issue update", 500);
   }
 
-  return {
-    ...data,
-    content: data.message,
-    author_id: data.created_by,
+  const organizationsMap = await fetchOrganizationsByIds([issue.organization_id]);
+  const issueSummary = {
+    id: issue.id,
+    title: issue.title,
+    locality: issue.locality,
+    status: issue.status,
+    organization_id: issue.organization_id,
+    organization: organizationsMap.get(issue.organization_id) || null,
   };
+
+  return formatUpdateRecord(data, issueSummary);
 };
 
 export const addIssueVote = async (issueId, userId, voteType = "upvote") => {
