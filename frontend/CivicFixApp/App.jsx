@@ -12,6 +12,7 @@ import SearchScreen from './components/SearchScreen';
 import CreatePost from './components/CreatePost';
 import Notifications from './components/Notifications';
 import CivicAssistant from './components/CivicAssistant';
+import IssueMap from './components/IssueMap';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
@@ -324,14 +325,23 @@ export default function App() {
     try {
       const result = await listAllUpdates();
       const mappedUpdates = Array.isArray(result)
-        ? result.map((update) => ({
-            ...update,
-            issueTitle: update.issue_title || update.issue?.title || `Issue ${update.issue_id}`,
-            issueLocality: update.issue?.locality || '',
-            issueStatus: update.issue?.status || '',
-            time: formatRelativeTime(update.created_at),
-            content: update.content || update.message,
-          }))
+        ? result.map((update) => {
+            const organizationName =
+              update.issue?.organization?.name ||
+              update.organization?.name ||
+              update.organization_name ||
+              null;
+
+            return {
+              ...update,
+              issueTitle: update.issue_title || update.issue?.title || `Issue ${update.issue_id}`,
+              issueLocality: update.issue?.locality || '',
+              issueStatus: update.issue?.status || '',
+              time: formatRelativeTime(update.created_at),
+              content: update.content || update.message,
+              organizationName,
+            };
+          })
         : [];
 
       setUpdates(mappedUpdates);
@@ -551,21 +561,18 @@ export default function App() {
       const result = await listIssueUpdates(issueId);
       const items = Array.isArray(result)
         ? result.map((update) => {
-            // Extract author information
-            const authorName = update?.created_by_user?.name || update?.created_by_user?.email || 'Unknown User';
-            const isEmail = authorName.includes('@');
-            const displayName = isEmail ? authorName.split('@')[0] : authorName;
-            
-            // Check if this is the issue author (original reporter)
-            const isIssueAuthor = selectedIssue?.createdBy === update.created_by;
+            const organizationName =
+              update?.issue?.organization?.name ||
+              update?.organization?.name ||
+              update?.organization_name ||
+              'Assigned organization';
             
             return {
               ...update,
               time: formatRelativeTime(update.created_at),
               content: update.content || update.message,
-              authorName: displayName,
+              organizationName,
               authorId: update.created_by,
-              isIssueAuthor,
             };
           })
         : [];
@@ -716,6 +723,19 @@ export default function App() {
       return <CivicAssistant user={user} />;
     }
 
+    if (activeTab === 'map') {
+      return (
+        <IssueMap
+          onOpenIssue={async (issueId) => {
+            const issue = await loadIssueById(issueId);
+            if (issue) {
+              await handleOpenPostDetail(issue);
+            }
+          }}
+        />
+      );
+    }
+
     if (activeTab === 'search') {
       return (
         <SearchScreen
@@ -857,6 +877,19 @@ export default function App() {
                 </View>
                 <Text style={[styles.bottomLabel, activeTab === 'assistant' && styles.bottomLabelActive]}>
                   CivicBot
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('map')}>
+                <View style={[styles.tabIconWrap, activeTab === 'map' && styles.tabIconWrapActive]}>
+                  <MaterialCommunityIcons
+                    name="map-marker-radius-outline"
+                    size={20}
+                    color={activeTab === 'map' ? '#0B2D5C' : '#9CA3AF'}
+                  />
+                </View>
+                <Text style={[styles.bottomLabel, activeTab === 'map' && styles.bottomLabelActive]}>
+                  Map
                 </Text>
               </TouchableOpacity>
 
