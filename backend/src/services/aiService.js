@@ -11,16 +11,16 @@ const GEMINI_MODELS = (process.env.GEMINI_MODEL || DEFAULT_MODELS.join(","))
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 const CATEGORY_OPTIONS = [
-  { value: "roads", label: "Roads", keywords: ["pothole", "road", "street", "asphalt", "footpath", "sidewalk", "speed breaker"] },
-  { value: "sanitation", label: "Sanitation", keywords: ["garbage", "trash", "waste", "dump", "litter", "cleaning", "sanitation"] },
+  { value: "roads", label: "Roads", keywords: ["pothole", "road", "street", "asphalt", "footpath", "sidewalk"] },
+  { value: "sanitation", label: "Sanitation", keywords: ["garbage", "trash", "waste", "dump", "litter", "cleaning"] },
   { value: "street_lighting", label: "Street Lighting", keywords: ["streetlight", "street light", "lamp", "dark", "lighting", "pole"] },
-  { value: "drainage", label: "Drainage", keywords: ["drain", "sewage", "sewer", "gutter", "waterlogging", "flood", "overflow"] },
-  { value: "water_supply", label: "Water Supply", keywords: ["water", "leak", "pipeline", "tap", "supply", "contamination"] },
-  { value: "public_safety", label: "Public Safety", keywords: ["danger", "unsafe", "accident", "hazard", "fire", "crime", "school"] },
-  { value: "traffic", label: "Traffic", keywords: ["traffic", "signal", "parking", "congestion", "vehicle", "jam"] },
-  { value: "parks", label: "Parks", keywords: ["park", "garden", "playground", "tree", "bench"] },
-  { value: "utilities", label: "Utilities", keywords: ["electric", "wire", "cable", "internet", "utility"] },
-  { value: "noise", label: "Noise", keywords: ["noise", "loud", "speaker", "construction sound"] },
+  { value: "drainage", label: "Drainage", keywords: ["drain", "sewage", "sewer", "gutter", "waterlogging", "flood"] },
+  { value: "water_supply", label: "Water Supply", keywords: ["water", "leak", "pipeline", "tap", "supply"] },
+  { value: "public_safety", label: "Public Safety", keywords: ["danger", "unsafe", "accident", "hazard", "fire"] },
+  { value: "traffic", label: "Traffic", keywords: ["traffic", "signal", "parking", "congestion", "vehicle"] },
+  { value: "parks", label: "Parks", keywords: ["park", "garden", "playground", "tree"] },
+  { value: "utilities", label: "Utilities", keywords: ["electric", "wire", "cable", "utility"] },
+  { value: "noise", label: "Noise", keywords: ["noise", "loud", "speaker"] },
   { value: "encroachment", label: "Encroachment", keywords: ["encroachment", "illegal", "blocked", "vendor", "obstruction"] },
   { value: "other", label: "Other", keywords: [] },
 ];
@@ -42,16 +42,7 @@ const compactText = (value) =>
   typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
 
 const getIssueText = (issue = {}) =>
-  [issue.title, issue.description, issue.locality]
-    .map(compactText)
-    .filter(Boolean)
-    .join(" ");
-
-const clampNumber = (value, min, max, fallback) => {
-  const number = Number(value);
-  if (!Number.isFinite(number)) return fallback;
-  return Math.min(max, Math.max(min, number));
-};
+  [issue.title, issue.description, issue.locality].map(compactText).filter(Boolean).join(" ");
 
 const normalizeCategory = (category) => {
   const normalized = compactText(category).toLowerCase().replace(/[\s-]+/g, "_");
@@ -63,8 +54,11 @@ const normalizeSeverity = (severity) => {
   return SEVERITY_OPTIONS.includes(normalized) ? normalized : "medium";
 };
 
-const getCategoryLabel = (category) =>
-  CATEGORY_OPTIONS.find((item) => item.value === category)?.label || "Other";
+const clampNumber = (value, min, max, fallback) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
+};
 
 const safeJsonParse = (text) => {
   const trimmed = compactText(text);
@@ -84,37 +78,16 @@ const safeJsonParse = (text) => {
   }
 };
 
-const tokenize = (text) => {
-  const stopWords = new Set([
-    "a",
-    "an",
-    "and",
-    "are",
-    "at",
-    "for",
-    "from",
-    "in",
-    "is",
-    "near",
-    "of",
-    "on",
-    "or",
-    "the",
-    "to",
-    "with",
-  ]);
-
-  return compactText(text)
+const tokenize = (text) =>
+  compactText(text)
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)
-    .filter((token) => token.length > 2 && !stopWords.has(token));
-};
+    .filter((token) => token.length > 2);
 
 const jaccardSimilarity = (leftText, rightText) => {
   const left = new Set(tokenize(leftText));
   const right = new Set(tokenize(rightText));
-
   if (!left.size || !right.size) return 0;
 
   let intersection = 0;
@@ -140,14 +113,67 @@ const haversineDistanceMeters = (lat1, lng1, lat2, lng2) => {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(originLat) * Math.cos(targetLat) * Math.sin(dLng / 2) ** 2;
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
   return earthRadiusMeters * c;
 };
 
-const buildClassificationPrompt = (issue) => `
-Classify this civic complaint.
+const callGeminiJson = async (prompt, logPrefix) => {
+  if (!ai) return null;
 
-Return only valid JSON with this exact shape:
+  for (const model of GEMINI_MODELS) {
+    try {
+      const response = await ai.models.generateContent({
+        model,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+      });
+      const text = typeof response.text === "function" ? response.text() : response.text;
+      const parsed = safeJsonParse(text);
+      if (parsed) return { parsed, model };
+    } catch (error) {
+      console.error(`[${logPrefix}] ${model} failed`, {
+        status: error?.status,
+        message: error?.message,
+      });
+    }
+  }
+
+  return null;
+};
+
+const classifyWithRules = (issue) => {
+  const text = getIssueText(issue).toLowerCase();
+  const categoryScores = CATEGORY_OPTIONS.map((category) => ({
+    ...category,
+    score: category.keywords.reduce((total, keyword) => total + (text.includes(keyword) ? 1 : 0), 0),
+  })).sort((left, right) => right.score - left.score);
+
+  const winner =
+    categoryScores[0]?.score > 0 ? categoryScores[0] : CATEGORY_OPTIONS[CATEGORY_OPTIONS.length - 1];
+  const severity =
+    ["life", "fire", "accident", "danger", "injury", "hospital"].some((word) => text.includes(word))
+      ? "critical"
+      : ["overflow", "flood", "blocked", "unsafe", "major", "urgent"].some((word) => text.includes(word))
+        ? "high"
+        : text.length > 140
+          ? "medium"
+          : "low";
+
+  return {
+    category: winner.value,
+    category_label: winner.label,
+    severity,
+    confidence: winner.score > 1 ? 0.78 : winner.score === 1 ? 0.62 : 0.45,
+    summary: compactText(issue.description) || compactText(issue.title) || "Civic issue reported by a resident.",
+    tags: tokenize(text).slice(0, 5),
+    provider: "local_rules",
+    model: null,
+    used_ai: false,
+  };
+};
+
+export const classifyIssue = async (issue = {}) => {
+  const fallback = classifyWithRules(issue);
+  const prompt = `
+Classify this civic complaint and return only valid JSON:
 {
   "category": one of ${CATEGORY_OPTIONS.map((item) => item.value).join(", ")},
   "severity": one of ${SEVERITY_OPTIONS.join(", ")},
@@ -156,177 +182,29 @@ Return only valid JSON with this exact shape:
   "tags": array of up to 5 short lowercase tags
 }
 
-Complaint:
 Title: ${compactText(issue.title) || "N/A"}
 Description: ${compactText(issue.description) || "N/A"}
 Locality: ${compactText(issue.locality) || "N/A"}
-Image count: ${Array.isArray(issue.attachments) ? issue.attachments.length : 0}
 `;
-
-const callGeminiJson = async (prompt, logPrefix) => {
-  if (!ai) return null;
-
-  let lastError = null;
-
-  for (const model of GEMINI_MODELS) {
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: [
-          {
-            role: "user",
-            parts: [{ text: prompt }],
-          },
-        ],
-      });
-
-      const text = typeof response.text === "function" ? response.text() : response.text;
-      const parsed = safeJsonParse(text);
-
-      if (parsed) {
-        return { parsed, model };
-      }
-    } catch (error) {
-      lastError = error;
-      console.error(`[${logPrefix}] ${model} failed`, {
-        status: error?.status,
-        message: error?.message,
-      });
-    }
-  }
-
-  console.error(`[${logPrefix}] falling back to local analysis`, {
-    status: lastError?.status,
-    message: lastError?.message,
-  });
-
-  return null;
-};
-
-const classifyWithRules = (issue) => {
-  const text = getIssueText(issue).toLowerCase();
-  const categoryScores = CATEGORY_OPTIONS.map((category) => {
-    const score = category.keywords.reduce((total, keyword) => {
-      return total + (text.includes(keyword) ? 1 : 0);
-    }, 0);
-
-    return { ...category, score };
-  }).sort((left, right) => right.score - left.score);
-
-  const winner =
-    categoryScores[0]?.score > 0
-      ? categoryScores[0]
-      : CATEGORY_OPTIONS[CATEGORY_OPTIONS.length - 1];
-  const criticalSignals = ["life", "fire", "accident", "danger", "injury", "school children", "hospital"];
-  const highSignals = ["overflow", "flood", "blocked", "unsafe", "major", "urgent", "weeks"];
-  const severity = criticalSignals.some((word) => text.includes(word))
-    ? "critical"
-    : highSignals.some((word) => text.includes(word))
-      ? "high"
-      : text.length > 140
-        ? "medium"
-        : "low";
-
-  const tags = tokenize(text).slice(0, 5);
-
-  return {
-    category: winner.value,
-    category_label: winner.label,
-    severity,
-    confidence: winner.score > 1 ? 0.78 : winner.score === 1 ? 0.62 : 0.45,
-    summary: compactText(issue.description) || compactText(issue.title) || "Civic issue reported by a resident.",
-    tags,
-    provider: "local_rules",
-    model: null,
-    used_ai: false,
-  };
-};
-
-const normalizeClassification = (raw, fallback, model = null) => {
-  const category = normalizeCategory(raw?.category ?? fallback.category);
-  const tags = Array.isArray(raw?.tags)
-    ? raw.tags.map(compactText).filter(Boolean).slice(0, 5)
-    : fallback.tags;
+  const geminiResult = await callGeminiJson(prompt, "AiService:classifyIssue");
+  const raw = geminiResult?.parsed || {};
+  const category = normalizeCategory(raw.category ?? fallback.category);
 
   return {
     category,
-    category_label: getCategoryLabel(category),
-    severity: normalizeSeverity(raw?.severity ?? fallback.severity),
-    confidence: clampNumber(raw?.confidence, 0, 1, fallback.confidence),
-    summary: compactText(raw?.summary) || fallback.summary,
-    tags,
-    provider: model ? "gemini" : fallback.provider,
-    model,
-    used_ai: Boolean(model),
-  };
-};
-
-export const classifyIssue = async (issue = {}) => {
-  const fallback = classifyWithRules(issue);
-  const geminiResult = await callGeminiJson(
-    buildClassificationPrompt(issue),
-    "AiService:classifyIssue"
-  );
-
-  return normalizeClassification(geminiResult?.parsed, fallback, geminiResult?.model || null);
-};
-
-const getCandidateScore = ({ issue, candidate, category }) => {
-  const issueText = getIssueText(issue);
-  const candidateText = getIssueText(candidate);
-  const textScore = jaccardSimilarity(issueText, candidateText);
-  const localityScore =
-    compactText(issue.locality) &&
-    compactText(candidate.locality) &&
-    compactText(issue.locality).toLowerCase() === compactText(candidate.locality).toLowerCase()
-      ? 0.14
-      : compactText(issue.locality) &&
-          compactText(candidate.locality) &&
-          compactText(candidate.locality).toLowerCase().includes(compactText(issue.locality).toLowerCase())
-        ? 0.08
-        : 0;
-
-  const distanceMeters = haversineDistanceMeters(issue.lat, issue.lng, candidate.lat, candidate.lng);
-  const distanceScore =
-    distanceMeters === null
-      ? 0
-      : distanceMeters <= 30
-        ? 0.42
-        : distanceMeters <= 100
-          ? 0.34
-          : distanceMeters <= 250
-            ? 0.24
-            : distanceMeters <= 500
-              ? 0.12
-              : 0;
-
-  const categoryScore =
-    category && candidate.category && category === candidate.category ? 0.12 : 0;
-  const titleScore = jaccardSimilarity(issue.title, candidate.title) * 0.16;
-  const score = Math.min(0.98, textScore * 0.42 + titleScore + localityScore + distanceScore + categoryScore);
-
-  return {
-    issue_id: candidate.id,
-    title: candidate.title,
-    locality: candidate.locality,
-    status: candidate.status,
-    created_at: candidate.created_at,
-    distance_meters: distanceMeters === null ? null : Math.round(distanceMeters),
-    score: Number(score.toFixed(2)),
-    reason:
-      distanceMeters !== null && distanceMeters <= 250
-        ? "Similar text near the same location"
-        : localityScore
-          ? "Similar text in the same locality"
-          : "Similar complaint wording",
+    category_label: CATEGORY_OPTIONS.find((item) => item.value === category)?.label || "Other",
+    severity: normalizeSeverity(raw.severity ?? fallback.severity),
+    confidence: clampNumber(raw.confidence, 0, 1, fallback.confidence),
+    summary: compactText(raw.summary) || fallback.summary,
+    tags: Array.isArray(raw.tags) ? raw.tags.map(compactText).filter(Boolean).slice(0, 5) : fallback.tags,
+    provider: geminiResult?.model ? "gemini" : fallback.provider,
+    model: geminiResult?.model || null,
+    used_ai: Boolean(geminiResult?.model),
   };
 };
 
 const fetchDuplicateCandidates = async (issue, excludeIssueId) => {
-  const candidateExcludeId = [excludeIssueId, issue.id].find((id) =>
-    UUID_PATTERN.test(String(id || ""))
-  );
-
+  const candidateExcludeId = [excludeIssueId, issue.id].find((id) => UUID_PATTERN.test(String(id || "")));
   const { data, error } = await supabase
     .from("issues")
     .select("id, title, description, locality, lat, lng, status, category, created_at")
@@ -342,103 +220,57 @@ const fetchDuplicateCandidates = async (issue, excludeIssueId) => {
   return data || [];
 };
 
-const buildDuplicatePrompt = ({ issue, category, candidates }) => `
-Decide whether the new civic complaint is a duplicate of an existing complaint.
-
-Return only valid JSON with this exact shape:
-{
-  "is_duplicate": boolean,
-  "duplicate_of": existing issue id string or null,
-  "duplicate_score": number from 0 to 1,
-  "reason": short sentence,
-  "candidates": [{"issue_id": string, "score": number from 0 to 1, "reason": short sentence}]
-}
-
-Treat reports as duplicates only when they describe the same physical civic problem, not just the same category.
-
-New issue:
-ID: ${issue.id || "new"}
-Category: ${category || "unknown"}
-Title: ${compactText(issue.title) || "N/A"}
-Description: ${compactText(issue.description) || "N/A"}
-Locality: ${compactText(issue.locality) || "N/A"}
-Coordinates: ${issue.lat ?? "N/A"}, ${issue.lng ?? "N/A"}
-
-Existing candidates:
-${JSON.stringify(candidates, null, 2)}
-`;
-
-const normalizeDuplicateResult = ({ raw, fallback, candidateIds }) => {
-  const duplicateOf = raw?.duplicate_of && candidateIds.has(raw.duplicate_of) ? raw.duplicate_of : fallback.duplicate_of;
-  const duplicateScore = clampNumber(raw?.duplicate_score, 0, 1, fallback.duplicate_score);
-  const modelDecision =
-    typeof raw?.is_duplicate === "boolean"
-      ? Boolean(raw.is_duplicate && duplicateOf && duplicateScore >= 0.65)
-      : null;
-  const isDuplicate = modelDecision ?? fallback.is_duplicate;
-  const candidates = Array.isArray(raw?.candidates)
-    ? raw.candidates
-        .filter((candidate) => candidateIds.has(candidate.issue_id))
-        .map((candidate) => ({
-          issue_id: candidate.issue_id,
-          score: clampNumber(candidate.score, 0, 1, 0),
-          reason: compactText(candidate.reason),
-        }))
-        .sort((left, right) => right.score - left.score)
-        .slice(0, 5)
-    : fallback.candidates;
+const scoreDuplicateCandidate = ({ issue, candidate, category }) => {
+  const textScore = jaccardSimilarity(getIssueText(issue), getIssueText(candidate));
+  const titleScore = jaccardSimilarity(issue.title, candidate.title) * 0.16;
+  const localityScore =
+    compactText(issue.locality).toLowerCase() === compactText(candidate.locality).toLowerCase() ? 0.14 : 0;
+  const distanceMeters = haversineDistanceMeters(issue.lat, issue.lng, candidate.lat, candidate.lng);
+  const distanceScore =
+    distanceMeters === null
+      ? 0
+      : distanceMeters <= 30
+        ? 0.42
+        : distanceMeters <= 100
+          ? 0.34
+          : distanceMeters <= 250
+            ? 0.24
+            : distanceMeters <= 500
+              ? 0.12
+              : 0;
+  const categoryScore = category && candidate.category && category === candidate.category ? 0.12 : 0;
+  const score = Math.min(0.98, textScore * 0.42 + titleScore + localityScore + distanceScore + categoryScore);
 
   return {
-    is_duplicate: isDuplicate,
-    duplicate_of: isDuplicate ? duplicateOf : null,
-    duplicate_score: isDuplicate ? Number(duplicateScore.toFixed(2)) : fallback.duplicate_score,
-    candidates,
-    reason: compactText(raw?.reason) || fallback.reason,
+    issue_id: candidate.id,
+    title: candidate.title,
+    locality: candidate.locality,
+    status: candidate.status,
+    created_at: candidate.created_at,
+    distance_meters: distanceMeters === null ? null : Math.round(distanceMeters),
+    score: Number(score.toFixed(2)),
+    reason: distanceMeters !== null && distanceMeters <= 250 ? "Similar report near the same location" : "Similar complaint wording",
   };
 };
 
 export const detectDuplicateIssue = async (issue = {}, { category = null, excludeIssueId = null } = {}) => {
   const candidates = await fetchDuplicateCandidates(issue, excludeIssueId);
   const scoredCandidates = candidates
-    .map((candidate) => getCandidateScore({ issue, candidate, category }))
+    .map((candidate) => scoreDuplicateCandidate({ issue, candidate, category }))
     .filter((candidate) => candidate.score >= 0.28)
     .sort((left, right) => right.score - left.score)
-    .slice(0, 8);
-
+    .slice(0, 5);
   const topCandidate = scoredCandidates[0] || null;
-  const fallback = {
+
+  return {
     is_duplicate: Boolean(topCandidate && topCandidate.score >= DUPLICATE_THRESHOLD),
     duplicate_of: topCandidate?.score >= DUPLICATE_THRESHOLD ? topCandidate.issue_id : null,
     duplicate_score: topCandidate?.score || 0,
-    candidates: scoredCandidates.slice(0, 5),
+    candidates: scoredCandidates,
     reason: topCandidate ? topCandidate.reason : "No similar reports found nearby.",
     provider: "local_similarity",
     model: null,
     used_ai: false,
-  };
-
-  if (!scoredCandidates.length) {
-    return fallback;
-  }
-
-  const geminiResult = await callGeminiJson(
-    buildDuplicatePrompt({ issue, category, candidates: scoredCandidates }),
-    "AiService:detectDuplicateIssue"
-  );
-
-  if (!geminiResult?.parsed) {
-    return fallback;
-  }
-
-  return {
-    ...normalizeDuplicateResult({
-      raw: geminiResult.parsed,
-      fallback,
-      candidateIds: new Set(scoredCandidates.map((candidate) => candidate.issue_id)),
-    }),
-    provider: "gemini",
-    model: geminiResult.model,
-    used_ai: true,
   };
 };
 
@@ -486,7 +318,6 @@ export const analyzeAndUpdateIssue = async (issueId) => {
   }
 
   if (error) {
-    console.error("[AiService] analyzeAndUpdateIssue fetch failed", { issueId, error });
     throw new AiServiceError(error.message || "Unable to fetch issue", 500);
   }
 
@@ -500,18 +331,10 @@ export const analyzeAndUpdateIssue = async (issueId) => {
     .single();
 
   if (updateError) {
-    console.error("[AiService] analyzeAndUpdateIssue update failed", {
-      issueId,
-      updatePayload,
-      error: updateError,
-    });
     throw new AiServiceError(updateError.message || "Unable to update issue AI metadata", 500);
   }
 
-  return {
-    issue: updatedIssue,
-    analysis,
-  };
+  return { issue: updatedIssue, analysis };
 };
 
 export { AiServiceError, CATEGORY_OPTIONS, SEVERITY_OPTIONS };

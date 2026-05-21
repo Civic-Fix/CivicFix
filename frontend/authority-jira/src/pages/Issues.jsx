@@ -5,9 +5,11 @@ import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd'
 import {
   AlertCircle,
   ArrowUpRight,
+  Brain,
   CalendarDays,
   ChevronDown,
   Columns3,
+  Copy,
   Filter,
   List,
   MapPin,
@@ -103,6 +105,37 @@ function decorateIssue(issue) {
   }
 }
 
+function formatPercent(value) {
+  const numericValue = Number(value)
+  return Number.isFinite(numericValue) ? `${Math.round(numericValue * 100)}%` : ''
+}
+
+function AiTriageLine({ issue }) {
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <span className="inline-flex min-w-0 items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-[9.5px] font-black text-blue-700 ring-1 ring-blue-100">
+        <Brain className="h-3 w-3 shrink-0" />
+        <span className="truncate">
+          {issue.aiPending
+            ? 'AI checking'
+            : `${issue.categoryLabel || 'Uncategorized'}${formatPercent(issue.aiCategoryConfidence) ? ` ${formatPercent(issue.aiCategoryConfidence)}` : ''}`}
+        </span>
+      </span>
+      {issue.aiSeverity ? (
+        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[9.5px] font-black capitalize text-slate-600 ring-1 ring-slate-200">
+          {issue.aiSeverity}
+        </span>
+      ) : null}
+      {issue.aiDuplicateOf ? (
+        <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 text-[9.5px] font-black text-amber-700 ring-1 ring-amber-200">
+          <Copy className="h-3 w-3" />
+          duplicate
+        </span>
+      ) : null}
+    </div>
+  )
+}
+
 function IssueCard({ issue, index, onOpen }) {
   return (
     <Draggable draggableId={String(issue.id)} index={index}>
@@ -112,11 +145,11 @@ function IssueCard({ issue, index, onOpen }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={[
-            'group h-35 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm transition',
+            'group h-44 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm transition',
             snapshot.isDragging ? 'rotate-1 border-blue-300 shadow-xl shadow-blue-950/15' : 'hover:border-blue-200 hover:shadow-md',
           ].join(' ')}
         >
-          <div className="grid h-full grid-rows-[2rem_1.25rem_1.25rem_1.75rem] gap-1.5">
+          <div className="grid h-full grid-rows-[2.5rem_1.25rem_1.25rem_1fr] gap-1.5">
             <div className="flex min-h-8 items-start justify-between gap-2">
               <p className="line-clamp-2 text-[12px] font-black leading-4 text-slate-950">
                 {issue.title || `Issue #${issue.id}`}
@@ -145,13 +178,21 @@ function IssueCard({ issue, index, onOpen }) {
               </span>
             </div>
 
-            <div className="flex min-w-0 items-center gap-1.5 overflow-hidden">
-              <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-orange-500 text-[8px] font-black text-white">
-                {issue.assignee?.initials || 'NA'}
-              </span>
-              <span className="min-w-0 truncate text-[10px] font-semibold leading-none text-slate-600">
-                {issue.assignee?.name || 'Unassigned'}
-              </span>
+            <div className="grid min-w-0 gap-1 overflow-hidden">
+              <AiTriageLine issue={issue} />
+              {issue.aiSummary ? (
+                <p className="line-clamp-2 text-[10px] font-semibold leading-4 text-slate-500">
+                  {issue.aiSummary}
+                </p>
+              ) : null}
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-orange-500 text-[8px] font-black text-white">
+                  {issue.assignee?.initials || 'NA'}
+                </span>
+                <span className="min-w-0 truncate text-[10px] font-semibold leading-none text-slate-600">
+                  {issue.assignee?.name || 'Unassigned'}
+                </span>
+              </div>
             </div>
           </div>
         </article>
@@ -405,6 +446,7 @@ function Issues() {
                   <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-black uppercase tracking-[0.16em] text-slate-500">
                     <th className="px-4 py-3">Issue</th>
                     <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">AI Triage</th>
                     <th className="px-4 py-3">Priority</th>
                     <th className="px-4 py-3">Assignee</th>
                     <th className="px-4 py-3">Location</th>
@@ -437,6 +479,14 @@ function Issues() {
                         </td>
                         <td className="px-4 py-3">
                           <StatusBadge status={row.status || 'reported'} />
+                        </td>
+                        <td className="min-w-56 px-4 py-3">
+                          <AiTriageLine issue={row} />
+                          {row.aiSummary ? (
+                            <span className="mt-1 block line-clamp-1 text-[11px] font-semibold text-slate-500">
+                              {row.aiSummary}
+                            </span>
+                          ) : null}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`rounded-full px-2.5 py-1 text-xs font-black ring-1 ${priorityStyles[row.priority]}`}>
