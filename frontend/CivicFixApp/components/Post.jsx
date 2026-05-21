@@ -41,6 +41,14 @@ const formatCommentTime = (timestamp) => {
   });
 };
 
+const getUpdateAuthorName = (update, issue) =>
+  update?.organization_name ||
+  update?.organization?.name ||
+  update?.issue?.organization?.name ||
+  issue?.organizationName ||
+  issue?.organization?.name ||
+  'Assigned organization';
+
 const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLoadingIssueUpdates, onVote, onDelete, currentHandle, onBack, onOpenCommentForm, onDeleteComment, onVoteComment, onShare }) => {
   if (!issue) return null;
 
@@ -51,7 +59,7 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
   const VERIFICATION_BADGES = {
     authority_verified: { icon: 'shield-check', color: '#B91C1C', bg: '#FEE2E2', border: '#FCA5A5', label: 'Authority' },
     community_verified: { icon: 'account-group', color: '#15803D', bg: '#DCFCE7', border: '#86EFAC', label: 'Community' },
-    pending:            { icon: 'clock-outline',  color: '#B45309', bg: '#FEF3C7', border: '#FCD34D', label: 'Pending' },
+    pending: { icon: 'clock-outline', color: '#B45309', bg: '#FEF3C7', border: '#FCD34D', label: 'Pending' },
   };
 
   const badge = VERIFICATION_BADGES[issue.verification_status] ?? VERIFICATION_BADGES.pending;
@@ -111,7 +119,7 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
                 </View>
               ) : null}
             </View>
-            
+
             <Text style={styles.brief}>
               {issue.brief}
             </Text>
@@ -133,7 +141,7 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
             <View style={styles.updatesSection}>
               <View style={styles.updatesHeader}>
                 <Text style={styles.updatesTitle}>Issue Timeline</Text>
-                <Text style={styles.updatesSubtitle}>Recent progress updates and status changes</Text>
+                <Text style={styles.updatesSubtitle}>Official notes and status changes</Text>
               </View>
 
               {isLoadingIssueUpdates ? (
@@ -142,35 +150,40 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
                   <Text style={styles.updatesLoadingText}>Loading updates...</Text>
                 </View>
               ) : issueUpdates.length > 0 ? (
-                issueUpdates.map((update) => (
-                  <View key={update.id} style={styles.issueUpdateItem}>
-                    <View style={styles.issueUpdateMarker} />
-                    <View style={styles.issueUpdateItemCard}>
-                      <View style={styles.issueUpdateHeader}>
-                        <View style={styles.issueUpdateTitleRow}>
-                          <Text style={styles.issueUpdateTitle}>{update.type ? `${update.type.replace(/_/g, ' ')} update` : 'Update'}</Text>
-                          {update.authorName && (
-                            <View style={[styles.issueAuthorBadge, update.isIssueAuthor && styles.issueAuthorBadgeOfficial]}>
-                              {update.isIssueAuthor && (
-                                <MaterialCommunityIcons name="crown" size={11} color="#F59E0B" />
-                              )}
-                              <Text style={[styles.issueAuthorName, update.isIssueAuthor && styles.issueAuthorNameOfficial]}>
-                                {update.authorName}
-                              </Text>
+                issueUpdates.map((update) => {
+                  const updateAuthorName = getUpdateAuthorName(update, issue);
+
+                  return (
+                    <View key={update.id} style={styles.issueUpdateItem}>
+                      <View style={styles.issueUpdateMarker} />
+                      <View style={styles.issueUpdateItemCard}>
+                        <View style={styles.issueUpdateHeader}>
+                          <View style={styles.officialSourceHeader}>
+                            <View style={styles.officialSourceAvatar}>
+                              <MaterialCommunityIcons name="office-building-marker" size={16} color="#2563EB" />
                             </View>
-                          )}
-                        </View>
-                        {update.issueStatus ? (
-                          <View style={styles.issueUpdateBadge}>
-                            <Text style={styles.issueUpdateBadgeText}>{update.issueStatus}</Text>
+                            <View style={styles.officialSourceTextBlock}>
+                              <View style={styles.officialSourceNameRow}>
+                                <Text style={styles.officialSourceName} numberOfLines={1}>
+                                  {updateAuthorName}
+                                </Text>
+                                <MaterialCommunityIcons name="check-decagram" size={15} color="#2563EB" />
+                              </View>
+                              <Text style={styles.officialSourceMeta}>Official source</Text>
+                            </View>
                           </View>
-                        ) : null}
+                          {update.issueStatus ? (
+                            <View style={styles.issueUpdateBadge}>
+                              <Text style={styles.issueUpdateBadgeText}>{update.issueStatus}</Text>
+                            </View>
+                          ) : null}
+                        </View>
+                        <Text style={styles.issueUpdateDescription}>{update.content}</Text>
+                        <Text style={styles.issueUpdateTime}>{formatCommentTime(update.created_at || update.time)}</Text>
                       </View>
-                      <Text style={styles.issueUpdateDescription}>{update.content}</Text>
-                      <Text style={styles.issueUpdateTime}>{formatCommentTime(update.created_at || update.time)}</Text>
                     </View>
-                  </View>
-                ))
+                  );
+                })
               ) : (
                 <View style={styles.updatesEmptyState}>
                   <Text style={styles.updatesEmptyTitle}>No updates yet</Text>
@@ -182,11 +195,11 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
             {/* Actions */}
             <View style={styles.actions}>
               <View style={styles.actionsLeft}>
-<TouchableOpacity
-              style={styles.actionBtn}
-              activeOpacity={0.7}
-              onPress={onOpenCommentForm ? () => onOpenCommentForm(issue) : undefined}
-            >
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  activeOpacity={0.7}
+                  onPress={onOpenCommentForm ? () => onOpenCommentForm(issue) : undefined}
+                >
                   <Feather name="message-circle" size={14} color="#9CA3AF" />
                 </TouchableOpacity>
 
@@ -545,44 +558,49 @@ const styles = StyleSheet.create({
   },
   issueUpdateHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: 10,
+    gap: 10,
   },
-  issueUpdateTitleRow: {
+  officialSourceHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     flex: 1,
-    flexWrap: 'wrap',
+    minWidth: 0,
   },
-  issueUpdateTitle: {
+  officialSourceAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: '#DBEAFE',
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  officialSourceTextBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  officialSourceNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minWidth: 0,
+    gap: 5,
+  },
+  officialSourceName: {
     color: '#0F172A',
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '800',
+    flexShrink: 1,
   },
-  issueAuthorBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
-    backgroundColor: '#F3F4F6',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  issueAuthorBadgeOfficial: {
-    backgroundColor: '#FEF3C7',
-    borderColor: '#FCD34D',
-  },
-  issueAuthorName: {
-    color: '#475569',
+  officialSourceMeta: {
+    color: '#2563EB',
     fontSize: 12,
     fontWeight: '700',
-  },
-  issueAuthorNameOfficial: {
-    color: '#B45309',
+    marginTop: 2,
   },
   issueUpdateBadge: {
     paddingVertical: 4,
