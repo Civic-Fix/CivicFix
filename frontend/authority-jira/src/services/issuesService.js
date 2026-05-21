@@ -24,8 +24,31 @@ export function getIssueStatusLabel(status) {
   return statusLabelMap[status] || status || 'reported'
 }
 
+export function getIssueCategoryLabel(category) {
+  return category
+    ? String(category)
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : 'Uncategorized'
+}
+
+function normalizeScore(score) {
+  const numericScore = Number(score)
+  return Number.isFinite(numericScore) ? numericScore : null
+}
+
 function normalizeIssue(issue) {
   const attachments = Array.isArray(issue?.attachments) ? issue.attachments : []
+  const classification = issue?.ai_analysis?.classification || {}
+  const duplicateDetection = issue?.ai_analysis?.duplicate_detection || {}
+  const category = issue?.category || classification.category || ''
+  const aiCategoryConfidence = normalizeScore(
+    issue?.ai_category_confidence ?? classification.confidence
+  )
+  const aiDuplicateScore = normalizeScore(
+    issue?.ai_duplicate_score ?? duplicateDetection.duplicate_score
+  )
 
   return {
     ...issue,
@@ -35,6 +58,18 @@ function normalizeIssue(issue) {
     latitude: issue?.lat ?? null,
     longitude: issue?.lng ?? null,
     images: attachments.map((attachment) => attachment.file_url).filter(Boolean),
+    category,
+    categoryLabel: getIssueCategoryLabel(category),
+    aiCategoryConfidence,
+    aiSeverity: issue?.ai_severity || classification.severity || '',
+    aiSummary: issue?.ai_summary || classification.summary || '',
+    aiTags: issue?.ai_tags || classification.tags || [],
+    aiDuplicateOf: issue?.ai_duplicate_of || duplicateDetection.duplicate_of || null,
+    aiDuplicateScore,
+    aiDuplicateCandidates:
+      issue?.ai_duplicate_candidates || duplicateDetection.candidates || [],
+    aiAnalyzedAt: issue?.ai_analyzed_at || issue?.ai_analysis?.analyzed_at || null,
+    aiPending: !issue?.ai_analyzed_at && !issue?.ai_analysis?.analyzed_at,
   }
 }
 

@@ -52,6 +52,7 @@ const VoteButton = ({ icon, count, active, activeColor, onPress }) => (
 
 const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentPress, onShare }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAiSummary, setShowAiSummary] = useState(false);
   const isOwner = typeof issue.isOwner === 'boolean' ? issue.isOwner : issue.handle === currentHandle;
   const avatarColor = getAvatarColor(issue.author);
   const statusStyle = getStatusStyle(issue.status);
@@ -129,6 +130,27 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
                 <Feather name="copy" size={12} color="#B45309" />
                 <Text style={styles.aiDuplicateText}>Possible duplicate</Text>
               </View>
+            ) : null}
+          </View>
+        ) : null}
+
+        {issue.aiSummary ? (
+          <View style={styles.aiSummaryWrap}>
+            <TouchableOpacity
+              style={styles.aiSummaryToggle}
+              activeOpacity={0.75}
+              onPress={(event) => runAction(event, () => setShowAiSummary((prev) => !prev))}
+            >
+              <View style={styles.aiSummaryToggleLeft}>
+                <MaterialCommunityIcons name="text-box-search-outline" size={14} color="#1D4ED8" />
+                <Text style={styles.aiSummaryToggleText}>
+                  {showAiSummary ? 'Hide AI summary' : 'Show AI summary'}
+                </Text>
+              </View>
+              <Feather name={showAiSummary ? 'chevron-up' : 'chevron-down'} size={14} color="#1D4ED8" />
+            </TouchableOpacity>
+            {showAiSummary ? (
+              <Text style={styles.aiSummaryText}>{issue.aiSummary}</Text>
             ) : null}
           </View>
         ) : null}
@@ -372,6 +394,46 @@ const styles = StyleSheet.create({
     color: '#B45309',
     fontSize: 11,
     fontWeight: '800',
+  },
+  aiSummaryWrap: {
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 10,
+    backgroundColor: '#EFF6FF',
+    overflow: 'hidden',
+  },
+  aiSummaryToggle: {
+    minHeight: 38,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  aiSummaryToggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    flex: 1,
+    minWidth: 0,
+  },
+  aiSummaryToggleText: {
+    color: '#1D4ED8',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  aiSummaryText: {
+    borderTopWidth: 1,
+    borderTopColor: '#BFDBFE',
+    paddingHorizontal: 10,
+    paddingTop: 9,
+    paddingBottom: 10,
+    color: '#334155',
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '600',
   },
   seeMoreButton: {
     marginBottom: 10,
