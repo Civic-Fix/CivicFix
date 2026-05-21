@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,6 +25,14 @@ const formatStatus = (status) =>
         .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
         .join(' ')
     : 'Reported';
+
+const formatCategoryLabel = (category) =>
+  category
+    ? category
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : '';
 
 const formatRelativeTime = (timestamp) => {
   if (!timestamp) {
@@ -147,6 +155,18 @@ const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = [])
     currentUserDownvoteId: issue.current_user_downvote_id || null,
     isOwner,
     verification_status: issue.verification_status || 'pending',
+    aiCategory: issue.category || issue.ai_analysis?.classification?.category || '',
+    aiCategoryConfidence: issue.ai_category_confidence ?? issue.ai_analysis?.classification?.confidence ?? null,
+    aiCategoryLabel: formatCategoryLabel(issue.category || issue.ai_analysis?.classification?.category),
+    aiSeverity: issue.ai_severity || issue.ai_analysis?.classification?.severity || '',
+    aiSummary: issue.ai_summary || issue.ai_analysis?.classification?.summary || '',
+    aiTags: issue.ai_tags || issue.ai_analysis?.classification?.tags || [],
+    aiDuplicateOf: issue.ai_duplicate_of || issue.ai_analysis?.duplicate_detection?.duplicate_of || null,
+    aiDuplicateScore: issue.ai_duplicate_score ?? issue.ai_analysis?.duplicate_detection?.duplicate_score ?? null,
+    aiDuplicateCandidates:
+      issue.ai_duplicate_candidates || issue.ai_analysis?.duplicate_detection?.candidates || [],
+    aiAnalyzedAt: issue.ai_analyzed_at || issue.ai_analysis?.analyzed_at || null,
+    aiPending: !issue.ai_analyzed_at && !issue.ai_analysis?.analyzed_at,
   };
 };
 
@@ -168,6 +188,8 @@ export default function App() {
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
+  const aiAnalysisQueuedRef = useRef(new Set());
+  const aiPollAttemptsRef = useRef(new Map());
 
   const loadIssues = useCallback(async (activeUser = user) => {
     setIsLoadingIssues(true);
@@ -315,7 +337,7 @@ export default function App() {
     setIssues((prev) => [newPost, ...prev]);
     setScreen('feeds');
     setActiveTab('home');
-    await loadIssues(user);
+    loadIssues(user);
   };
 
   const loadUpdates = useCallback(async () => {
@@ -597,6 +619,74 @@ export default function App() {
       return null;
     }
   };
+
+  useEffect(() => {
+    const pendingIssueIds = issues
+      .filter((issue) => issue.aiPending && issue.id)
+      .map((issue) => issue.id);
+
+    if (!pendingIssueIds.length) {
+      return undefined;
+    }
+
+    let isActive = true;
+
+    const queueAnalysisForPendingIssues = async () => {
+      const authToken = await AsyncStorage.getItem('authToken');
+      if (!authToken) return;
+
+      pendingIssueIds.forEach((issueId) => {
+        if (aiAnalysisQueuedRef.current.has(issueId)) {
+          return;
+        }
+
+        aiAnalysisQueuedRef.current.add(issueId);
+
+        fetch(`${API_BASE_URL}/ai/issues/${issueId}/analyze?async=true`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ async: true }),
+        }).catch((error) => {
+          aiAnalysisQueuedRef.current.delete(issueId);
+          console.warn('[App] queue AI analysis failed', issueId, error.message);
+        });
+      });
+    };
+
+    const refreshPendingIssues = async () => {
+      if (!isActive) return;
+
+      await Promise.all(
+        pendingIssueIds.map(async (issueId) => {
+          const attempts = aiPollAttemptsRef.current.get(issueId) || 0;
+          if (attempts >= 20) return;
+
+          aiPollAttemptsRef.current.set(issueId, attempts + 1);
+          const updatedIssue = await loadIssueById(issueId);
+
+          if (!isActive || !updatedIssue) return;
+
+          if (!updatedIssue.aiPending) {
+            aiPollAttemptsRef.current.delete(issueId);
+            aiAnalysisQueuedRef.current.delete(issueId);
+            updateIssueEverywhere(issueId, () => updatedIssue);
+          }
+        })
+      );
+    };
+
+    queueAnalysisForPendingIssues();
+    const pollTimer = setInterval(refreshPendingIssues, 3000);
+    refreshPendingIssues();
+
+    return () => {
+      isActive = false;
+      clearInterval(pollTimer);
+    };
+  }, [issues, user, anonymousIssueIds]);
 
   const handleOpenIssueFromUpdate = async (update) => {
     const issueId = update?.issue?.id || update?.issue_id;

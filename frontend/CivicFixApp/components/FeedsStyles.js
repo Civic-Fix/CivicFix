@@ -237,6 +237,35 @@ const styles = StyleSheet.create({
   anonymousToggleButtonTextActive: {
     color: '#14B8A6',
   },
+  aiAssistCard: {
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: '#EFF6FF',
+    marginBottom: 12,
+  },
+  aiAssistTitle: {
+    color: '#1D4ED8',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  aiAssistText: {
+    color: '#334155',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  aiAssistProgress: {
+    marginTop: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  aiAssistProgressText: {
+    color: '#1D4ED8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   input: {
     backgroundColor: '#F8FAFC',
     color: '#0F172A',

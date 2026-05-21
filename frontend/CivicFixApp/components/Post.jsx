@@ -17,6 +17,23 @@ const getStatusStyle = (status) =>
 const AVATAR_COLORS = ['#4F46E5', '#0891B2', '#DC2626', '#7C3AED', '#C2410C', '#15803D'];
 const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
 
+const formatCategoryLabel = (category) =>
+  category
+    ? category
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : '';
+
+const formatConfidence = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return '';
+  }
+
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? `${Math.round(numericValue * 100)}%` : '';
+};
+
 const VoteButton = ({ icon, count, active, activeColor, onPress }) => (
   <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.voteBtn} disabled={!onPress}>
     <View style={[styles.voteBtnInner, active && { backgroundColor: activeColor + '20' }]}>
@@ -59,6 +76,8 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
     .filter(Boolean)
     .join(' - ');
   const carouselImages = issue.images?.length ? issue.images : issue.image ? [{ uri: issue.image }] : [];
+  const aiCategoryLabel = issue.aiCategoryLabel || formatCategoryLabel(issue.aiCategory);
+  const aiConfidence = formatConfidence(issue.aiCategoryConfidence);
 
   return (
     <View style={styles.container}>
@@ -115,6 +134,47 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
             <Text style={styles.brief}>
               {issue.brief}
             </Text>
+
+            {issue.aiPending || aiCategoryLabel || issue.aiDuplicateOf || issue.aiSummary ? (
+              <View style={styles.aiInsightPanel}>
+                <View style={styles.aiInsightHeader}>
+                  <MaterialCommunityIcons name="robot-outline" size={18} color="#1D4ED8" />
+                  <View style={styles.aiInsightHeaderText}>
+                    <Text style={styles.aiInsightTitle}>AI triage</Text>
+                    <Text style={styles.aiInsightSubtitle}>
+                      Category and duplicate checks are stored with this issue.
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.aiInsightGrid}>
+                  <View style={styles.aiInsightItem}>
+                    <Text style={styles.aiInsightLabel}>Category</Text>
+                    <Text style={styles.aiInsightValue}>
+                      {issue.aiPending ? 'Checking...' : aiCategoryLabel || 'Not analyzed'}
+                      {aiConfidence ? ` (${aiConfidence})` : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.aiInsightItem}>
+                    <Text style={styles.aiInsightLabel}>Severity</Text>
+                    <Text style={styles.aiInsightValue}>{issue.aiSeverity || 'Not set'}</Text>
+                  </View>
+                </View>
+                {issue.aiSummary ? (
+                  <Text style={styles.aiSummary}>{issue.aiSummary}</Text>
+                ) : null}
+                {issue.aiDuplicateOf ? (
+                  <View style={styles.aiDuplicateNotice}>
+                    <Feather name="copy" size={14} color="#B45309" />
+                    <Text style={styles.aiDuplicateNoticeText}>
+                      Possible duplicate of issue #{String(issue.aiDuplicateOf).slice(0, 8)}
+                      {Number.isFinite(Number(issue.aiDuplicateScore))
+                        ? ` (${Math.round(Number(issue.aiDuplicateScore) * 100)}% match)`
+                        : ''}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
 
             <View style={styles.metaRow}>
               {locationText ? (
@@ -431,6 +491,85 @@ const styles = StyleSheet.create({
     color: '#334155',
     lineHeight: 22,
     marginBottom: 16,
+  },
+  aiInsightPanel: {
+    borderWidth: 1,
+    borderColor: '#BFDBFE',
+    backgroundColor: '#EFF6FF',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 14,
+  },
+  aiInsightHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 12,
+  },
+  aiInsightHeaderText: {
+    flex: 1,
+  },
+  aiInsightTitle: {
+    color: '#1D4ED8',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  aiInsightSubtitle: {
+    color: '#475569',
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 2,
+  },
+  aiInsightGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 10,
+  },
+  aiInsightItem: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#DBEAFE',
+    borderRadius: 10,
+    padding: 10,
+    backgroundColor: '#FFFFFF',
+  },
+  aiInsightLabel: {
+    color: '#64748B',
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    marginBottom: 4,
+  },
+  aiInsightValue: {
+    color: '#0F172A',
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '800',
+    textTransform: 'capitalize',
+  },
+  aiSummary: {
+    color: '#334155',
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: '600',
+  },
+  aiDuplicateNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#FCD34D',
+    backgroundColor: '#FEF3C7',
+    borderRadius: 10,
+    padding: 10,
+  },
+  aiDuplicateNoticeText: {
+    flex: 1,
+    color: '#92400E',
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '800',
   },
   metaRow: {
     flexDirection: 'row',

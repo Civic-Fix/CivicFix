@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { supabase } from "../config/supabaseClient.js";
+import { analyzeIssue, buildIssueAiUpdatePayload } from "./aiService.js";
 
 const allowedStatuses = [
   "reported",
@@ -57,6 +58,16 @@ const issueSelect = `
   created_by,
   assigned_to,
   organization_id,
+  category,
+  ai_category_confidence,
+  ai_severity,
+  ai_summary,
+  ai_tags,
+  ai_duplicate_of,
+  ai_duplicate_score,
+  ai_duplicate_candidates,
+  ai_analysis,
+  ai_analyzed_at,
   created_at,
   updated_at
 `;
@@ -524,6 +535,55 @@ const haversineDistanceMeters = (lat1, lng1, lat2, lng2) => {
   return earthRadiusMeters * c;
 };
 
+const applyAiAnalysisToIssue = async (issueId, issuePayload, attachments = []) => {
+  try {
+    const analysis = await analyzeIssue({
+      ...issuePayload,
+      id: issueId,
+      attachments,
+    });
+    const updatePayload = buildIssueAiUpdatePayload(analysis);
+    const { error } = await supabase
+      .from("issues")
+      .update(updatePayload)
+      .eq("id", issueId);
+
+    if (error) {
+      console.error("[IssueService] AI metadata update failed", {
+        issueId,
+        error,
+      });
+      return null;
+    }
+
+    return analysis;
+  } catch (error) {
+    console.error("[IssueService] AI analysis failed", {
+      issueId,
+      message: error?.message,
+    });
+    return null;
+  }
+};
+
+const scheduleAiAnalysisForIssue = (issueId, issuePayload, attachments = []) => {
+  const runAnalysis = () => {
+    applyAiAnalysisToIssue(issueId, issuePayload, attachments).catch((error) => {
+      console.error("[IssueService] scheduled AI analysis failed", {
+        issueId,
+        message: error?.message,
+      });
+    });
+  };
+
+  if (typeof setImmediate === "function") {
+    setImmediate(runAnalysis);
+    return;
+  }
+
+  setTimeout(runAnalysis, 0);
+};
+
 export const createIssue = async (issueData, userId) => {
   const {
     title,
@@ -611,6 +671,8 @@ export const createIssue = async (issueData, userId) => {
       );
     }
   }
+
+  scheduleAiAnalysisForIssue(data.id, issuePayload, validatedFields.attachments);
 
   return getIssueById(data.id, userId);
 };
