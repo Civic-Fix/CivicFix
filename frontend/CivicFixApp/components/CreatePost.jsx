@@ -36,6 +36,14 @@ const formatStatus = (status) =>
         .join(' ')
     : 'Reported';
 
+const formatCategoryLabel = (category) =>
+  category
+    ? category
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+    : '';
+
 const buildAttachmentPayload = (images = []) =>
   images.map((image) => ({
     file_url: image.uri,
@@ -322,6 +330,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
       downvotes: 0,
       lat: issueCoordinates?.lat ?? null,
       lng: issueCoordinates?.lng ?? null,
+      aiPending: true,
     };
 
     try {
@@ -413,8 +422,33 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           lng: createdIssue?.lng ?? localPost.lng,
           anonymous: createdIssue?.is_anonymous ?? isAnonymous,
           isAnonymous: createdIssue?.is_anonymous ?? isAnonymous,
+          aiCategory: createdIssue?.category || createdIssue?.ai_analysis?.classification?.category || '',
+          aiCategoryLabel: formatCategoryLabel(
+            createdIssue?.category || createdIssue?.ai_analysis?.classification?.category
+          ),
+          aiCategoryConfidence:
+            createdIssue?.ai_category_confidence ??
+            createdIssue?.ai_analysis?.classification?.confidence ??
+            null,
+          aiSeverity: createdIssue?.ai_severity || createdIssue?.ai_analysis?.classification?.severity || '',
+          aiSummary: createdIssue?.ai_summary || createdIssue?.ai_analysis?.classification?.summary || '',
+          aiDuplicateOf:
+            createdIssue?.ai_duplicate_of ||
+            createdIssue?.ai_analysis?.duplicate_detection?.duplicate_of ||
+            null,
+          aiDuplicateScore:
+            createdIssue?.ai_duplicate_score ??
+            createdIssue?.ai_analysis?.duplicate_detection?.duplicate_score ??
+            null,
+          aiDuplicateCandidates:
+            createdIssue?.ai_duplicate_candidates ||
+            createdIssue?.ai_analysis?.duplicate_detection?.candidates ||
+            [],
+          aiAnalyzedAt: createdIssue?.ai_analyzed_at || createdIssue?.ai_analysis?.analyzed_at || null,
+          aiPending: false,
         };
       } else {
+        syncedPost = { ...localPost, aiPending: false };
         setInfoMessage('Posted locally. Log in again if you want it synced to the server.');
       }
 
@@ -481,6 +515,24 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
                   Locality is required. Photos and exact location are optional.
                 </Text>
               </View>
+            </View>
+
+            <View style={styles.aiAssistCard}>
+              <View style={styles.sectionTitleRow}>
+                <Feather name="cpu" size={15} color="#1D4ED8" />
+                <Text style={styles.aiAssistTitle}>AI assisted triage</Text>
+              </View>
+              <Text style={styles.aiAssistText}>
+                CivicFix will auto-categorize this complaint and check nearby reports for duplicates after submission.
+              </Text>
+              {isSubmitting ? (
+                <View style={styles.aiAssistProgress}>
+                  <ActivityIndicator size="small" color="#1D4ED8" />
+                  <Text style={styles.aiAssistProgressText}>
+                    AI is categorizing and checking duplicates...
+                  </Text>
+                </View>
+              ) : null}
             </View>
 
             <View style={styles.inputIconWrap}>

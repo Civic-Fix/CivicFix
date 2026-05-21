@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes.js";
 import assistantRoutes from "./routes/assistantRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 import issueRoutes from "./routes/issueRoutes.js";
 import commentRoutes from "./routes/commentRoutes.js";
 import teamRoutes from "./routes/teamRoutes.js";
@@ -29,6 +30,7 @@ app.use((req, res, next) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/assistant", assistantRoutes);
+app.use("/api/ai", aiRoutes);
 console.log('Mounting issue routes...');
 app.use("/api/issues", issueRoutes);
 console.log('Mounted issue routes');
