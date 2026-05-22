@@ -145,7 +145,7 @@ function IssueCard({ issue, index, onOpen }) {
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           className={[
-            'group h-44 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm transition',
+            'group h-55 rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm transition',
             snapshot.isDragging ? 'rotate-1 border-blue-300 shadow-xl shadow-blue-950/15' : 'hover:border-blue-200 hover:shadow-md',
           ].join(' ')}
         >
