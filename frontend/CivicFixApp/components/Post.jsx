@@ -239,6 +239,11 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
                           ) : null}
                         </View>
                         <Text style={styles.issueUpdateDescription}>{update.content}</Text>
+                        {update.update_attachments && update.update_attachments.length ? (
+                          <View style={{ marginTop: 8, marginBottom: 8 }}>
+                            <ImageCarousel images={update.update_attachments.map((a) => a.file_url)} height={140} borderRadius={12} resizeMode={'contain'} />
+                          </View>
+                        ) : null}
                         <Text style={styles.issueUpdateTime}>{formatCommentTime(update.created_at || update.time)}</Text>
                       </View>
                     </View>

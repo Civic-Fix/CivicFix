@@ -134,6 +134,46 @@ const normalizeAttachment = (attachment) => {
   };
 };
 
+const normalizeUpdateAttachmentPayload = (attachment) => {
+  if (!attachment || typeof attachment !== "object") {
+    throw new IssueServiceError("Each update attachment must be an object");
+  }
+
+  const fileUrl =
+    typeof attachment.file_url === "string" ? attachment.file_url.trim() : "";
+  const fileName =
+    typeof attachment.file_name === "string" ? attachment.file_name.trim() : "";
+  const mimeType =
+    typeof attachment.mime_type === "string" ? attachment.mime_type.trim() : "";
+  const fileDataBase64 =
+    typeof attachment.file_data_base64 === "string" ? attachment.file_data_base64.trim() : "";
+
+  if (!fileUrl && !(fileName && mimeType && fileDataBase64)) {
+    throw new IssueServiceError(
+      "Each update attachment must include either file_url or file_name, mime_type, and file_data_base64"
+    );
+  }
+
+  return {
+    file_url: fileUrl || null,
+    file_name: fileName || null,
+    mime_type: mimeType || null,
+    file_data_base64: fileDataBase64 || null,
+  };
+};
+
+const normalizeUpdateAttachments = (attachments) => {
+  if (attachments === undefined || attachments === null) {
+    return [];
+  }
+
+  if (!Array.isArray(attachments)) {
+    throw new IssueServiceError("update attachments must be an array");
+  }
+
+  return attachments.map(normalizeUpdateAttachmentPayload);
+};
+
 const normalizeUploadPayload = ({ file_name, mime_type, file_data_base64 }) => {
   const fileName = typeof file_name === "string" ? file_name.trim() : "";
   const mimeType = typeof mime_type === "string" ? mime_type.trim() : "";
@@ -279,6 +319,44 @@ const fetchAttachmentsByIssueIds = async (issueIds) => {
     }
 
     attachmentsMap.get(attachment.issue_id).push(attachment);
+  }
+
+  return attachmentsMap;
+};
+
+const fetchUpdateAttachmentsByUpdateIds = async (updateIds) => {
+  if (!updateIds.length) {
+    return new Map();
+  }
+
+  const { data, error } = await supabase
+    .from("update_attachments")
+    .select("id, update_id, file_url, created_at")
+    .in("update_id", updateIds)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[IssueService] fetchUpdateAttachmentsByUpdateIds failed", {
+      updateIds,
+      error,
+    });
+    throw new IssueServiceError(
+      error.message || "Unable to fetch update attachments",
+      500
+    );
+  }
+
+  const attachmentsMap = new Map();
+  for (const updateId of updateIds) {
+    attachmentsMap.set(updateId, []);
+  }
+
+  for (const attachment of data || []) {
+    if (!attachmentsMap.has(attachment.update_id)) {
+      attachmentsMap.set(attachment.update_id, []);
+    }
+
+    attachmentsMap.get(attachment.update_id).push(attachment);
   }
 
   return attachmentsMap;
@@ -476,6 +554,7 @@ const getIssueRecordById = async (issueId) => {
 
 const formatUpdateRecord = (update, issue = null) => {
   const organization = issue?.organization || null;
+  const attachments = update.update_attachments || update.attachments || [];
 
   return {
     ...update,
@@ -495,6 +574,8 @@ const formatUpdateRecord = (update, issue = null) => {
           organization,
         }
       : null,
+    update_attachments: attachments,
+    attachments,
   };
 };
 
@@ -913,7 +994,7 @@ export const listIssueUpdates = async (issueId) => {
 
   const { data, error } = await supabase
     .from("updates")
-    .select("id, issue_id, message, image_url, type, created_by, created_at")
+    .select("id, issue_id, message, type, created_by, created_at")
     .eq("issue_id", issueId)
     .order("created_at", { ascending: false });
 
@@ -924,6 +1005,15 @@ export const listIssueUpdates = async (issueId) => {
     });
     throw new IssueServiceError(error.message || "Unable to fetch issue updates", 500);
   }
+
+  const updateRows = data || [];
+  const updateIds = updateRows.map((update) => update.id).filter(Boolean);
+  const attachmentsMap = await fetchUpdateAttachmentsByUpdateIds(updateIds);
+
+  const updatesWithAttachments = updateRows.map((update) => ({
+    ...update,
+    update_attachments: attachmentsMap.get(update.id) || [],
+  }));
 
   const organizationsMap = await fetchOrganizationsByIds([issue.organization_id]);
   const organization = organizationsMap.get(issue.organization_id) || null;
@@ -936,13 +1026,13 @@ export const listIssueUpdates = async (issueId) => {
     organization,
   };
 
-  return (data || []).map((update) => formatUpdateRecord(update, issueSummary));
+  return updatesWithAttachments.map((update) => formatUpdateRecord(update, issueSummary));
 };
 
 export const listAllUpdates = async () => {
   const { data, error } = await supabase
     .from("updates")
-    .select("id, issue_id, message, image_url, type, created_by, created_at")
+    .select("id, issue_id, message, type, created_by, created_at")
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -952,7 +1042,13 @@ export const listAllUpdates = async () => {
     throw new IssueServiceError(error.message || "Unable to fetch issue updates", 500);
   }
 
-  const updates = data || [];
+  const updateRows = data || [];
+  const updateIds = updateRows.map((update) => update.id).filter(Boolean);
+  const updateAttachmentsMap = await fetchUpdateAttachmentsByUpdateIds(updateIds);
+  const updates = updateRows.map((update) => ({
+    ...update,
+    update_attachments: updateAttachmentsMap.get(update.id) || [],
+  }));
 
   const issueIds = [...new Set(updates.map((update) => update.issue_id).filter(Boolean))];
 
@@ -989,7 +1085,7 @@ export const listAllUpdates = async () => {
   }));
 };
 
-export const addIssueUpdate = async (issueId, content, userId) => {
+export const addIssueUpdate = async (issueId, content, userId, attachments = []) => {
   const issue = await getIssueRecordById(issueId);
 
   const normalizedContent = typeof content === "string" ? content.trim() : "";
@@ -1006,7 +1102,7 @@ export const addIssueUpdate = async (issueId, content, userId) => {
       created_by: userId,
       type: "comment",
     })
-    .select("id, issue_id, message, image_url, type, created_by, created_at")
+    .select("id, issue_id, message, type, created_by, created_at")
     .single();
 
   if (error || !data) {
@@ -1016,6 +1112,62 @@ export const addIssueUpdate = async (issueId, content, userId) => {
       error,
     });
     throw new IssueServiceError(error?.message || "Unable to add issue update", 500);
+  }
+
+  if (attachments.length) {
+    const normalizedAttachments = normalizeUpdateAttachments(attachments);
+    const attachmentRows = [];
+
+    for (const attachment of normalizedAttachments) {
+      let fileUrl = attachment.file_url;
+
+      if (!fileUrl) {
+        const uploadResult = await uploadBufferToStorage({
+          buffer: Buffer.from(attachment.file_data_base64, "base64"),
+          fileName: attachment.file_name,
+          mimeType: attachment.mime_type,
+          userId,
+        });
+
+        if (!uploadResult.file_url) {
+          await supabase.from("updates").delete().eq("id", data.id);
+          throw new IssueServiceError(
+            "Attachment uploaded but no public URL could be generated",
+            500
+          );
+        }
+
+        fileUrl = uploadResult.file_url;
+      }
+
+      attachmentRows.push({
+        update_id: data.id,
+        file_url: fileUrl,
+      });
+    }
+
+    const { data: attachedRows, error: attachmentError } = await supabase
+      .from("update_attachments")
+      .insert(attachmentRows)
+      .select("id, update_id, file_url, created_at");
+
+    if (attachmentError) {
+      await supabase.from("updates").delete().eq("id", data.id);
+      console.error("[IssueService] addIssueUpdate attachments failed", {
+        issueId,
+        userId,
+        attachmentRows,
+        error: attachmentError,
+      });
+      throw new IssueServiceError(
+        attachmentError.message || "Update created but attachments could not be saved",
+        500
+      );
+    }
+
+    data.update_attachments = attachedRows || [];
+  } else {
+    data.update_attachments = [];
   }
 
   const organizationsMap = await fetchOrganizationsByIds([issue.organization_id]);

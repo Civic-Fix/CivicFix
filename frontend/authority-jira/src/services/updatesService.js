@@ -5,8 +5,8 @@ export async function listUpdates(issueId) {
   return data?.updates ?? []
 }
 
-export async function addUpdate({ issueId, content }) {
-  const data = await api.post(`/issues/${issueId}/updates`, { content })
+export async function addUpdate({ issueId, content, attachments = [] }) {
+  const data = await api.post(`/issues/${issueId}/updates`, { content, attachments })
   return data?.update
 }
 
