@@ -163,7 +163,12 @@ export const getUpdates = async (req, res) => {
 
 export const addIssueUpdate = async (req, res) => {
   try {
-    const update = await addIssueUpdateRecord(req.params.id, req.body?.content, req.userId);
+    const update = await addIssueUpdateRecord(
+      req.params.id,
+      req.body?.content,
+      req.userId,
+      req.body?.attachments || []
+    );
 
     return res.status(201).json({
       message: "Issue update added successfully",
