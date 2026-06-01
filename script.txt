@@ -1,0 +1,147 @@
+TITLE: "THE JOURNEY OF A POTHOLE"
+
+[Scene 1: The Old Way (45 seconds)]
+
+Citizen:
+(holding imaginary phone)
+Oh great! The pothole outside my house has become so big it deserves its own PIN code.
+
+Clerk:
+Did you file a complaint?
+
+Citizen:
+Yes. Three months ago.
+
+Clerk:
+Then file another complaint.
+
+Citizen:
+I already filed three!
+
+Clerk:
+Perfect. File a fourth. We like consistency.
+
+(Audience laughs)
+
+Citizen:
+Where did my complaints go?
+
+Clerk:
+(looking around dramatically)
+Nobody knows.
+
+Officer:
+(enters carrying fake stack of papers)
+I got 500 complaints this week.
+Half have no location.
+Some are duplicates.
+One complaint just says:
+"Road bad. Please fix."
+
+Citizen:
+So when will my pothole be fixed?
+
+Officer:
+Maybe before your grandchildren graduate.
+
+(All freeze dramatically)
+
+[Scene 2: Enter CivicFix (15 seconds)]
+
+Narrator:
+What if civic complaints didn't disappear into a black hole?
+
+What if citizens and authorities worked on the same transparent platform?
+
+Introducing... CivicFix!
+
+[Scene 3: The CivicFix Way (1 minute)]
+
+Citizen:
+(opens imaginary app)
+
+There's a pothole.
+
+Click photo.
+
+GPS captured.
+
+Complaint submitted.
+
+Narrator:
+CivicFix automatically records location, categorizes the issue using AI, and makes it visible to both citizens and authorities.
+
+Officer:
+(looking at dashboard)
+
+Issue verified.
+
+Priority high.
+
+Assigned to repair team.
+
+Narrator:
+No paperwork chaos.
+No duplicate confusion.
+Every issue follows a clear workflow.
+
+Officer:
+Reported.
+
+Verified.
+
+In Progress.
+
+Review.
+
+Completed.
+
+Citizen:
+And I can track every update in real time!
+
+Narrator:
+Citizens can vote, comment, and stay informed throughout the entire lifecycle.
+
+[Scene 4: The Punchline & Impact (30 seconds)]
+
+Citizen:
+So you're telling me I don't need to call five departments?
+
+Officer:
+No.
+
+Citizen:
+Or submit four complaints?
+
+Officer:
+No.
+
+Citizen:
+Or pray to the pothole gods?
+
+Officer:
+Definitely no.
+
+Narrator:
+With CivicFix, governance becomes transparent, accountable, and efficient.
+
+Citizen:
+For citizens, every complaint matters.
+
+Officer:
+For authorities, every issue is manageable.
+
+Narrator:
+And for cities...
+
+(All together, stepping forward)
+
+"...every problem gets a path to resolution."
+
+(Pause)
+
+Narrator:
+
+Now, let us show you how CivicFix makes this possible.
+
+[Transition directly to demo/presentation]
