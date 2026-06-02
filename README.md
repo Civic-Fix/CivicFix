@@ -339,3 +339,6 @@ MIT License – See LICENSE file
 ---
 
 **Questions? Open an issue or check the [Architecture Guide](ARCHITECTURE.md)!**
+
+## Affinity Map Link
+https://drive.google.com/file/d/1yW3NGpZ46KwXfg9tbDL_SP9VMNVS0JDs/view?usp=drivesdk
