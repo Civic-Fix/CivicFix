@@ -12,9 +12,15 @@
       "android": {
         "buildType": "apk"
       },
+      "ios": {
+        "simulator": true
+      },
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://civicfix-0r1r.onrender.com/api",
-        "EXPO_PUBLIC_ISSUE_SHARE_BASE_URL": "https://civicfixcoderz.netlify.app"
+        "EXPO_PUBLIC_ISSUE_SHARE_BASE_URL": "https://civicfixcoderz.netlify.app",
+        "EXPO_PUBLIC_SUPABASE_URL":"https://stgwyeypnntftjmlunov.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Z3d5ZXlwbm50ZnRqbWx1bm92Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1OTY0NDcsImV4cCI6MjA5MDE3MjQ0N30.iVNuDF9gijqWhRxYKP6pdzhoIsnCvM-ciHywZ3-l2zI"
+
       }
     },
     "production": {
