@@ -10,6 +10,7 @@ const extractBearerToken = (authHeader) => {
 
 export const requireAuth = async (req, res, next) => {
   try {
+    console.log("Authorization header:", req.headers.authorization);
     const token = extractBearerToken(req.headers.authorization);
 
     if (!token) {

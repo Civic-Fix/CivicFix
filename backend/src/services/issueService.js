@@ -392,7 +392,7 @@ const fetchUsersByIds = async (userIds) => {
 
   const { data, error } = await supabase
     .from("users")
-    .select("id, name, phone, email, trust_score, is_verified")
+    .select("id, name, phone, avatar_url, email, trust_score, is_verified")
     .in("id", uniqueUserIds);
 
   if (error) {

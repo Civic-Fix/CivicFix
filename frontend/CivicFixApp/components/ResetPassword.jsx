@@ -1,73 +1,70 @@
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  Text,
-  View,
-  TextInput,
-  TouchableOpacity,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ActivityIndicator,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { API_BASE_URL } from '../config';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'; // Import the Supabase client
+import { supabase } from '../supabaseClient';
 
 const CIVIC_BLUE = '#1D4ED8';
 const TEAL = '#14B8A6';
 
-const Login = ({ onSignupPress, onLoginSuccess, onForgotPasswordPress }) => {
-  const [email, setEmail] = useState('');
+const ResetPassword = ({ onBack }) => {
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [focusedField, setFocusedField] = useState(null);
 
-  const handleLogin = async () => {
+  const handleResetPassword = async () => {
     setError('');
     setSuccess('');
 
-    if (!email || !password) {
-      setError('Please enter both email and password.');
+    if (!password || !confirmPassword) {
+      setError('Please enter and confirm your new password.');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password should be at least 6 characters long.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, accountType: 'citizen' }),
+      // Use the Supabase client to update the user's password
+      // Supabase automatically handles the recovery token from the URL
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: password,
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Login failed');
+      if (updateError) {
+        throw updateError;
       }
 
-      const accessToken = result.session?.accessToken;
-      const refreshToken = result.session?.refreshToken;
-      const userInfo = result.user ? JSON.stringify(result.user) : null;
-
-      const storageItems = [];
-      if (accessToken) storageItems.push(['authToken', accessToken]);
-      if (refreshToken) storageItems.push(['refreshToken', refreshToken]);
-      if (userInfo) storageItems.push(['userInfo', userInfo]);
-
-      if (storageItems.length) {
-        await AsyncStorage.multiSet(storageItems);
-      }
-
-      const userData = result.user || (userInfo ? JSON.parse(userInfo) : null);
-      setSuccess('Login successful. Welcome to CivicFix!');
-      if (onLoginSuccess) onLoginSuccess(userData);
+      setSuccess('Your password has been updated. You can now sign in.');
+      setPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        onBack(); // Navigate back to login after a short delay
+      }, 2000);
     } catch (err) {
-      setError(err.message || 'Unable to log in.');
+      setError(err.message || 'Unable to update password.');
     } finally {
       setLoading(false);
     }
@@ -81,48 +78,23 @@ const Login = ({ onSignupPress, onLoginSuccess, onForgotPasswordPress }) => {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <View style={styles.logoWrap}>
-            <MaterialCommunityIcons name="city-variant-outline" size={34} color="#FFFFFF" />
+            <MaterialCommunityIcons name="lock-reset" size={32} color="#FFFFFF" />
           </View>
-          <Text style={styles.heroTitle}>CivicFix</Text>
-          <Text style={styles.heroTagline}>Report - Track - Resolve</Text>
+          <Text style={styles.heroTitle}>Reset password</Text>
+          <Text style={styles.heroTagline}>Choose a new password for your account</Text>
         </View>
 
         <View style={styles.formCard}>
-          <Text style={styles.formHeading}>Welcome back</Text>
-          <Text style={styles.formSubheading}>Sign in to continue civic reporting</Text>
+          <Text style={styles.formHeading}>Set new password</Text>
+          <Text style={styles.formSubheading}>Use the reset link you opened to create a new password.</Text>
 
           <View style={styles.fieldWrap}>
-            <Text style={styles.fieldLabel}>Email</Text>
-            <View style={[styles.inputWrap, focusedField === 'email' && styles.inputFocused]}>
-              <MaterialCommunityIcons name="email-outline" size={19} color={TEAL} />
-              <TextInput
-                style={styles.input}
-                placeholder="you@example.com"
-                placeholderTextColor="#64748B"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                underlineColorAndroid="transparent"
-                selectionColor={TEAL}
-                value={email}
-                onChangeText={setEmail}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-              />
-            </View>
-          </View>
-
-          <View style={styles.fieldWrap}>
-            <View style={styles.fieldLabelRow}>
-              <Text style={styles.fieldLabel}>Password</Text>
-              <TouchableOpacity onPress={() => onForgotPasswordPress(email)}>
-                <Text style={styles.forgotText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.fieldLabel}>New password</Text>
             <View style={[styles.inputWrap, focusedField === 'password' && styles.inputFocused]}>
               <MaterialCommunityIcons name="lock-outline" size={19} color={TEAL} />
               <TextInput
                 style={styles.input}
-                placeholder="Password"
+                placeholder="New password"
                 placeholderTextColor="#64748B"
                 secureTextEntry={!showPassword}
                 underlineColorAndroid="transparent"
@@ -146,12 +118,32 @@ const Login = ({ onSignupPress, onLoginSuccess, onForgotPasswordPress }) => {
             </View>
           </View>
 
+          <View style={styles.fieldWrap}>
+            <Text style={styles.fieldLabel}>Confirm password</Text>
+            <View style={[styles.inputWrap, focusedField === 'confirmPassword' && styles.inputFocused]}>
+              <MaterialCommunityIcons name="lock-check-outline" size={19} color={TEAL} />
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm password"
+                placeholderTextColor="#64748B"
+                secureTextEntry={!showPassword}
+                underlineColorAndroid="transparent"
+                selectionColor={TEAL}
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                onFocus={() => setFocusedField('confirmPassword')}
+                onBlur={() => setFocusedField(null)}
+              />
+            </View>
+          </View>
+
           {error ? (
             <View style={styles.alertError}>
               <MaterialCommunityIcons name="alert-circle-outline" size={15} color="#DC2626" />
               <Text style={styles.alertErrorText}>{error}</Text>
             </View>
           ) : null}
+
           {success ? (
             <View style={styles.alertSuccess}>
               <MaterialCommunityIcons name="check-circle-outline" size={15} color={TEAL} />
@@ -161,7 +153,7 @@ const Login = ({ onSignupPress, onLoginSuccess, onForgotPasswordPress }) => {
 
           <TouchableOpacity
             style={[styles.primaryBtn, loading && styles.btnDisabled]}
-            onPress={handleLogin}
+            onPress={handleResetPassword}
             disabled={loading}
             activeOpacity={0.85}
           >
@@ -169,18 +161,15 @@ const Login = ({ onSignupPress, onLoginSuccess, onForgotPasswordPress }) => {
               <ActivityIndicator color="#FFFFFF" />
             ) : (
               <>
-                <MaterialCommunityIcons name="login" size={18} color="#FFFFFF" />
-                <Text style={styles.primaryBtnText}>Sign In</Text>
+                <MaterialCommunityIcons name="check-circle-outline" size={18} color="#FFFFFF" />
+                <Text style={styles.primaryBtnText}>Update password</Text>
               </>
             )}
           </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={onSignupPress}>
-              <Text style={styles.footerLink}>Sign Up</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity style={styles.secondaryBtn} onPress={onBack} activeOpacity={0.8}>
+            <Text style={styles.secondaryBtnText}>Back to sign in</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -198,7 +187,7 @@ const styles = StyleSheet.create({
   hero: {
     alignItems: 'center',
     paddingTop: 48,
-    paddingBottom: 30,
+    paddingBottom: 28,
     paddingHorizontal: 24,
     backgroundColor: CIVIC_BLUE,
   },
@@ -214,7 +203,7 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255,255,255,0.35)',
   },
   heroTitle: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: '#FFFFFF',
     marginBottom: 6,
@@ -243,7 +232,7 @@ const styles = StyleSheet.create({
   formSubheading: {
     fontSize: 14,
     color: '#52616B',
-    marginBottom: 28,
+    marginBottom: 24,
   },
   fieldWrap: {
     marginBottom: 16,
@@ -253,17 +242,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#334155',
     marginBottom: 6,
-  },
-  fieldLabelRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  forgotText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: TEAL,
   },
   inputWrap: {
     height: 48,
@@ -353,20 +331,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 24,
+  secondaryBtn: {
+    marginTop: 12,
+    alignItems: 'center',
   },
-  footerText: {
-    color: '#52616B',
-    fontSize: 14,
-  },
-  footerLink: {
+  secondaryBtnText: {
     color: TEAL,
-    fontWeight: '800',
     fontSize: 14,
+    fontWeight: '700',
   },
 });
 
-export default Login;
+export default ResetPassword;

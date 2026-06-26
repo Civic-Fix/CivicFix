@@ -1,15 +1,76 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import {
+  addStoredNotifications,
+  getDismissedNotificationIds,
+  getStoredNotifications,
+  removeStoredNotification,
+  requestNotificationPermissions,
+  scheduleLocalNotification,
+} from '../services/notificationService';
 
-const Notifications = ({ issues }) => {
-  const items = issues.slice(0, 4).map((issue) => ({
-    id: issue.id,
-    title: `${issue.author} posted an update`,
-    body: issue.brief,
-    time: issue.time,
-  }));
+const Notifications = ({ issues, user }) => {
+  const [items, setItems] = useState([]);
+  const userId = user?.id || user?.email || 'guest';
+
+  useEffect(() => {
+    const loadItems = async () => {
+      const stored = await getStoredNotifications(userId);
+      setItems(stored);
+    };
+
+    loadItems();
+  }, [userId]);
+
+  useEffect(() => {
+    const syncItems = async () => {
+      const seeded = issues.slice(0, 4).map((issue) => ({
+        id: `feed-${issue.id}`,
+        sourceIssueId: issue.id,
+        title: `${issue.author} posted an update`,
+        body: issue.brief,
+        time: issue.time,
+        category: 'feed',
+      }));
+
+      if (!seeded.length) {
+        return;
+      }
+
+      const [storedItems, dismissedIssueIds] = await Promise.all([
+        getStoredNotifications(userId),
+        getDismissedNotificationIds(userId),
+      ]);
+      const existingIds = new Set(storedItems.map((item) => item.id));
+      const dismissedIds = new Set(dismissedIssueIds);
+      const newItems = seeded.filter(
+        (item) => !existingIds.has(item.id) && !dismissedIds.has(item.sourceIssueId)
+      );
+
+      if (newItems.length) {
+        const nextItems = await addStoredNotifications(newItems, userId);
+        setItems(nextItems);
+      }
+
+      requestNotificationPermissions();
+      newItems.forEach((item) => {
+        scheduleLocalNotification({
+          title: item.title,
+          body: item.body,
+          data: { id: item.id },
+        });
+      });
+    };
+
+    syncItems();
+  }, [issues, userId]);
+
+  const handleRemove = async (id) => {
+    const next = await removeStoredNotification(id, userId);
+    setItems(next);
+  };
 
   return (
     <View style={styles.container}>
@@ -37,7 +98,12 @@ const Notifications = ({ issues }) => {
                 <Text style={styles.cardTitle}>{item.title}</Text>
                 <Text numberOfLines={2} style={styles.cardBody}>{item.body}</Text>
               </View>
-              <Text style={styles.time}>{item.time}</Text>
+              <View style={styles.actions}>
+                <Text style={styles.time}>{item.time}</Text>
+                <TouchableOpacity onPress={() => handleRemove(item.id)} style={styles.removeButton}>
+                  <MaterialCommunityIcons name="close" size={16} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
             </View>
           ))
         )}
@@ -116,10 +182,24 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  actions: {
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    minHeight: 42,
+  },
   time: {
     color: '#9CA3AF',
     fontSize: 12,
     marginTop: 2,
+  },
+  removeButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+    marginTop: 6,
   },
   empty: {
     alignItems: 'center',

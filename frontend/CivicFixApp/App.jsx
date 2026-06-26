@@ -1,16 +1,20 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import Login from './components/Login';
 import Signup from './components/Signup';
+import ResetPassword from './components/ResetPassword';
+import ForgotPassword from './components/ForgotPassword';
+import UpdatePassword from './components/UpdatePassword';
 import Feeds from './components/Feeds';
 import SearchScreen from './components/SearchScreen';
 import CreatePost from './components/CreatePost';
 import Notifications from './components/Notifications';
+import ProfileScreen from './components/ProfileScreen';
 import CivicAssistant from './components/CivicAssistant';
 import IssueMap from './components/IssueMap';
 import Post from './components/Post';
@@ -132,6 +136,7 @@ const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = [])
   return {
     id: issue.id,
     author,
+    avatar_url: issueUser?.avatar_url,
     handle,
     time: formatRelativeTime(issue.created_at),
     fullTime: formatPostTime(issue.created_at),
@@ -173,7 +178,10 @@ const mapIssueToFeedItem = (issue, currentUserId = null, anonymousIssueIds = [])
 
 export default function App() {
   const [screen, setScreen] = useState('login');
+  const [isResetPasswordFlow, setIsResetPasswordFlow] = useState(false);
+  const [isUpdatePasswordFlow, setIsUpdatePasswordFlow] = useState(false);
   const [user, setUser] = useState(null);
+  const [initialForgotPasswordEmail, setInitialForgotPasswordEmail] = useState('');
   const [selectedIssue, setSelectedIssue] = useState(null);
   const [selectedIssueComments, setSelectedIssueComments] = useState([]);
   const [selectedIssueUpdates, setSelectedIssueUpdates] = useState([]);
@@ -191,11 +199,14 @@ export default function App() {
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const aiAnalysisQueuedRef = useRef(new Set());
   const aiPollAttemptsRef = useRef(new Map());
+  const hasLoadedIssuesRef = useRef(false);
+  const hasLoadedUpdatesRef = useRef(false);
 
   const loadIssues = useCallback(async (activeUser = user) => {
     setIsLoadingIssues(true);
 
     try {
+      console.log(await AsyncStorage.getItem("authToken"));
       const authToken = await AsyncStorage.getItem('authToken');
       const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
 
@@ -207,6 +218,7 @@ export default function App() {
       console.log('[App] Response data:', result);
 
       if (!response.ok) {
+        console.log(await AsyncStorage.getItem("authToken"));
         throw new Error(result.error || 'Unable to fetch issues');
       }
 
@@ -280,6 +292,28 @@ export default function App() {
   }, [searchQuery, user, anonymousIssueIds]);
 
   useEffect(() => {
+    // This function handles the incoming URL and checks for a recovery token
+    const handleRecoveryUrl = (url) => {
+      if (!url) return;
+
+      // Supabase appends the recovery info in a URL fragment
+      const params = new URLSearchParams(url.split('#')[1]);
+      if (params.get('type') === 'recovery') {
+        setIsResetPasswordFlow(true);
+        setScreen('resetPassword');
+      }
+    };
+
+    // Check for an initial URL when the app is opened from a cold start
+    Linking.getInitialURL().then(url => handleRecoveryUrl(url));
+
+    // Listen for incoming links while the app is running
+    const subscription = Linking.addEventListener('url', ({ url }) => handleRecoveryUrl(url));
+
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
     const restoreSession = async () => {
       try {
         const [authToken, userInfo, savedAnonymousIds] = await Promise.all([
@@ -302,30 +336,49 @@ export default function App() {
     restoreSession();
   }, []);
 
-  useEffect(() => {
-    if (screen === 'feeds' && activeTab === 'home') {
-      loadIssues();
-      loadUpdates();
-    }
-
-    if (screen === 'feeds' && activeTab === 'search' && !searchQuery.trim()) {
-      loadIssues();
-    }
-  }, [screen, user, activeTab, searchQuery]);
-
   const handleLoginSuccess = async (userData) => {
-    setUser(userData);
+    const userToStore = {
+      ...userData,
+      // Exclude large fields from the stored user object to keep the token small
+      profile: userData.profile ? {
+        name: userData.profile.name,
+        avatar_url: userData.profile.avatar_url,
+        trust_score: userData.profile.trust_score,
+      } : null,
+    };
+
+    hasLoadedIssuesRef.current = false;
+    hasLoadedUpdatesRef.current = false;
+    setUser(userToStore);
     setScreen('feeds');
     setActiveTab('home');
   };
 
   const handleLogout = async () => {
-    await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userInfo']);
+    await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userInfo', 'anonymousIssueIds']);
+    hasLoadedIssuesRef.current = false;
+    hasLoadedUpdatesRef.current = false;
     setUser(null);
     setIssues([]);
+    setUpdates([]);
     setSearchQuery('');
+    setIsUpdatePasswordFlow(false);
     setSearchResults([]);
     setScreen('login');
+  };
+
+  const handleUserUpdated = async (nextUser) => {
+    const userToStore = {
+      ...nextUser,
+      profile: nextUser.profile ? {
+        name: nextUser.profile.name,
+        avatar_url: nextUser.profile.avatar_url,
+        trust_score: nextUser.profile.trust_score,
+      } : null,
+    };
+
+    setUser(userToStore);
+    await AsyncStorage.setItem('userInfo', JSON.stringify(userToStore));
   };
 
   const handleCreatePost = async (newPost) => {
@@ -374,6 +427,22 @@ export default function App() {
       setIsLoadingUpdates(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (screen !== 'feeds') {
+      return;
+    }
+
+    if (!hasLoadedIssuesRef.current) {
+      hasLoadedIssuesRef.current = true;
+      loadIssues();
+    }
+
+    if (!hasLoadedUpdatesRef.current) {
+      hasLoadedUpdatesRef.current = true;
+      loadUpdates();
+    }
+  }, [screen, user, loadIssues, loadUpdates]);
 
   const updateIssueEverywhere = (id, updater) => {
     setIssues((prev) =>
@@ -804,9 +873,40 @@ export default function App() {
     }
   };
 
+  const getHeaderMeta = () => {
+    switch (activeTab) {
+      case 'search':
+        return { title: 'Discover', subtitle: 'Find issues and local stories' };
+      case 'assistant':
+        return { title: 'CivicBot', subtitle: 'Ask for guidance and support' };
+      case 'map':
+        return { title: 'Map view', subtitle: 'Explore issues nearby' };
+      case 'notifications':
+        return { title: 'Alerts', subtitle: 'Your latest civic updates' };
+      case 'profile':
+        return { title: 'Profile', subtitle: 'Manage your account and preferences' };
+      case 'createPost':
+        return { title: 'New report', subtitle: 'Share civic issues with the community' };
+      default:
+        return { title: 'Home', subtitle: 'Stay updated with local civic activity' };
+    }
+  };
+
   const renderMainScreen = () => {
     if (activeTab === 'notifications') {
-      return <Notifications issues={issues} />;
+      return <Notifications issues={issues} user={user} />;
+    }
+
+    if (activeTab === 'profile') {
+      return (
+        <ProfileScreen
+          user={user}
+          issues={issues}
+          onLogout={handleLogout}
+          onUserUpdated={handleUserUpdated}
+          onOpenUpdatePassword={() => setScreen('updatePassword')}
+        />
+      );
     }
 
     if (activeTab === 'assistant') {
@@ -816,6 +916,7 @@ export default function App() {
     if (activeTab === 'map') {
       return (
         <IssueMap
+          issues={issues}
           onOpenIssue={async (issueId) => {
             const issue = await loadIssueById(issueId);
             if (issue) {
@@ -851,7 +952,7 @@ export default function App() {
       );
     }
 
-    if (activeTab === 'home' && isLoadingIssues) {
+    if (activeTab === 'home' && isLoadingIssues && !issues.length) {
       return (
         <View style={styles.loadingState}>
           <ActivityIndicator size="large" color="#0F766E" />
@@ -879,6 +980,9 @@ export default function App() {
     );
   };
 
+  const headerMeta = getHeaderMeta();
+  const shouldShowShellHeader = screen !== 'login' && screen !== 'signup' && screen !== 'resetPassword';
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -895,14 +999,30 @@ export default function App() {
           <Login
             onSignupPress={() => setScreen('signup')}
             onLoginSuccess={handleLoginSuccess}
+            onForgotPasswordPress={(email) => {
+              setInitialForgotPasswordEmail(email || '');
+              setScreen('forgotPassword');
+            }}
           />
         ) : screen === 'signup' ? (
           <Signup onLoginPress={() => setScreen('login')} />
+        ) : screen === 'resetPassword' ? (
+          <ResetPassword onBack={() => {
+            setScreen('login');
+            setIsResetPasswordFlow(false);
+          }} />
+        ) : screen === 'forgotPassword' ? (
+          <ForgotPassword onBack={() => setScreen('login')} initialEmail={initialForgotPasswordEmail} />
         ) : screen === 'createPost' ? (
           <CreatePost
             user={user}
             onPostCreated={handleCreatePost}
             onCancel={() => setScreen('feeds')}
+          />
+        ) : screen === 'updatePassword' ? (
+          <UpdatePassword
+            user={user}
+            onBack={() => setScreen('feeds')}
           />
         ) : screen === 'postDetail' ? (
           <Post
@@ -928,6 +1048,14 @@ export default function App() {
           />
         ) : (
           <View style={styles.appShell}>
+            {shouldShowShellHeader ? (
+              <View style={styles.appHeader}>
+                <View>
+                  <Text style={styles.headerTitle}>{headerMeta.title}</Text>
+                  <Text style={styles.headerSubtitle}>{headerMeta.subtitle}</Text>
+                </View>
+              </View>
+            ) : null}
             <View style={styles.mainContent}>{renderMainScreen()}</View>
 
             <View style={styles.bottomBar}>
@@ -995,6 +1123,19 @@ export default function App() {
                   Alerts
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity style={styles.bottomItem} onPress={() => setActiveTab('profile')}>
+                <View style={[styles.tabIconWrap, activeTab === 'profile' && styles.tabIconWrapActive]}>
+                  <MaterialCommunityIcons
+                    name="account-circle-outline"
+                    size={20}
+                    color={activeTab === 'profile' ? '#0B2D5C' : '#9CA3AF'}
+                  />
+                </View>
+                <Text style={[styles.bottomLabel, activeTab === 'profile' && styles.bottomLabelActive]}>
+                  Profile
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -1006,14 +1147,33 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#EEF4FF',
   },
   appShell: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#EEF4FF',
+  },
+  appHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 12,
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  headerSubtitle: {
+    marginTop: 2,
+    fontSize: 12,
+    color: '#64748B',
   },
   mainContent: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   loadingState: {
     flex: 1,
@@ -1030,20 +1190,23 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   bottomBar: {
-    height: 68,
-    paddingHorizontal: 16,
-    paddingBottom: 6,
-    paddingTop: 6,
+    height: 74,
+    marginHorizontal: 12,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    paddingBottom: 8,
+    paddingTop: 8,
+    borderRadius: 24,
     backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
     elevation: 8,
   },
   bottomItem: {
@@ -1059,7 +1222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabIconWrapActive: {
-    backgroundColor: '#F0FDF4',
+    backgroundColor: '#DBEAFE',
   },
   bottomCenterItem: {
     alignItems: 'center',
@@ -1092,7 +1255,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   bottomLabelActive: {
-    color: '#0B2D5C',
+    color: '#2563EB',
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,

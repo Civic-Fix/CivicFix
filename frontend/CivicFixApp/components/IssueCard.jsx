@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, Image } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import ImageCarousel from './ImageCarousel';
@@ -75,11 +75,18 @@ const IssueCard = ({ issue, onVote, onDelete, currentHandle, onPress, onCommentP
     <TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.card}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={[styles.avatar, { backgroundColor: avatarColor + '22' }]}>
-          <Text style={[styles.avatarText, { color: avatarColor }]}>
-            {issue.author.charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        {!issue.isAnonymous && issue.avatar_url && !issue.avatar_url.startsWith('data:') ? (
+          <Image
+            source={{ uri: issue.avatar_url }}
+            style={styles.avatarImage}
+          />
+        ) : (
+          <View style={[styles.avatar, { backgroundColor: avatarColor + '22' }]}>
+            <Text style={[styles.avatarText, { color: avatarColor }]}>
+              {issue.author.charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.headerInfo}>
           <Text style={styles.authorName}>{issue.author}</Text>
@@ -273,6 +280,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+  },
+  avatarImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   avatarText: {
     fontSize: 15,
