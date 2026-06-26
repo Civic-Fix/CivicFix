@@ -22,7 +22,7 @@ const normalizeAccountType = (accountType = ACCOUNT_TYPES.CITIZEN) => {
 const profileConfigByAccountType = {
   [ACCOUNT_TYPES.CITIZEN]: {
     table: "users",
-    select: "id, name, phone, email, trust_score, is_verified, created_at",
+    select: "id, name, phone, email, avatar_url, trust_score, is_verified, created_at",
     missingMessage: "This account is not registered as a citizen user",
   },
   [ACCOUNT_TYPES.ORGANIZATION_MEMBER]: {
@@ -64,6 +64,87 @@ const resolveOrganizationId = (organizationId) => {
   }
 
   return resolvedOrganizationId;
+};
+
+export const updateCitizenProfile = async (userId, { name, avatarUrl }) => {
+  const updates = {};
+  const authMetadata = {};
+
+  if (typeof name === "string") {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      throw new Error("Username is required");
+    }
+    updates.name = trimmedName;
+    authMetadata.name = trimmedName;
+  }
+
+  if (typeof avatarUrl === "string") {
+    updates.avatar_url = avatarUrl.trim() || null;
+    authMetadata.avatar_url = updates.avatar_url;
+  }
+
+  if (!Object.keys(updates).length) {
+    throw new Error("No profile changes provided");
+  }
+
+  const { error: profileError } = await supabase
+    .from("users")
+    .update(updates)
+    .eq("id", userId);
+
+  if (profileError) {
+    throw new Error(profileError.message || "Unable to update profile");
+  }
+
+  if (Object.keys(authMetadata).length) {
+    const { error: authError } = await createAuthClient().auth.admin.updateUserById(
+      userId,
+      { user_metadata: authMetadata }
+    );
+
+    if (authError) {
+      throw new Error(authError.message || "Unable to update auth profile");
+    }
+  }
+
+  const profile = await getProfileForAccountType(userId, ACCOUNT_TYPES.CITIZEN);
+
+  return {
+    ...profile,
+    accountType: ACCOUNT_TYPES.CITIZEN,
+  };
+};
+
+export const updateAuthenticatedPassword = async (userId, newPassword) => {
+  if (!newPassword || newPassword.length < 6) {
+    throw new Error("Password should be at least 6 characters long");
+  }
+
+  const { error } = await createAuthClient().auth.admin.updateUserById(userId, {
+    password: newPassword,
+  });
+
+  if (error) {
+    throw new Error(error.message || "Unable to update password");
+  }
+};
+
+export const deleteCitizenAccount = async (userId) => {
+  const { error: profileError } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", userId);
+
+  if (profileError) {
+    throw new Error(profileError.message || "Unable to delete user profile");
+  }
+
+  const { error: authError } = await createAuthClient().auth.admin.deleteUser(userId);
+
+  if (authError) {
+    throw new Error(authError.message || "Unable to delete auth account");
+  }
 };
 
 export const signIn = async (

@@ -3,6 +3,7 @@
     "name": "CivicFixApp",
     "slug": "CivicFixApp",
     "version": "1.0.0",
+    "scheme": "com.civicfix.app",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",

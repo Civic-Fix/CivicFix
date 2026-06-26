@@ -64,6 +64,34 @@ const worldToLatLng = ({ x, y }, zoom) => {
 
 const worldToTile = (value) => Math.floor(value / TILE_SIZE);
 
+const parseCoordinate = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return null;
+  }
+
+  if (typeof value === 'string' && !value.trim()) {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const getIssueCoordinates = (issue) => {
+  const lat = parseCoordinate(issue?.lat);
+  const lng = parseCoordinate(issue?.lng);
+
+  if (lat === null || lng === null) {
+    return null;
+  }
+
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    return null;
+  }
+
+  return { lat, lng };
+};
+
 const buildTileGrid = (center, zoom, size) => {
   const centerWorld = latLngToWorld(center, zoom);
   const left = centerWorld.x - size.width / 2;
@@ -89,7 +117,7 @@ const buildTileGrid = (center, zoom, size) => {
   return { centerWorld, left, top, tiles };
 };
 
-const IssueMap = ({ onOpenIssue }) => {
+const IssueMap = ({ issues: allIssues = [], onOpenIssue }) => {
   const dragRef = useRef(null);
   const [issues, setIssues] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -114,11 +142,14 @@ const IssueMap = ({ onOpenIssue }) => {
         throw new Error(result.error || 'Unable to load map issues');
       }
 
-      setIssues(Array.isArray(result.issues) ? result.issues : []);
-      if (recenter && !userLocation && Array.isArray(result.issues) && result.issues.length) {
-        const firstIssue = result.issues.find((issue) => Number.isFinite(Number(issue.lat)) && Number.isFinite(Number(issue.lng)));
-        if (firstIssue) {
-          setMapCenter({ lat: Number(firstIssue.lat), lng: Number(firstIssue.lng) });
+      const mapIssues = Array.isArray(result.issues) ? result.issues : [];
+      setIssues(mapIssues);
+
+      if (recenter && !userLocation && mapIssues.length) {
+        const firstIssue = mapIssues.find((issue) => getIssueCoordinates(issue));
+        const firstIssueCoordinates = getIssueCoordinates(firstIssue);
+        if (firstIssueCoordinates) {
+          setMapCenter(firstIssueCoordinates);
         }
       }
     } catch (err) {
@@ -135,27 +166,44 @@ const IssueMap = ({ onOpenIssue }) => {
 
   const { left, top, tiles } = useMemo(() => buildTileGrid(mapCenter, zoom, mapSize), [mapCenter, zoom, mapSize]);
 
+  const coordinateIssues = useMemo(
+    () =>
+      issues
+        .map((issue) => {
+          const coordinates = getIssueCoordinates(issue);
+          return coordinates ? { ...issue, coordinates } : null;
+        })
+        .filter(Boolean),
+    [issues]
+  );
+
+  const localityOnlyCount = useMemo(
+    () =>
+      allIssues.filter((issue) => {
+        const locationText = issue.locality || issue.location || '';
+        return Boolean(locationText.trim?.()) && !getIssueCoordinates(issue);
+      }).length,
+    [allIssues]
+  );
+
   const plottedIssues = useMemo(() => {
     const filtered = userLocation
-      ? issues.filter((issue) => distanceMeters(userLocation, { lat: Number(issue.lat), lng: Number(issue.lng) }) <= RADIUS_METERS)
-      : issues;
+      ? coordinateIssues.filter((issue) => distanceMeters(userLocation, issue.coordinates) <= RADIUS_METERS)
+      : coordinateIssues;
 
     return filtered
       .map((issue) => {
-        const lat = Number(issue.lat);
-        const lng = Number(issue.lng);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-        const world = latLngToWorld({ lat, lng }, zoom);
+        const world = latLngToWorld(issue.coordinates, zoom);
         return {
           ...issue,
           x: world.x - left,
           y: world.y - top,
-          distance: userLocation ? distanceMeters(userLocation, { lat, lng }) : null,
+          distance: userLocation ? distanceMeters(userLocation, issue.coordinates) : null,
         };
       })
       .filter(Boolean)
       .filter((issue) => issue.x >= -24 && issue.x <= mapSize.width + 24 && issue.y >= -24 && issue.y <= mapSize.height + 24);
-  }, [issues, left, top, userLocation, zoom, mapSize]);
+  }, [coordinateIssues, left, top, userLocation, zoom, mapSize]);
 
   const selectedIssue = plottedIssues.find((issue) => issue.id === selectedIssueId) || plottedIssues[0] || null;
 
@@ -221,9 +269,9 @@ const IssueMap = ({ onOpenIssue }) => {
     setUserLocation(null);
     setLocationStatus('');
     setSelectedIssueId(null);
-    const firstIssue = issues.find((issue) => Number.isFinite(Number(issue.lat)) && Number.isFinite(Number(issue.lng)));
-    if (firstIssue) {
-      setMapCenter({ lat: Number(firstIssue.lat), lng: Number(firstIssue.lng) });
+    const firstIssue = coordinateIssues[0];
+    if (firstIssue?.coordinates) {
+      setMapCenter(firstIssue.coordinates);
       setZoom(DEFAULT_ZOOM);
     }
   };
@@ -282,8 +330,13 @@ const IssueMap = ({ onOpenIssue }) => {
           <Text style={styles.subtitle}>
             {userLocation
               ? `${plottedIssues.length} issues inside 3 km`
-              : `${issues.length} issues with exact coordinates`}
+              : `${coordinateIssues.length} issues with exact coordinates`}
           </Text>
+          {!userLocation && localityOnlyCount > 0 ? (
+            <Text style={styles.helperText}>
+              {localityOnlyCount} locality-only {localityOnlyCount === 1 ? 'report is' : 'reports are'} not pinned.
+            </Text>
+          ) : null}
         </View>
         <TouchableOpacity style={styles.refreshButton} onPress={() => loadMapIssues()} activeOpacity={0.8}>
           <Feather name="refresh-cw" size={15} color="#0F766E" />
@@ -441,6 +494,11 @@ const IssueMap = ({ onOpenIssue }) => {
           {userLocation && plottedIssues.length === 0 ? (
             <Text style={styles.locationStatus}>No issues were found inside your 3 km radius. Use Show all to return to the city map.</Text>
           ) : null}
+          {!userLocation && localityOnlyCount > 0 ? (
+            <Text style={styles.locationStatus}>
+              Locality-only reports stay visible in the feed, but the map only shows reports with exact pins.
+            </Text>
+          ) : null}
           <Text style={styles.attribution}>Map data © OpenStreetMap contributors</Text>
         </View>
       </View>
@@ -509,6 +567,12 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#64748B',
     fontSize: 13,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  helperText: {
+    color: '#94A3B8',
+    fontSize: 12,
     fontWeight: '600',
     marginTop: 4,
   },
