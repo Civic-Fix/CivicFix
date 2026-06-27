@@ -70,15 +70,13 @@ export default function IssueMap({ onOpenIssue }) {
     if (!userLocation) return;
     cameraRef.current?.easeTo({
       center: userLocation,
-      zoom: 14,
-      duration: 1000,
+      duration: 500,
     });
   };
 
   const handleResetView = () => {
     cameraRef.current?.easeTo({
       center: DEFAULT_CENTER,
-      zoom: 11,
       duration: 800,
     });
     setSelectedIssue(null);
@@ -88,7 +86,6 @@ export default function IssueMap({ onOpenIssue }) {
     setSelectedIssue(issue);
     cameraRef.current?.easeTo({
       center: issue.coordinates,
-      zoom: 15,
       duration: 600,
     });
   };
@@ -125,16 +122,15 @@ export default function IssueMap({ onOpenIssue }) {
           <UserLocation accuracy heading />
 
           {issues.map(issue => (
-            <Marker key={String(issue.id)} lngLat={issue.coordinates}>
-              <TouchableOpacity
-                onPress={() => handleMarkerPress(issue)}
+            <Marker id={String(issue.id)} lngLat={issue.coordinates} onPress={() => handleMarkerPress(issue)}>
+              <View
                 style={[
                   styles.marker,
                   { backgroundColor: statusColors[issue.status] || statusColors.reported },
                 ]}
               >
                 <MaterialCommunityIcons name="alert" size={12} color="#fff" />
-              </TouchableOpacity>
+              </View>
             </Marker>
           ))}
         </Map>
