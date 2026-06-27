@@ -115,6 +115,11 @@ export async function updateIssue(issueId, patch) {
   return result
 }
 
+export async function uploadIssueAttachmentAsset(attachment) {
+  const data = await api.post('/issues/attachments/upload', attachment)
+  return data?.asset
+}
+
 export async function getIssueStats() {
   const rows = await listIssues()
 

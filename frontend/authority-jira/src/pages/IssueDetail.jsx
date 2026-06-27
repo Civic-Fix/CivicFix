@@ -17,7 +17,7 @@ import Button from '../components/ui/Button'
 import Card, { CardBody, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
 import Loader from '../components/ui/Loader'
 import StatusBadge from '../components/ui/StatusBadge'
-import { getIssueById, issueStatusOptions, updateIssue } from '../services/issuesService'
+import { getIssueById, issueStatusOptions, updateIssue, uploadIssueAttachmentAsset } from '../services/issuesService'
 import { listTeamMembers } from '../services/teamService'
 import { addUpdate, listUpdates } from '../services/updatesService'
 import { formatDate } from '../utils/formatDate'
@@ -173,19 +173,12 @@ function IssueDetail() {
     setPostingUpdate(true)
     setError('')
     try {
-      // If there are files, upload them first via the attachments asset endpoint
       const attachmentsPayload = []
 
       for (const f of newUpdateFiles) {
-        // Expect file objects with { file_name, mime_type, file_data_base64 }
-        const uploaded = await fetch(`/api/issues/attachments/upload`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: window.localStorage.getItem('authority-jira.auth-token') ? `Bearer ${window.localStorage.getItem('authority-jira.auth-token')}` : undefined },
-          body: JSON.stringify(f),
-        })
-        const r = await uploaded.json()
-        if (!uploaded.ok) throw new Error(r.error || 'Attachment upload failed')
-        attachmentsPayload.push({ file_url: r.asset.file_url })
+        const asset = await uploadIssueAttachmentAsset(f)
+        if (!asset?.file_url) throw new Error('Attachment upload failed')
+        attachmentsPayload.push({ file_url: asset.file_url })
       }
 
       await addUpdate({ issueId: issue.id, content, attachments: attachmentsPayload })
