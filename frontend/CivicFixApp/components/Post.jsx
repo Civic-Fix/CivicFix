@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, ScrollView } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View, TouchableOpacity, Image, ScrollView } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import ImageCarousel from './ImageCarousel';
@@ -20,9 +20,9 @@ const getAvatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_
 const formatCategoryLabel = (category) =>
   category
     ? category
-        .split('_')
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ')
+      .split('_')
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ')
     : '';
 
 const formatConfidence = (value) => {
@@ -102,11 +102,18 @@ const Post = ({ issue, comments = [], issueUpdates = [], isLoadingComments, isLo
         <View style={styles.card}>
           {/* Header */}
           <View style={styles.header}>
-            <View style={[styles.avatar, { backgroundColor: avatarColor + '22' }]}>
-              <Text style={[styles.avatarText, { color: avatarColor }]}>
-                {issue.author.charAt(0).toUpperCase()}
-              </Text>
-            </View>
+              {!issue.isAnonymous && issue.avatar_url && !issue.avatar_url.startsWith('data:') ? (
+                <Image
+                  source={{ uri: issue.avatar_url }}
+                  style={styles.avatar}
+                />
+              ) : (
+                <View style={[styles.avatar, { backgroundColor: avatarColor + '22' }]}>
+                  <Text style={[styles.avatarText, { color: avatarColor }]}>
+                    {issue.author.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
 
             <View style={styles.headerInfo}>
               <Text style={styles.authorName}>{issue.author}</Text>
