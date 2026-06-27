@@ -89,7 +89,8 @@ export const uploadAvatar = async (req, res) => {
 
     // 2. Create a unique and deterministic file path.
     const fileExt = mime_type.split("/")[1] || "png";
-    const filePath = `${userId}/avatar.${fileExt}`;
+    const uniqueId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const filePath = `${userId}/avatar-${uniqueId}.${fileExt}`;
 
     // 3. Upload the file to the 'avatars' bucket in Supabase Storage.
     const { data: uploadData, error: uploadError } =
