@@ -7,7 +7,7 @@
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
@@ -25,7 +25,8 @@
         {
           "photosPermission": "Allow CivicFix to access your photos to attach issue proof."
         }
-      ]
+      ],
+      "@maplibre/maplibre-react-native"
     ],
     "extra": {
       "eas": {
@@ -41,6 +42,11 @@
     },
     "android": {
       "package": "com.khcoder.CivicFixApp",
+      "config": {
+        "googleMaps": {
+          "apiKey": "$GMAP_API_KEY"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
         "backgroundColor": "#ffffff"
