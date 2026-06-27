@@ -118,7 +118,7 @@ export const removeStoredNotification = async (id, userId) => {
   const removedItem = items.find((item) => item.id === id);
   const next = items.filter((item) => item.id !== id);
   const dismissedIds = await getDismissedNotificationIds(userId);
-  const dismissedId = removedItem?.sourceIssueId || id;
+  const dismissedId = removedItem?.dismissalKey || removedItem?.sourceIssueId || id;
   const nextDismissedIds = Array.from(new Set([...dismissedIds, dismissedId])).slice(-100);
   await Promise.all([
     saveStoredNotifications(next, userId),

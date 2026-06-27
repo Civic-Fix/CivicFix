@@ -11,7 +11,7 @@ import {
   scheduleLocalNotification,
 } from '../services/notificationService';
 
-const Notifications = ({ issues, user }) => {
+const Notifications = ({ issues, updates = [], user }) => {
   const [items, setItems] = useState([]);
   const userId = user?.id || user?.email || 'guest';
 
@@ -26,14 +26,29 @@ const Notifications = ({ issues, user }) => {
 
   useEffect(() => {
     const syncItems = async () => {
-      const seeded = issues.slice(0, 4).map((issue) => ({
+      const feedItems = issues.slice(0, 4).map((issue) => ({
         id: `feed-${issue.id}`,
-        sourceIssueId: issue.id,
+        dismissalKey: `feed-${issue.id}`,
         title: `${issue.author} posted an update`,
         body: issue.brief,
         time: issue.time,
         category: 'feed',
       }));
+
+      const updateItems = updates
+        .filter((update) => issues.some((issue) => issue.id === update.issue_id && issue.isOwner))
+        .slice(0, 8)
+        .map((update) => ({
+          id: `issue-update-${update.id}`,
+          dismissalKey: `issue-update-${update.id}`,
+          sourceIssueId: update.issue_id,
+          title: `New update on ${update.issueTitle || 'your issue'}`,
+          body: update.content || 'An official update was posted for your issue.',
+          time: update.time,
+          category: 'issue-update',
+        }));
+
+      const seeded = [...updateItems, ...feedItems];
 
       if (!seeded.length) {
         return;
@@ -46,7 +61,7 @@ const Notifications = ({ issues, user }) => {
       const existingIds = new Set(storedItems.map((item) => item.id));
       const dismissedIds = new Set(dismissedIssueIds);
       const newItems = seeded.filter(
-        (item) => !existingIds.has(item.id) && !dismissedIds.has(item.sourceIssueId)
+        (item) => !existingIds.has(item.id) && !dismissedIds.has(item.dismissalKey || item.sourceIssueId || item.id)
       );
 
       if (newItems.length) {
@@ -65,7 +80,7 @@ const Notifications = ({ issues, user }) => {
     };
 
     syncItems();
-  }, [issues, userId]);
+  }, [issues, updates, userId]);
 
   const handleRemove = async (id) => {
     const next = await removeStoredNotification(id, userId);
@@ -89,10 +104,17 @@ const Notifications = ({ issues, user }) => {
             <Text style={styles.emptyBody}>Updates from the civic feed will appear here.</Text>
           </View>
         ) : (
-          items.map((item) => (
-            <View key={item.id} style={styles.card}>
-              <View style={styles.iconWrap}>
-                <MaterialCommunityIcons name="bell-ring-outline" size={17} color="#16A34A" />
+          items.map((item) => {
+            const isIssueUpdate = item.category === 'issue-update';
+
+            return (
+            <View key={item.id} style={[styles.card, isIssueUpdate && styles.updateCard]}>
+              <View style={[styles.iconWrap, isIssueUpdate && styles.updateIconWrap]}>
+                <MaterialCommunityIcons
+                  name={isIssueUpdate ? 'progress-clock' : 'bell-ring-outline'}
+                  size={17}
+                  color={isIssueUpdate ? '#2563EB' : '#16A34A'}
+                />
               </View>
               <View style={styles.copy}>
                 <Text style={styles.cardTitle}>{item.title}</Text>
@@ -105,7 +127,8 @@ const Notifications = ({ issues, user }) => {
                 </TouchableOpacity>
               </View>
             </View>
-          ))
+            );
+          })
         )}
       </ScrollView>
     </View>
@@ -156,6 +179,10 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 1,
   },
+  updateCard: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+  },
   iconWrap: {
     width: 38,
     height: 38,
@@ -166,6 +193,10 @@ const styles = StyleSheet.create({
     marginRight: 12,
     borderWidth: 1,
     borderColor: '#BBF7D0',
+  },
+  updateIconWrap: {
+    backgroundColor: '#DBEAFE',
+    borderColor: '#93C5FD',
   },
   copy: {
     flex: 1,

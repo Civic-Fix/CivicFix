@@ -444,6 +444,12 @@ export default function App() {
     }
   }, [screen, user, loadIssues, loadUpdates]);
 
+  useEffect(() => {
+    if (screen === 'feeds' && activeTab === 'notifications') {
+      loadUpdates();
+    }
+  }, [screen, activeTab, loadUpdates]);
+
   const updateIssueEverywhere = (id, updater) => {
     setIssues((prev) =>
       prev.map((issue) => (issue.id === id ? updater(issue) : issue))
@@ -894,7 +900,7 @@ export default function App() {
 
   const renderMainScreen = () => {
     if (activeTab === 'notifications') {
-      return <Notifications issues={issues} user={user} />;
+      return <Notifications issues={issues} updates={updates} user={user} />;
     }
 
     if (activeTab === 'profile') {
