@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Circle, UrlTile } from 'react-native-maps';
 import * as Location from 'expo-location';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL, MAP_API_KEY } from '../config';
 
 const DEFAULT_REGION = {
   latitude: 22.5726,
@@ -28,9 +28,9 @@ const statusColors = {
 const formatStatus = (status) =>
   status
     ? status
-        .split('_')
-        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-        .join(' ')
+      .split('_')
+      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(' ')
     : 'Reported';
 
 const toRad = (v) => (v * Math.PI) / 180;
@@ -190,13 +190,18 @@ const IssueMap = ({ issues: allIssues = [], onOpenIssue }) => {
 
         <MapView
           ref={mapRef}
-          provider={PROVIDER_GOOGLE}
           style={styles.map}
           region={region}
           onRegionChangeComplete={setRegion}
           showsUserLocation
           showsMyLocationButton={false}
+          mapType="none"
         >
+          <UrlTile
+            urlTemplate={`https://api.maptiler.com/maps/streets-v4/256/{z}/{x}/{y}.png?key=${MAP_API_KEY}`}
+            maximumZ={20}
+            flipY={false}
+          />
 
           {/* RADIUS */}
           {userLocation && (

@@ -15,6 +15,8 @@ const getLocalApiBaseUrl = () => {
   return 'http://localhost:5001/api';
 };
 
+export const MAP_API_KEY = process.env.EXPO_PUBLIC_MAP_API_KEY;
+
 export const API_BASE_URL = trimTrailingSlash(
   process.env.EXPO_PUBLIC_API_BASE_URL || getLocalApiBaseUrl()
 );
