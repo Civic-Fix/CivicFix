@@ -23,19 +23,16 @@ CivicFix bridges the gap between citizens and government by:
 
 ---
 
-## 📰 Latest Updates (May 22, 2026)
+## 📰 Latest Updates (June 28, 2026)
 
-### Recent Commits
-| Date | Commit | Author |
-|------|--------|--------|
-| May 22 | 🎨 Increase height of issue card component | Nikunj Kumar Agarwal |
-| May 22 | 📎 Update Attachment | Nikunj Kumar Agarwal |
-| May 21 | 🤖 Added AI summary and categorization features | KH-Coder865 |
-| May 21 | 🗺️ Added issue map and feed improvements | Nikunj Kumar Agarwal |
-| May 19 | 📍 Update Trail Functionality Sync | Arindam-GitH |
-| May 17 | 📝 Added Update Trail Functionality | KH-Coder865 |
-| May 12 | 🧹 Dashboard Cleanup | Arindam-GitH |
-| May 11 | 🏢 Authority Dashboard Launch | KH-Coder865 |
+### Recent Commit Highlights
+| Date | Commit | Author | What changed |
+|------|--------|--------|-------------|
+| Jun 28 | 🔐 Refresh Token | Nikunj Kumar Agarwal | Added refresh-token-based session renewal for auth flows, including mobile session handling and password/account management improvements |
+| Jun 28 | 🗺️ map | Nikunj Kumar Agarwal | Added a dedicated issue map experience with geolocated markers, camera controls, and issue selection on the mobile app |
+| Jun 27 | 🔔 Notify change | Nikunj Kumar Agarwal | Added local notifications for civic feed updates and issue updates with dismissal support |
+| Jun 27 | 🧭 Fixed Marker Syntax | KH-Coder865 | Stabilized the issue map marker rendering and map UI behavior |
+| Jun 27 | 📦 Added easignore | KH-Coder865 | Added Expo/EAS ignore rules for smoother mobile build packaging |
 
 **[View all commits →](https://github.com/Civic-Fix/CivicFix/commits/main)**
 
@@ -132,7 +129,8 @@ CivicFix/
 ✅ Real-time status tracking  
 ✅ AI Assistant for smart suggestions  
 ✅ Offline caching with AsyncStorage  
-✅ Push notifications for updates  
+✅ Interactive issue map with geolocated markers and near-me controls  
+✅ Local notifications for feed and update alerts  
 
 ### 🏛️ Authority Web Dashboard
 ✅ **Kanban Board** – Drag-drop workflow (7 status columns)  
@@ -143,6 +141,12 @@ CivicFix/
 ✅ **Geo Map** – Geographic issue distribution  
 ✅ **Analytics** – Resolution metrics and trends  
 ✅ **Admin Controls** – Final status approvals  
+
+### ✨ Recently Added from Latest Commit Metadata
+- **Session refresh support** for smoother login persistence and safer auth handling
+- **Mobile issue mapping** with map markers and location-based issue discovery
+- **In-app notification feed** for civic updates and issue progress changes
+- **Improved Expo build packaging** for faster delivery and deployment consistency
 
 ### 🤖 AI-Powered Features
 ✅ **Auto Categorization** – Issue type classification  
@@ -303,8 +307,8 @@ npm run dev
 ## 📊 Project Stats
 
 - **Created**: March 17, 2026
-- **Last Updated**: June 1, 2026
-- **Status**: Active Development
+- **Last Updated**: June 28, 2026
+- **Status**: Active Development with recent auth, mapping, and notification enhancements
 - **Language**: 97.8% JavaScript, 1.5% PLpgSQL, 0.7% Other
 - **Team**: 4 developers
 
@@ -320,7 +324,6 @@ MIT License – See LICENSE file
 
 | Member | Role | Focus |
 |--------|------|-------|
-| **Debayan** | Backend Lead | Architecture & Database |
 | **Arindam** | Frontend Lead | Web Dashboard & UI/UX |
 | **Nikunj** | Full Stack | Mobile App & Geolocation |
 | **Kaushik** | DevOps Lead | AI Integration & Deployment |
