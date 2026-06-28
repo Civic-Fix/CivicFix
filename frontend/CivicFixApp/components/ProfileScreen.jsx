@@ -11,10 +11,10 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { API_BASE_URL } from '../config';
+import { authenticatedFetch } from '../utils/authSession';
 
 const CIVIC_BLUE = '#1D4ED8';
 const TEAL = '#14B8A6';
@@ -71,15 +71,12 @@ const ProfileScreen = ({ user, issues, onLogout, onUserUpdated, onOpenUpdatePass
 
     try {
       let avatarUrlToSave = avatar;
-      const authToken = await AsyncStorage.getItem('authToken');
-
       if (newAvatar) {
         // Upload the new avatar via the backend API
-        const uploadResponse = await fetch(`${API_BASE_URL}/auth/me/avatar`, {
+        const uploadResponse = await authenticatedFetch(`${API_BASE_URL}/auth/me/avatar`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             file_name: `${user.id}.${newAvatar.mimeType.split('/')[1] || 'jpg'}`,
@@ -97,11 +94,10 @@ const ProfileScreen = ({ user, issues, onLogout, onUserUpdated, onOpenUpdatePass
       }
 
       // Now, update the user metadata with the new name and the storage URL
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await authenticatedFetch(`${API_BASE_URL}/auth/me`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({ name, avatarUrl: avatarUrlToSave }),
       });
@@ -137,10 +133,8 @@ const ProfileScreen = ({ user, issues, onLogout, onUserUpdated, onOpenUpdatePass
           onPress: async () => {
             setLoading(true);
             try {
-              const authToken = await AsyncStorage.getItem('authToken');
-              const response = await fetch(`${API_BASE_URL}/auth/me`, {
+              const response = await authenticatedFetch(`${API_BASE_URL}/auth/me`, {
                 method: 'DELETE',
-                headers: { Authorization: `Bearer ${authToken}` },
               });
 
               if (!response.ok) {

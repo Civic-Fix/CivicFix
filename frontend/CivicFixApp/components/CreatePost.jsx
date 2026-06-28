@@ -10,13 +10,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import Feather from '@expo/vector-icons/Feather';
 import styles from './FeedsStyles';
 import { API_BASE_URL } from '../config';
 import ImageCarousel from './ImageCarousel';
+import { authenticatedFetch, clearStoredSession, getAuthToken } from '../utils/authSession';
 const MAX_IMAGES = 6;
 
 const formatCoordinates = ({ lat, lng }) => `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -334,17 +334,16 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
     };
 
     try {
-      const authToken = await AsyncStorage.getItem('authToken');
+      const authToken = await getAuthToken();
       let syncedPost = localPost;
 
       if (authToken) {
         const uploadResponses = await Promise.all(
           selectedImages.map(async (image) => {
-            const uploadResponse = await fetch(`${API_BASE_URL}/issues/attachments/upload`, {
+            const uploadResponse = await authenticatedFetch(`${API_BASE_URL}/issues/attachments/upload`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${authToken}`,
               },
               body: JSON.stringify({
                 file_name: image.fileName || 'issue-proof.jpg',
@@ -366,11 +365,10 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
           })
         );
 
-        const response = await fetch(`${API_BASE_URL}/issues`, {
+        const response = await authenticatedFetch(`${API_BASE_URL}/issues`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
           },
           body: JSON.stringify({
             title: titleText.trim(),
@@ -457,7 +455,7 @@ const CreatePost = ({ user, onPostCreated, onCancel }) => {
       let message = error.message || 'Unable to create issue right now.';
 
       if (isAuthError(error)) {
-        await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userInfo']);
+        await clearStoredSession();
         message = 'Your login session expired. Please log in again, then submit the report.';
       }
 

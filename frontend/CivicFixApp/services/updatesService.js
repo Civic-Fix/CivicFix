@@ -1,13 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { API_BASE_URL } from '../config'
+import { authenticatedFetch } from '../utils/authSession'
 
 export async function listAllUpdates() {
-  const authToken = await AsyncStorage.getItem('authToken')
-  const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {}
-
-  const response = await fetch(`${API_BASE_URL}/issues/updates`, {
-    headers,
-  })
+  const response = await authenticatedFetch(`${API_BASE_URL}/issues/updates`)
   const result = await response.json()
 
   if (!response.ok) {
@@ -20,12 +15,7 @@ export async function listAllUpdates() {
 export async function listIssueUpdates(issueId) {
   if (!issueId) return [];
 
-  const authToken = await AsyncStorage.getItem('authToken')
-  const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {}
-
-  const response = await fetch(`${API_BASE_URL}/issues/${encodeURIComponent(issueId)}/updates`, {
-    headers,
-  })
+  const response = await authenticatedFetch(`${API_BASE_URL}/issues/${encodeURIComponent(issueId)}/updates`)
   const result = await response.json()
 
   if (!response.ok) {

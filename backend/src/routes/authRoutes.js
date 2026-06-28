@@ -3,6 +3,7 @@ import {
   deleteAccount,
   login,
   recoverPassword,
+  refresh,
   resetPassword,
   signup,
   updateProfile,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.post("/login", login);
 router.post("/signup", signup);
+router.post("/refresh", refresh);
 router.post("/recover", recoverPassword);
 router.patch("/me", requireAuth, updateProfile);
 router.post("/me/avatar", requireAuth, uploadAvatar);

@@ -21,6 +21,7 @@ import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
 import { listAllUpdates, listIssueUpdates } from './services/updatesService';
+import { authenticatedFetch, clearStoredSession, getAuthToken } from './utils/authSession';
 
 
 const formatStatus = (status) =>
@@ -206,19 +207,14 @@ export default function App() {
     setIsLoadingIssues(true);
 
     try {
-      console.log(await AsyncStorage.getItem("authToken"));
-      const authToken = await AsyncStorage.getItem('authToken');
-      const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
-
       console.log('[App] Loading issues from:', `${API_BASE_URL}/issues`);
-      const response = await fetch(`${API_BASE_URL}/issues`, { headers });
+      const response = await authenticatedFetch(`${API_BASE_URL}/issues`);
       const result = await response.json();
 
       console.log('[App] Response status:', response.status);
       console.log('[App] Response data:', result);
 
       if (!response.ok) {
-        console.log(await AsyncStorage.getItem("authToken"));
         throw new Error(result.error || 'Unable to fetch issues');
       }
 
@@ -251,12 +247,7 @@ export default function App() {
     setIsSearchLoading(true);
 
     try {
-      const authToken = await AsyncStorage.getItem('authToken');
-      const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
-      const response = await fetch(
-        `${API_BASE_URL}/issues/search?q=${encodeURIComponent(trimmedQuery)}`,
-        { headers }
-      );
+      const response = await authenticatedFetch(`${API_BASE_URL}/issues/search?q=${encodeURIComponent(trimmedQuery)}`);
       const result = await response.json();
 
       if (!response.ok) {
@@ -355,7 +346,8 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await AsyncStorage.multiRemove(['authToken', 'refreshToken', 'userInfo', 'anonymousIssueIds']);
+    await clearStoredSession();
+    await AsyncStorage.removeItem('anonymousIssueIds');
     hasLoadedIssuesRef.current = false;
     hasLoadedUpdatesRef.current = false;
     setUser(null);
@@ -458,7 +450,7 @@ export default function App() {
   };
 
   const handleVote = async (id, voteType) => {
-    const authToken = await AsyncStorage.getItem('authToken');
+    const authToken = await getAuthToken();
     if (!authToken) return;
 
     const targetIssue = issues.find((issue) => issue.id === id) || (selectedIssue?.id === id ? selectedIssue : null);
@@ -498,9 +490,8 @@ export default function App() {
     try {
       // Remove opposite vote first if it exists
       if (removingOpposite) {
-        const res = await fetch(`${API_BASE_URL}/issues/${id}/votes?vote_type=${oppositeType}`, {
+        const res = await authenticatedFetch(`${API_BASE_URL}/issues/${id}/votes?vote_type=${oppositeType}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${authToken}` },
         });
         if (!res.ok) {
           const r = await res.json();
@@ -510,9 +501,8 @@ export default function App() {
 
       // Toggle the requested vote
       if (isRemoving) {
-        const res = await fetch(`${API_BASE_URL}/issues/${id}/votes?vote_type=${voteType}`, {
+        const res = await authenticatedFetch(`${API_BASE_URL}/issues/${id}/votes?vote_type=${voteType}`, {
           method: 'DELETE',
-          headers: { Authorization: `Bearer ${authToken}` },
         });
         if (!res.ok) {
           const r = await res.json();
@@ -524,9 +514,9 @@ export default function App() {
           updateIssueEverywhere(id, () => updatedIssue);
         }
       } else {
-        const res = await fetch(`${API_BASE_URL}/issues/${id}/votes`, {
+        const res = await authenticatedFetch(`${API_BASE_URL}/issues/${id}/votes`, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ vote_type: voteType }),
         });
         const r = await res.json();
@@ -543,7 +533,7 @@ export default function App() {
   };
 
   const handleDeletePost = async (id) => {
-    const authToken = await AsyncStorage.getItem('authToken');
+    const authToken = await getAuthToken();
     if (!authToken) return;
 
     const targetIssue = issues.find((issue) => issue.id === id);
@@ -552,9 +542,8 @@ export default function App() {
     setIssues((prev) => prev.filter((issue) => issue.id !== id));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/issues/${id}`, {
+      const response = await authenticatedFetch(`${API_BASE_URL}/issues/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${authToken}` },
       });
 
       const result = await response.json();
@@ -625,9 +614,7 @@ export default function App() {
     setIsLoadingComments(true);
 
     try {
-      const authToken = await AsyncStorage.getItem('authToken');
-      const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
-      const response = await fetch(`${API_BASE_URL}/comments?issue_id=${issueId}`, { headers });
+      const response = await authenticatedFetch(`${API_BASE_URL}/comments?issue_id=${issueId}`);
       const result = await response.json();
 
       if (!response.ok) {
@@ -686,9 +673,7 @@ export default function App() {
     if (!issueId) return null;
 
     try {
-      const authToken = await AsyncStorage.getItem('authToken');
-      const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
-      const response = await fetch(`${API_BASE_URL}/issues/${issueId}`, { headers });
+      const response = await authenticatedFetch(`${API_BASE_URL}/issues/${issueId}`);
       const result = await response.json();
 
       if (!response.ok) {
@@ -714,7 +699,7 @@ export default function App() {
     let isActive = true;
 
     const queueAnalysisForPendingIssues = async () => {
-      const authToken = await AsyncStorage.getItem('authToken');
+      const authToken = await getAuthToken();
       if (!authToken) return;
 
       pendingIssueIds.forEach((issueId) => {
@@ -724,10 +709,9 @@ export default function App() {
 
         aiAnalysisQueuedRef.current.add(issueId);
 
-        fetch(`${API_BASE_URL}/ai/issues/${issueId}/analyze?async=true`, {
+        authenticatedFetch(`${API_BASE_URL}/ai/issues/${issueId}/analyze?async=true`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${authToken}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ async: true }),
@@ -802,14 +786,13 @@ export default function App() {
   const handleCreateComment = async (description) => {
     if (!selectedIssue || !description) return;
 
-    const authToken = await AsyncStorage.getItem('authToken');
+    const authToken = await getAuthToken();
     if (!authToken) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/comments`, {
+      const response = await authenticatedFetch(`${API_BASE_URL}/comments`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ issue_id: selectedIssue.id, description }),
@@ -828,15 +811,12 @@ export default function App() {
   const handleDeleteComment = async (commentId) => {
     if (!commentId) return;
 
-    const authToken = await AsyncStorage.getItem('authToken');
+    const authToken = await getAuthToken();
     if (!authToken) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/comments/${commentId}`, {
+      const response = await authenticatedFetch(`${API_BASE_URL}/comments/${commentId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
       });
       const result = await response.json();
       if (!response.ok) {
@@ -850,14 +830,13 @@ export default function App() {
 
   const handleVoteComment = async (commentId, voteType) => {
     if (!commentId || !['upvote', 'downvote'].includes(voteType)) return;
-    const authToken = await AsyncStorage.getItem('authToken');
+    const authToken = await getAuthToken();
     if (!authToken) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/comments/${commentId}/vote`, {
+      const response = await authenticatedFetch(`${API_BASE_URL}/comments/${commentId}/vote`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${authToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ vote_type: voteType }),
