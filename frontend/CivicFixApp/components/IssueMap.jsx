@@ -98,7 +98,7 @@ export default function IssueMap({ onOpenIssue }) {
           <Text style={styles.subtitle}>{issues.length} total issues nearby</Text>
         </View>
 
-        <TouchableOpacity style={styles.refresh} onPress={loadMapIssues}>
+        <TouchableOpacity style={styles.refresh} onPress={loadMapIssues} activeOpacity={0.78}>
           <Feather name="refresh-cw" size={14} color="#0F766E" />
           <Text style={styles.refreshText}>Refresh</Text>
         </TouchableOpacity>
@@ -122,7 +122,12 @@ export default function IssueMap({ onOpenIssue }) {
           <UserLocation accuracy heading />
 
           {issues.map(issue => (
-            <Marker id={String(issue.id)} lngLat={issue.coordinates} onPress={() => handleMarkerPress(issue)}>
+            <Marker
+              key={String(issue.id)}
+              id={String(issue.id)}
+              lngLat={issue.coordinates}
+              onPress={() => handleMarkerPress(issue)}
+            >
               <View
                 style={[
                   styles.marker,
@@ -136,12 +141,21 @@ export default function IssueMap({ onOpenIssue }) {
         </Map>
 
         <View style={styles.controls}>
-          <TouchableOpacity style={styles.controlBtn} onPress={handleFollowUser}>
-            <MaterialCommunityIcons name="crosshairs-gps" size={18} color="#0B2D5C" />
-            <Text style={styles.btnText}>Near Me</Text>
+          <TouchableOpacity
+            style={[styles.controlBtn, !userLocation && styles.controlBtnDisabled]}
+            onPress={handleFollowUser}
+            disabled={!userLocation}
+            activeOpacity={0.78}
+          >
+            <MaterialCommunityIcons
+              name="crosshairs-gps"
+              size={18}
+              color={userLocation ? '#0B2D5C' : '#94A3B8'}
+            />
+            <Text style={[styles.btnText, !userLocation && styles.btnTextDisabled]}>Near Me</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.controlBtn} onPress={handleResetView}>
+          <TouchableOpacity style={styles.controlBtn} onPress={handleResetView} activeOpacity={0.78}>
             <Feather name="map" size={16} color="#334155" />
             <Text style={styles.btnText}>Show All</Text>
           </TouchableOpacity>
@@ -162,8 +176,8 @@ export default function IssueMap({ onOpenIssue }) {
               Status: {selectedIssue.status?.replace('_', ' ').toUpperCase() || 'REPORTED'}
             </Text>
 
-            <TouchableOpacity style={styles.openBtn} onPress={() => onOpenIssue?.(selectedIssue.id)}>
-              <Text style={{ color: '#fff', fontWeight: '800' }}>Open Issue</Text>
+            <TouchableOpacity style={styles.openBtn} onPress={() => onOpenIssue?.(selectedIssue.id)} activeOpacity={0.82}>
+              <Text style={styles.openBtnText}>Open Issue</Text>
             </TouchableOpacity>
           </>
         ) : (
@@ -176,29 +190,41 @@ export default function IssueMap({ onOpenIssue }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F3F4F6' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 12,
+    paddingBottom: 12,
+  },
   header: {
-    padding: 14,
+    paddingVertical: 12,
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
   },
   title: { fontSize: 20, fontWeight: '900', color: '#0F172A' },
-  subtitle: { fontSize: 12, color: '#64748B' },
+  subtitle: { marginTop: 2, fontSize: 12, color: '#64748B' },
   refresh: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-    padding: 8,
+    minHeight: 38,
+    paddingHorizontal: 12,
     borderWidth: 1,
-    borderColor: '#D1FAE5',
-    borderRadius: 10,
+    borderColor: '#B7E4D7',
+    borderRadius: 8,
     backgroundColor: '#fff',
   },
   refreshText: { color: '#0F766E', fontWeight: '700', fontSize: 12 },
   mapWrap: {
     flex: 1,
-    margin: 12,
-    borderRadius: 16,
+    minHeight: 320,
+    borderRadius: 12,
     overflow: 'hidden',
+    backgroundColor: '#E2E8F0',
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
   },
   map: { flex: 1 },
   marker: {
@@ -210,55 +236,70 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#fff',
   },
-  nearMe: {
+  controls: {
     position: 'absolute',
     bottom: 16,
     right: 16,
+    left: 16,
     flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  controlBtn: {
+    minHeight: 40,
+    minWidth: 112,
     backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 999,
+    paddingHorizontal: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#CBD5E1',
-    gap: 6,
-  },
-  nearMeText: { fontWeight: '800', color: '#0B2D5C' },
-  clearBtn: {
-    position: 'absolute',
-    bottom: 70,
-    right: 16,
     flexDirection: 'row',
-    gap: 6,
-    padding: 8,
-    backgroundColor: '#fff',
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  clearText: { fontWeight: '700' },
+  controlBtnDisabled: {
+    opacity: 0.78,
+    backgroundColor: '#F8FAFC',
+  },
+  btnText: { color: '#334155', fontSize: 12, fontWeight: '800' },
+  btnTextDisabled: { color: '#94A3B8' },
   loading: {
     position: 'absolute',
     top: 20,
     alignSelf: 'center',
     backgroundColor: '#fff',
     padding: 10,
-    borderRadius: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
   card: {
+    minHeight: 112,
     padding: 14,
     backgroundColor: '#fff',
-    margin: 12,
-    borderRadius: 14,
+    marginTop: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    justifyContent: 'center',
   },
-  cardTitle: { fontSize: 16, fontWeight: '900' },
+  cardTitle: { fontSize: 16, fontWeight: '900', color: '#0F172A' },
   cardSub: { fontSize: 12, color: '#64748B', marginTop: 4 },
   openBtn: {
     marginTop: 10,
     backgroundColor: '#0F766E',
-    padding: 10,
-    borderRadius: 10,
+    minHeight: 42,
+    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
   },
+  openBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
   cardEmpty: { color: '#64748B' },
   error: { color: '#DC2626', marginTop: 6 },
   statusText: { color: '#475569', fontSize: 12, marginTop: 4 }
