@@ -4,7 +4,10 @@ import { supabase } from "../config/supabaseClient.js";
 // Isolated client per call so signInWithPassword/signUp never overwrite the
 // shared service-role client's session (which would break RLS bypass on DB queries).
 const createAuthClient = () =>
-  createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+  createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 
 const ACCOUNT_TYPES = {
   CITIZEN: "citizen",
@@ -196,6 +199,26 @@ export const signIn = async (
       refreshToken: data.session.refresh_token,
       expiresAt: data.session.expires_at,
     },
+  };
+};
+
+export const refreshSession = async (refreshToken) => {
+  if (!refreshToken) {
+    throw new Error("Refresh token is required");
+  }
+
+  const { data, error } = await createAuthClient().auth.refreshSession({
+    refresh_token: refreshToken,
+  });
+
+  if (error || !data.session) {
+    throw new Error(error?.message || "Unable to refresh session");
+  }
+
+  return {
+    accessToken: data.session.access_token,
+    refreshToken: data.session.refresh_token,
+    expiresAt: data.session.expires_at,
   };
 };
 

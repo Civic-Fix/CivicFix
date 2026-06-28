@@ -10,9 +10,9 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { API_BASE_URL } from '../config';
+import { authenticatedFetch } from '../utils/authSession';
 
 const CIVIC_BLUE = '#1D4ED8';
 const TEAL = '#14B8A6';
@@ -48,12 +48,10 @@ const UpdatePassword = ({ onBack }) => {
     setLoading(true);
 
     try {
-      const authToken = await AsyncStorage.getItem('authToken');
-      const response = await fetch(`${API_BASE_URL}/auth/me/reset-password`, {
+      const response = await authenticatedFetch(`${API_BASE_URL}/auth/me/reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({ newPassword }),
       });

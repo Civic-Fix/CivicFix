@@ -1,5 +1,6 @@
 import {
   deleteCitizenAccount,
+  refreshSession,
   signIn,
   signUp,
   updateAuthenticatedPassword,
@@ -52,6 +53,22 @@ export const signup = async (req, res) => {
   } catch (err) {
     console.error("[AuthController] signup error", { body: req.body, error: err });
     return res.status(400).json({ error: err.message || "Unable to sign up" });
+  }
+};
+
+export const refresh = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(400).json({ error: "Refresh token is required" });
+  }
+
+  try {
+    const session = await refreshSession(refreshToken);
+    return res.status(200).json({ session });
+  } catch (err) {
+    console.error("[AuthController] refresh error", { error: err });
+    return res.status(401).json({ error: err.message || "Unable to refresh session" });
   }
 };
 
