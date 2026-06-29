@@ -6,7 +6,14 @@ import { supabase } from "../config/supabaseClient.js";
 const createAuthClient = () =>
   createClient(
     process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY,
+    {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    }
   );
 
 const ACCOUNT_TYPES = {
