@@ -250,7 +250,6 @@ export const signUp = async ({
     phone,
     accountType: normalizedAccountType,
     organization_id: organizationId,
-    redirectTo,
   });
 
   const signUpOptions = {
