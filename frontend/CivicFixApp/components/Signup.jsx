@@ -11,7 +11,7 @@ import {
   ScrollView,
 } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { API_BASE_URL } from '../config';
+import { API_BASE_URL,REDIRECT_URL } from '../config';
 
 
 const CIVIC_BLUE = '#1D4ED8';
@@ -40,10 +40,18 @@ const Signup = ({ onLoginPress }) => {
     setLoading(true);
 
     try {
+      const redirectTo = REDIRECT_URL;
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, accountType: 'citizen' }),
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          password,
+          accountType: 'citizen',
+          redirectTo,
+        }),
       });
 
       const result = await response.json();

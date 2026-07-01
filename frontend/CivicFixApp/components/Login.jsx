@@ -50,8 +50,8 @@ const Login = ({ onSignupPress, onLoginSuccess, onForgotPasswordPress }) => {
         throw new Error(result.error || 'Login failed');
       }
 
-      const accessToken = result.session?.accessToken;
-      const refreshToken = result.session?.refreshToken;
+      const accessToken = result.session?.accessToken || result.session?.access_token;
+      const refreshToken = result.session?.refreshToken || result.session?.refresh_token;
       const userInfo = result.user ? JSON.stringify(result.user) : null;
 
       const storageItems = [];

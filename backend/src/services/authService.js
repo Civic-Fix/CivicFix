@@ -237,6 +237,7 @@ export const signUp = async ({
   accountType = ACCOUNT_TYPES.CITIZEN,
   organization_id,
   role,
+  redirectTo,
 }) => {
   const normalizedAccountType = normalizeAccountType(accountType);
   const organizationId =
@@ -250,20 +251,24 @@ export const signUp = async ({
     phone,
     accountType: normalizedAccountType,
     organization_id: organizationId,
+    redirectTo,
   });
+
+  const signUpOptions = {
+    data: {
+      name,
+      phone,
+      account_type: normalizedAccountType,
+      ...(organizationId ? { organization_id: organizationId } : {}),
+      ...(role ? { role } : {}),
+    },
+  };
+  signUpOptions.emailRedirectTo = redirectTo;
 
   const { data, error } = await createAuthClient().auth.signUp({
     email,
     password,
-    options: {
-      data: {
-        name,
-        phone,
-        account_type: normalizedAccountType,
-        ...(organizationId ? { organization_id: organizationId } : {}),
-        ...(role ? { role } : {}),
-      },
-    },
+    options: signUpOptions,
   });
 
   console.log("[AuthService] signUp response", {

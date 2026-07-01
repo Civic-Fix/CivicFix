@@ -21,7 +21,7 @@ import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
 import { listAllUpdates, listIssueUpdates } from './services/updatesService';
-import { authenticatedFetch, clearStoredSession, getAuthToken } from './utils/authSession';
+import { authenticatedFetch, clearStoredSession, getAuthToken, refreshStoredSession } from './utils/authSession';
 
 
 const formatStatus = (status) =>
@@ -307,15 +307,27 @@ export default function App() {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const [authToken, userInfo, savedAnonymousIds] = await Promise.all([
+        const [authToken, refreshToken, userInfo, savedAnonymousIds] = await Promise.all([
           AsyncStorage.getItem('authToken'),
+          AsyncStorage.getItem('refreshToken'),
           AsyncStorage.getItem('userInfo'),
           AsyncStorage.getItem('anonymousIssueIds'),
         ]);
-        if (authToken && userInfo) {
+        if (userInfo) {
           const parsedUser = JSON.parse(userInfo);
           setUser(parsedUser);
-          setScreen('feeds');
+
+          if (authToken) {
+            setScreen('feeds');
+          } else if (refreshToken) {
+            try {
+              await refreshStoredSession();
+              setScreen('feeds');
+            } catch {
+              await clearStoredSession();
+              setScreen('login');
+            }
+          }
         }
         if (savedAnonymousIds) {
           setAnonymousIssueIds(JSON.parse(savedAnonymousIds));

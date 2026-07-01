@@ -35,24 +35,38 @@ async function refreshStoredSessionOnce() {
     throw new Error('No refresh token available');
   }
 
-  const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  });
+  let response;
+  let result = {};
 
-  const result = await readJsonSafely(response);
+  try {
+    response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    result = await readJsonSafely(response);
+  } catch (err) {
+    throw new Error(err.message || 'Unable to refresh session');
+  }
 
   if (!response.ok) {
-    await clearStoredSession();
+    const shouldClearRefresh =
+      response.status === 401 ||
+      /invalid refresh token|refresh token.*invalid|refresh token.*expired|token expired|invalid token/i.test(
+        result.error || ''
+      );
+
+    if (shouldClearRefresh) {
+      await clearStoredSession();
+    }
+
     throw new Error(result.error || 'Unable to refresh session');
   }
 
-  const nextAccessToken = result.session?.accessToken;
-  const nextRefreshToken = result.session?.refreshToken;
+  const nextAccessToken = result.session?.accessToken || result.session?.access_token;
+  const nextRefreshToken = result.session?.refreshToken || result.session?.refresh_token;
 
   if (!nextAccessToken) {
-    await clearStoredSession();
     throw new Error('Refresh response did not include an access token');
   }
 
@@ -68,6 +82,10 @@ export async function getAuthToken() {
   return AsyncStorage.getItem('authToken');
 }
 
+export async function getRefreshToken() {
+  return AsyncStorage.getItem('refreshToken');
+}
+
 export async function authenticatedFetch(input, init = {}) {
   const makeRequest = async (token) => {
     const headers = {
@@ -81,7 +99,12 @@ export async function authenticatedFetch(input, init = {}) {
     });
   };
 
-  const token = await getAuthToken();
+  let token = await getAuthToken();
+
+  if (!token) {
+    token = await refreshStoredSession();
+  }
+
   let response = await makeRequest(token);
 
   if (response.status !== 401) {
