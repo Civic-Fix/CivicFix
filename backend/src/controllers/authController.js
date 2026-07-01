@@ -32,7 +32,7 @@ export const login = async (req, res) => {
 };
 
 export const signup = async (req, res) => {
-  const { name, email, phone, password, accountType, organization_id, role, redirectTo } =
+  const { name, email, phone, password, accountType, organization_id, role } =
     req.body;
 
   if (!name || !email || !password) {
@@ -47,8 +47,7 @@ export const signup = async (req, res) => {
       password,
       accountType,
       organization_id,
-      role,
-      redirectTo,
+      role
     });
     return res.status(201).json(authData);
   } catch (err) {

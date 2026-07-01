@@ -237,7 +237,6 @@ export const signUp = async ({
   accountType = ACCOUNT_TYPES.CITIZEN,
   organization_id,
   role,
-  redirectTo,
 }) => {
   const normalizedAccountType = normalizeAccountType(accountType);
   const organizationId =
@@ -263,13 +262,12 @@ export const signUp = async ({
       ...(role ? { role } : {}),
     },
   };
-  // signUpOptions.emailRedirectTo = redirectTo;
+  signUpOptions.emailRedirectTo = process.env.REDIRECT_URL;
 
   const { data, error } = await createAuthClient().auth.signUp({
     email,
     password,
     options: signUpOptions,
-    redirectTo: redirectTo
   });
 
   console.log("[AuthService] signUp response", {
