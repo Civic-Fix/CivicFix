@@ -21,6 +21,8 @@ export const API_BASE_URL = trimTrailingSlash(
   process.env.EXPO_PUBLIC_API_BASE_URL || getLocalApiBaseUrl()
 );
 
+export const REDIRECT_URL = process.env.EXPO_PUBLIC_REDIRECT_URL;
+
 export const ISSUE_SHARE_BASE_URL = trimTrailingSlash(
   process.env.EXPO_PUBLIC_ISSUE_SHARE_BASE_URL || DEFAULT_ISSUE_SHARE_BASE_URL
 );

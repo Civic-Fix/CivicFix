@@ -95,7 +95,7 @@ function AppLayout() {
           </nav>
 
           <div className="border-t border-white/10 p-4">
-            <div className="rounded-md border border-white/10 bg-white/[0.03] p-3">
+            <div className="rounded-md border border-white/10 bg-white/3 p-3">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Signed in</p>
             <p className="mt-2 truncate text-sm font-bold text-slate-100">{displayName}</p>
             {displayName !== user.email ? (

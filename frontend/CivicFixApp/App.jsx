@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Share, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from '@expo/vector-icons/Feather';
@@ -21,7 +21,7 @@ import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
 import { listAllUpdates, listIssueUpdates } from './services/updatesService';
-import { authenticatedFetch, clearStoredSession, getAuthToken } from './utils/authSession';
+import { authenticatedFetch, clearStoredSession, getAuthToken, refreshStoredSession } from './utils/authSession';
 
 
 const formatStatus = (status) =>
@@ -307,15 +307,27 @@ export default function App() {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const [authToken, userInfo, savedAnonymousIds] = await Promise.all([
+        const [authToken, refreshToken, userInfo, savedAnonymousIds] = await Promise.all([
           AsyncStorage.getItem('authToken'),
+          AsyncStorage.getItem('refreshToken'),
           AsyncStorage.getItem('userInfo'),
           AsyncStorage.getItem('anonymousIssueIds'),
         ]);
-        if (authToken && userInfo) {
+        if (userInfo) {
           const parsedUser = JSON.parse(userInfo);
           setUser(parsedUser);
-          setScreen('feeds');
+
+          if (authToken) {
+            setScreen('feeds');
+          } else if (refreshToken) {
+            try {
+              await refreshStoredSession();
+              setScreen('feeds');
+            } catch {
+              await clearStoredSession();
+              setScreen('login');
+            }
+          }
         }
         if (savedAnonymousIds) {
           setAnonymousIssueIds(JSON.parse(savedAnonymousIds));
@@ -326,6 +338,43 @@ export default function App() {
     };
     restoreSession();
   }, []);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (screen === 'commentForm') {
+        setScreen('postDetail');
+        return true;
+      }
+
+      if (screen === 'postDetail') {
+        setScreen('feeds');
+        return true;
+      }
+
+      if (screen === 'createPost' || screen === 'updatePassword') {
+        setScreen('feeds');
+        return true;
+      }
+
+      if (screen === 'signup' || screen === 'forgotPassword' || screen === 'resetPassword') {
+        setScreen('login');
+        return true;
+      }
+
+      if (screen === 'feeds') {
+        if (activeTab !== 'home') {
+          setActiveTab('home');
+          return true;
+        }
+        return false;
+      }
+
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => backHandler.remove();
+  }, [screen, activeTab]);
 
   const handleLoginSuccess = async (userData) => {
     const userToStore = {

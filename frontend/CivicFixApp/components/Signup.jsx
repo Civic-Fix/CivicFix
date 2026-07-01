@@ -43,7 +43,13 @@ const Signup = ({ onLoginPress }) => {
       const response = await fetch(`${API_BASE_URL}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, phone, password, accountType: 'citizen' }),
+        body: JSON.stringify({
+          name,
+          email,
+          phone,
+          password,
+          accountType: 'citizen'
+        }),
       });
 
       const result = await response.json();

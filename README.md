@@ -324,7 +324,6 @@ MIT License – See LICENSE file
 
 | Member | Role | Focus |
 |--------|------|-------|
-| **Debayan** | Backend Lead | Architecture & Database |
 | **Arindam** | Frontend Lead | Web Dashboard & UI/UX |
 | **Nikunj** | Full Stack | Mobile App & Geolocation |
 | **Kaushik** | DevOps Lead | AI Integration & Deployment |

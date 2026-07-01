@@ -47,7 +47,7 @@ export const signup = async (req, res) => {
       password,
       accountType,
       organization_id,
-      role,
+      role
     });
     return res.status(201).json(authData);
   } catch (err) {
