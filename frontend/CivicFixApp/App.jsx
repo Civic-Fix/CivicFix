@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
+import { ActivityIndicator, Alert, BackHandler, Share, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from '@expo/vector-icons/Feather';
@@ -338,6 +338,43 @@ export default function App() {
     };
     restoreSession();
   }, []);
+
+  useEffect(() => {
+    const onBackPress = () => {
+      if (screen === 'commentForm') {
+        setScreen('postDetail');
+        return true;
+      }
+
+      if (screen === 'postDetail') {
+        setScreen('feeds');
+        return true;
+      }
+
+      if (screen === 'createPost' || screen === 'updatePassword') {
+        setScreen('feeds');
+        return true;
+      }
+
+      if (screen === 'signup' || screen === 'forgotPassword' || screen === 'resetPassword') {
+        setScreen('login');
+        return true;
+      }
+
+      if (screen === 'feeds') {
+        if (activeTab !== 'home') {
+          setActiveTab('home');
+          return true;
+        }
+        return false;
+      }
+
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => backHandler.remove();
+  }, [screen, activeTab]);
 
   const handleLoginSuccess = async (userData) => {
     const userToStore = {
