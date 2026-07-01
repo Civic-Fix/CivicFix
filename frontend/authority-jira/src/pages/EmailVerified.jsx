@@ -19,12 +19,6 @@ function EmailVerified() {
           </div>
 
           <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-center sm:gap-4">
-            <Link
-              to="/login"
-              className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700"
-            >
-              Go to Authority Sign in
-            </Link>
             <a
               href="/"
               className="inline-flex items-center justify-center rounded-full border border-slate-200 px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50"

@@ -263,12 +263,13 @@ export const signUp = async ({
       ...(role ? { role } : {}),
     },
   };
-  signUpOptions.emailRedirectTo = redirectTo;
+  // signUpOptions.emailRedirectTo = redirectTo;
 
   const { data, error } = await createAuthClient().auth.signUp({
     email,
     password,
     options: signUpOptions,
+    redirectTo: redirectTo
   });
 
   console.log("[AuthService] signUp response", {
