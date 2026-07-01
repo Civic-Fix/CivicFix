@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import * as Location from 'expo-location';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -89,9 +89,9 @@ const buildTileGrid = (center, zoom, size) => {
   return { centerWorld, left, top, tiles };
 };
 
-const IssueMap = ({ onOpenIssue }) => {
+const IssueMap = ({ issues: initialIssues = [], onOpenIssue }) => {
   const dragRef = useRef(null);
-  const [issues, setIssues] = useState([]);
+  const [issues, setIssues] = useState(initialIssues);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [userLocation, setUserLocation] = useState(null);
@@ -130,8 +130,25 @@ const IssueMap = ({ onOpenIssue }) => {
   }, [userLocation]);
 
   useEffect(() => {
-    loadMapIssues({ recenter: true });
-  }, []);
+    setIssues(initialIssues);
+    if (initialIssues.length > 0) {
+      setIsLoading(false);
+    }
+  }, [initialIssues]);
+
+  useEffect(() => {
+    if (initialIssues.length === 0) {
+      loadMapIssues({ recenter: true });
+      return;
+    }
+
+    if (!userLocation) {
+      const firstIssue = initialIssues.find((issue) => Number.isFinite(Number(issue.lat)) && Number.isFinite(Number(issue.lng)));
+      if (firstIssue) {
+        setMapCenter({ lat: Number(firstIssue.lat), lng: Number(firstIssue.lng) });
+      }
+    }
+  }, [initialIssues, loadMapIssues, userLocation]);
 
   const { left, top, tiles } = useMemo(() => buildTileGrid(mapCenter, zoom, mapSize), [mapCenter, zoom, mapSize]);
 
@@ -256,27 +273,39 @@ const IssueMap = ({ onOpenIssue }) => {
     setMapCenter(worldToLatLng({ x: currentWorld.x - dx, y: currentWorld.y - dy }, zoom));
   };
 
-  const handlePointerDown = (event) => {
+  const getInteractionPoint = (event) => {
     const nativeEvent = event.nativeEvent || event;
+    if (nativeEvent?.touches?.length) {
+      const touch = nativeEvent.touches[0];
+      return { x: touch.pageX ?? touch.clientX ?? 0, y: touch.pageY ?? touch.clientY ?? 0 };
+    }
+
+    return { x: nativeEvent?.pageX ?? nativeEvent?.clientX ?? 0, y: nativeEvent?.pageY ?? nativeEvent?.clientY ?? 0 };
+  };
+
+  const handleMapInteractionStart = (event) => {
+    const point = getInteractionPoint(event);
     dragRef.current = {
-      x: nativeEvent.pageX,
-      y: nativeEvent.pageY,
+      x: point.x,
+      y: point.y,
+      lastX: point.x,
+      lastY: point.y,
       totalX: 0,
       totalY: 0,
     };
-    event.currentTarget?.setPointerCapture?.(nativeEvent.pointerId);
   };
 
-  const handlePointerMove = (event) => {
+  const handleMapInteractionMove = (event) => {
     const drag = dragRef.current;
     if (!drag) return;
 
-    const { pageX, pageY } = event.nativeEvent || event;
-    const dx = pageX - drag.x;
-    const dy = pageY - drag.y;
+    const point = getInteractionPoint(event);
+    const dx = point.x - drag.lastX;
+    const dy = point.y - drag.lastY;
     const next = {
-      x: pageX,
-      y: pageY,
+      ...drag,
+      lastX: point.x,
+      lastY: point.y,
       totalX: drag.totalX + dx,
       totalY: drag.totalY + dy,
     };
@@ -284,22 +313,27 @@ const IssueMap = ({ onOpenIssue }) => {
     setDragOffset({ x: next.totalX, y: next.totalY });
   };
 
-  const handlePointerUp = (event) => {
+  const handleMapInteractionEnd = () => {
     const drag = dragRef.current;
-    if (!drag) return;
+    if (!drag) {
+      return;
+    }
 
-    commitPanByPixels(drag.totalX, drag.totalY);
-    setDragOffset({ x: 0, y: 0 });
+    if (Math.abs(drag.totalX) < 8 && Math.abs(drag.totalY) < 8) {
+      setDragOffset({ x: 0, y: 0 });
+    } else {
+      commitPanByPixels(drag.totalX, drag.totalY);
+      setDragOffset({ x: 0, y: 0 });
+    }
+
     dragRef.current = null;
-    const nativeEvent = event.nativeEvent || event;
-    event.currentTarget?.releasePointerCapture?.(nativeEvent.pointerId);
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
+      <View style={styles.content}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.eyebrow}>Map</Text>
           <Text style={styles.title}>Issue Locations</Text>
           <Text style={styles.subtitle}>
             {userLocation
@@ -337,12 +371,23 @@ const IssueMap = ({ onOpenIssue }) => {
             const { width, height } = event.nativeEvent.layout;
             if (width && height) setMapSize({ width, height });
           }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
-          onPointerLeave={handlePointerUp}
+          onTouchStart={handleMapInteractionStart}
+          onTouchMove={handleMapInteractionMove}
+          onTouchEnd={handleMapInteractionEnd}
+          onTouchCancel={handleMapInteractionEnd}
         >
+          <View style={styles.mapOverlayActions}>
+            <TouchableOpacity style={styles.mapActionButton} onPress={handleNearMe} activeOpacity={0.85}>
+              <MaterialCommunityIcons name="crosshairs-gps" size={14} color="#0B2D5C" />
+              <Text style={styles.mapActionButtonText}>Near me</Text>
+            </TouchableOpacity>
+            {userLocation ? (
+              <TouchableOpacity style={[styles.mapActionButton, styles.mapActionButtonSecondary]} onPress={clearNearMe} activeOpacity={0.85}>
+                <Feather name="x" size={14} color="#475569" />
+                <Text style={[styles.mapActionButtonText, styles.mapActionButtonSecondaryText]}>Show all</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
           {tiles.map((tile) => (
             <Image
               key={tile.key}
@@ -434,18 +479,6 @@ const IssueMap = ({ onOpenIssue }) => {
             </View>
           ) : null}
 
-          <TouchableOpacity style={styles.nearMeButton} onPress={handleNearMe} activeOpacity={0.85}>
-            <MaterialCommunityIcons name="crosshairs-gps" size={19} color="#0B2D5C" />
-            <Text style={styles.nearMeText}>Near me</Text>
-          </TouchableOpacity>
-
-          {userLocation ? (
-            <TouchableOpacity style={styles.showAllButton} onPress={clearNearMe} activeOpacity={0.85}>
-              <Feather name="x" size={14} color="#475569" />
-              <Text style={styles.showAllText}>Show all</Text>
-            </TouchableOpacity>
-          ) : null}
-
           <View style={styles.zoomControls}>
             <TouchableOpacity style={styles.zoomButton} onPress={() => setZoom((current) => Math.min(MAX_ZOOM, current + 1))}>
               <Text style={styles.zoomButtonText}>+</Text>
@@ -495,44 +528,50 @@ const IssueMap = ({ onOpenIssue }) => {
           ) : null}
         </View>
       )}
-    </ScrollView>
+    </View>
+  </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    minHeight: '100%',
+    maxHeight: '100%',
+    overflow: 'hidden',
     backgroundColor: '#F3F4F6',
   },
   content: {
-    padding: 16,
-    paddingBottom: 88,
+    flex: 1,
+    justifyContent: 'flex-start',
+    padding: 12,
+    paddingBottom: 12,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
-    gap: 12,
+    marginBottom: 8,
+    gap: 10,
   },
   eyebrow: {
     color: '#0F766E',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 0,
-    marginBottom: 3,
+    marginBottom: 2,
   },
   title: {
     color: '#0F172A',
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '900',
   },
   subtitle: {
     color: '#64748B',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 2,
   },
   refreshButton: {
     flexDirection: 'row',
@@ -551,19 +590,22 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   mapCard: {
+    flex: 1,
+    minHeight: 420,
     borderRadius: 18,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#CBD5E1',
     backgroundColor: '#FFFFFF',
+    marginBottom: 10,
   },
   mapToolbar: {
     flexDirection: 'row',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
     backgroundColor: '#F8FAFC',
@@ -576,8 +618,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   mapStatText: {
     color: '#475569',
@@ -593,7 +635,8 @@ const styles = StyleSheet.create({
     borderColor: '#FED7AA',
   },
   mapViewport: {
-    height: 500,
+    height: 370,
+    minHeight: 370,
     width: '100%',
     overflow: 'hidden',
     position: 'relative',
@@ -751,20 +794,57 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 8,
   },
+  mapOverlayActions: {
+    position: 'absolute',
+    right: 14,
+    bottom: 26,
+    zIndex: 10,
+    width: '40%',
+    flexDirection: 'column',
+    gap: 8,
+  },
+  mapActionButton: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 7,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 5,
+  },
+  mapActionButtonSecondary: {
+    backgroundColor: '#F8FAFC',
+  },
+  mapActionButtonText: {
+    color: '#0B2D5C',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  mapActionButtonSecondaryText: {
+    color: '#475569',
+  },
   mapFooter: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     gap: 4,
   },
   attribution: {
     color: '#94A3B8',
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
   },
   locationStatus: {
     color: '#64748B',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
   },
   errorText: {
@@ -773,18 +853,18 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   issuePreview: {
-    marginTop: 12,
+    marginTop: 6,
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
     borderColor: '#E2E8F0',
-    padding: 14,
+    padding: 10,
   },
   previewHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 7,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 5,
   },
   previewStatusDot: {
     width: 8,
@@ -804,20 +884,20 @@ const styles = StyleSheet.create({
   },
   previewTitle: {
     color: '#0F172A',
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '800',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   openIssueButton: {
-    marginTop: 12,
+    marginTop: 10,
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
     backgroundColor: '#0F766E',
     borderRadius: 12,
-    paddingHorizontal: 13,
-    paddingVertical: 9,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   openIssueText: {
     color: '#FFFFFF',
@@ -825,7 +905,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   clearPreviewButton: {
-    marginTop: 12,
+    marginTop: 10,
     alignSelf: 'flex-start',
     borderRadius: 12,
     borderWidth: 1,
