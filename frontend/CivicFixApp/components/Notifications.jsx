@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
+import { Platform, StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import {
@@ -13,6 +13,7 @@ import {
 
 const Notifications = ({ issues, updates = [], user }) => {
   const [items, setItems] = useState([]);
+  const [permissionState, setPermissionState] = useState('unknown');
   const userId = user?.id || user?.email || 'guest';
 
   useEffect(() => {
@@ -69,7 +70,11 @@ const Notifications = ({ issues, updates = [], user }) => {
         setItems(nextItems);
       }
 
-      requestNotificationPermissions();
+      const permissionResult = await requestNotificationPermissions();
+      if (Platform.OS === 'web') {
+        setPermissionState(permissionResult.status);
+      }
+
       newItems.forEach((item) => {
         scheduleLocalNotification({
           title: item.title,
@@ -93,6 +98,13 @@ const Notifications = ({ issues, updates = [], user }) => {
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.subtitle}>Recent civic feed updates near you.</Text>
       </View>
+
+      {Platform.OS === 'web' && permissionState === 'denied' ? (
+        <View style={styles.permissionNotice}>
+          <Feather name="info" size={14} color="#C2410C" />
+          <Text style={styles.permissionNoticeText}>Browser notifications are blocked, so updates will appear in this list instead.</Text>
+        </View>
+      ) : null}
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
         {items.length === 0 ? (
@@ -158,6 +170,26 @@ const styles = StyleSheet.create({
     color: '#9CA3AF',
     marginTop: 3,
     fontSize: 12,
+  },
+  permissionNotice: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    backgroundColor: '#FFF7ED',
+    borderColor: '#FED7AA',
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'flex-start',
+  },
+  permissionNoticeText: {
+    flex: 1,
+    color: '#9A2C00',
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: '600',
   },
   list: {
     paddingHorizontal: 16,

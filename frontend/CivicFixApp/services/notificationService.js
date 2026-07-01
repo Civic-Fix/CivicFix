@@ -6,6 +6,14 @@ const DISMISSED_STORAGE_KEY = 'dismissedLocalNotifications';
 let nativeNotifications = null;
 let notificationHandlerConfigured = false;
 
+const getBrowserNotificationApi = () => {
+  if (typeof window === 'undefined' || typeof window.Notification === 'undefined') {
+    return null;
+  }
+
+  return window.Notification;
+};
+
 const getScopedKey = (baseKey, userId) => {
   const safeUserId = userId ? String(userId) : 'guest';
   return `${baseKey}:${safeUserId}`;
@@ -35,6 +43,22 @@ const getNativeNotifications = async () => {
 };
 
 export const requestNotificationPermissions = async () => {
+  const browserNotificationApi = getBrowserNotificationApi();
+  if (browserNotificationApi) {
+    if (browserNotificationApi.permission === 'granted') {
+      return { status: 'granted' };
+    }
+
+    if (browserNotificationApi.permission === 'denied') {
+      return { status: 'denied' };
+    }
+
+    const permission = await browserNotificationApi.requestPermission();
+    return {
+      status: permission === 'granted' ? 'granted' : permission === 'denied' ? 'denied' : 'default',
+    };
+  }
+
   const Notifications = await getNativeNotifications();
   if (!Notifications) {
     return { status: 'granted' };
@@ -45,6 +69,15 @@ export const requestNotificationPermissions = async () => {
 };
 
 export const scheduleLocalNotification = async ({ title, body, data = {} }) => {
+  const browserNotificationApi = getBrowserNotificationApi();
+  if (browserNotificationApi?.permission === 'granted') {
+    new browserNotificationApi(title, {
+      body,
+      tag: data?.id ? String(data.id) : undefined,
+    });
+    return { status: 'scheduled' };
+  }
+
   const Notifications = await getNativeNotifications();
   if (!Notifications) {
     return null;
