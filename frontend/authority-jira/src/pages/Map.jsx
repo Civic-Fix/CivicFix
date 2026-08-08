@@ -6,6 +6,19 @@ import Loader from '../components/ui/Loader'
 import Button from '../components/ui/Button'
 import { listIssues } from '../services/issuesService'
 
+const issueMarkerIcon = L.divIcon({
+  className: '',
+  iconSize: [30, 38],
+  iconAnchor: [15, 38],
+  popupAnchor: [0, -34],
+  html: `
+    <div style="position:relative;width:30px;height:38px;">
+      <div style="position:absolute;left:3px;top:1px;width:24px;height:24px;border-radius:999px 999px 999px 0;background:#059669;border:3px solid #ffffff;box-shadow:0 8px 18px rgba(15,23,42,.28);transform:rotate(-45deg);"></div>
+      <div style="position:absolute;left:11px;top:9px;width:8px;height:8px;border-radius:999px;background:#ffffff;"></div>
+    </div>
+  `,
+})
+
 function Map() {
   const navigate = useNavigate()
   const containerRef = useRef(null)
@@ -66,7 +79,7 @@ function Map() {
       const lng = Number(issue.longitude)
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue
 
-      const marker = L.marker([lat, lng])
+      const marker = L.marker([lat, lng], { icon: issueMarkerIcon })
       marker.bindPopup(
         `<div style="min-width: 220px">
           <div style="font-weight: 800; margin-bottom: 4px;">${escapeHtml(issue.title || `Issue #${issue.id}`)}</div>
