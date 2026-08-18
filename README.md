@@ -16,10 +16,18 @@ CivicFix bridges the gap between citizens and government by:
 
 ## 📋 Quick Links
 
-- **Live Demo**: [civic-fix-red.vercel.app](https://civic-fix-red.vercel.app)
-- **Architecture Guide**: [ARCHITECTURE.md](ARCHITECTURE.md) ← **Start here for technical details**
-- **Migration Guide**: [MIGRATION_GUIDE.md](MIGRATION_GUIDE.md)
-- **GitHub Repo**: [Civic-Fix/CivicFix](https://github.com/Civic-Fix/CivicFix)
+* **CivicFix App**: [civicfix-xi2r.onrender.com](https://civicfix-xi2r.onrender.com)
+* **Authority Jira**: [civicfixcoderz.netlify.app](https://civicfixcoderz.netlify.app)
+* **Authority-Jira Manual**: [drive.google.com](https://drive.google.com/file/d/1JOc_Pw2Q1PxlwaV3HsT_vpYQ2E_Bis91/view?usp=drive_link)
+* **CivicFix App Manual**: [civicfixapp-download-now.netlify.app](https://civicfixapp-download-now.netlify.app)
+
+## Deployment
+
+| Resource | Link |
+|----------|------|
+| **Live Demo(App for iOS)** | [App Demo(Web Version)](https://civicfix-xi2r.onrender.com) |
+| **Live Demo(App for Android)** | APK available from GitHub Release |
+| **Live Demo(Authority Website)** | [Authority Website Demo](https://civicfixcoderz.netlify.app) |
 
 ---
 
