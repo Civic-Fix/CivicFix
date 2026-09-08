@@ -17,7 +17,7 @@ import CreatePost from './components/CreatePost';
 import Notifications from './components/Notifications';
 import ProfileScreen from './components/ProfileScreen';
 import CivicAssistant from './components/CivicAssistant';
-// import IssueMap from './components/IssueMap';
+import IssueMap from './components/IssueMap';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
@@ -1038,19 +1038,19 @@ export default function App() {
       return <CivicAssistant user={user} />;
     }
 
-    // if (activeTab === 'map') {
-    //   return (
-    //     <IssueMap
-    //       issues={issues}
-    //       onOpenIssue={async (issueId) => {
-    //         const issue = await loadIssueById(issueId);
-    //         if (issue) {
-    //           await handleOpenPostDetail(issue);
-    //         }
-    //       }}
-    //     />
-    //   );
-    // }
+    if (activeTab === 'map') {
+      return (
+        <IssueMap
+          issues={issues}
+          onOpenIssue={async (issueId) => {
+            const issue = await loadIssueById(issueId);
+            if (issue) {
+              await handleOpenPostDetail(issue);
+            }
+          }}
+        />
+      );
+    }
 
     if (activeTab === 'search') {
       return (
