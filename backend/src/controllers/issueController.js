@@ -192,7 +192,7 @@ export const addIssueUpdate = async (req, res) => {
 
 export const getNearbyIssues = async (req, res) => {
   try {
-    const issues = await getNearbyIssueRecords(req.query, req.userId || null);
+    const issues = await getNearbyIssueRecord(req.query, req.userId || null);
 
     return res.status(200).json({
       issues,

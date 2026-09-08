@@ -20,7 +20,7 @@ const getUpdateOrganizationName = (update) =>
   update?.issue?.organization?.name ||
   'Assigned organization';
 
-const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDeletePost, onOpenCreatePost, isLoading, onRefresh, onLoadUpdates, onOpenPostDetail, onOpenUpdateIssue, onOpenCommentForm, onShareIssue }) => {
+const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDeletePost, onOpenCreatePost, isLoading, onRefresh, onLoadUpdates, onOpenPostDetail, onOpenUpdateIssue, onOpenCommentForm, onShareIssue, isNearMeActive, isLoadingNearbyIssues, onNearMe, onClearNearMe }) => {
   const [displayName, setDisplayName] = useState('CivicFix User');
   const [currentHandle, setCurrentHandle] = useState('@civicfixuser');
   const [feedTab, setFeedTab] = useState('forYou');
@@ -109,6 +109,27 @@ const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDe
           </Text>
           {feedTab === 'updates' ? <View style={styles.feedTabIndicator} /> : null}
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.nearMeRow}>
+        <TouchableOpacity
+          style={[styles.nearMeButton, isNearMeActive && styles.nearMeButtonActive]}
+          onPress={onNearMe}
+          disabled={isLoadingNearbyIssues}
+        >
+          {isLoadingNearbyIssues ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <Feather name="map-pin" size={15} color="#FFFFFF" />
+          )}
+          <Text style={styles.nearMeButtonText}>{isLoadingNearbyIssues ? 'Finding issues...' : 'Near Me'}</Text>
+        </TouchableOpacity>
+        {isNearMeActive ? (
+          <TouchableOpacity style={styles.clearNearMeButton} onPress={onClearNearMe}>
+            <Feather name="x" size={15} color="#0F766E" />
+            <Text style={styles.clearNearMeText}>Show all posts</Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
 
       <ScrollView 

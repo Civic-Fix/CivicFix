@@ -1413,11 +1413,12 @@ export const getNearbyIssues = async ({ lat, lng, radius, limit }, currentUserId
   const resultLimit = parseOptionalPositiveInteger(limit, 50, "limit");
 
   const { data, error } = await supabase
-    .from("issues")
-    .select(issueSelect)
-    .not("lat", "is", null)
-    .not("lng", "is", null)
-    .limit(500);
+    .rpc("get_nearby_issues", {
+      query_lat: queryLat,
+      query_lng: queryLng,
+      radius_meters: radiusMeters,
+      result_limit: resultLimit,
+    });
 
   if (error) {
     console.error("[IssueService] getNearbyIssues failed", {
@@ -1433,27 +1434,7 @@ export const getNearbyIssues = async ({ lat, lng, radius, limit }, currentUserId
     );
   }
 
-  const nearbyIssues = (data || [])
-    .map((issue) => ({
-      ...issue,
-      distance_meters: haversineDistanceMeters(
-        queryLat,
-        queryLng,
-        issue.lat,
-        issue.lng
-      ),
-    }))
-    .filter((issue) => issue.distance_meters <= radiusMeters)
-    .sort((left, right) => {
-      if (left.distance_meters !== right.distance_meters) {
-        return left.distance_meters - right.distance_meters;
-      }
-
-      return new Date(right.created_at).getTime() - new Date(left.created_at).getTime();
-    })
-    .slice(0, resultLimit);
-
-  return attachRelatedData(nearbyIssues, currentUserId);
+  return attachRelatedData(data || [], currentUserId);
 };
 
 export const getIssueMapPoints = async (limit) => {

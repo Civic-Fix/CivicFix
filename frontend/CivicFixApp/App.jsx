@@ -1,6 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, BackHandler, Share, StyleSheet, Text, TouchableOpacity, View, Linking } from 'react-native';
+import * as Location from 'expo-location';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Feather from '@expo/vector-icons/Feather';
@@ -16,7 +17,7 @@ import CreatePost from './components/CreatePost';
 import Notifications from './components/Notifications';
 import ProfileScreen from './components/ProfileScreen';
 import CivicAssistant from './components/CivicAssistant';
-import IssueMap from './components/IssueMap';
+// import IssueMap from './components/IssueMap';
 import Post from './components/Post';
 import CommentForm from './components/CommentForm';
 import { API_BASE_URL, ISSUE_SHARE_BASE_URL } from './config';
@@ -197,6 +198,8 @@ export default function App() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [isLoadingIssues, setIsLoadingIssues] = useState(false);
+  const [isNearMeActive, setIsNearMeActive] = useState(false);
+  const [isLoadingNearbyIssues, setIsLoadingNearbyIssues] = useState(false);
   const [isLoadingComments, setIsLoadingComments] = useState(false);
   const aiAnalysisQueuedRef = useRef(new Set());
   const aiPollAttemptsRef = useRef(new Map());
@@ -234,6 +237,47 @@ export default function App() {
       setIsLoadingIssues(false);
     }
   }, [user, anonymousIssueIds]);
+
+  const loadNearbyIssues = useCallback(async () => {
+    setIsLoadingNearbyIssues(true);
+
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        throw new Error('Location permission is required to find issues near you.');
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+      const { latitude, longitude } = location.coords;
+      const response = await authenticatedFetch(
+        `${API_BASE_URL}/issues/nearby?lat=${encodeURIComponent(latitude)}&lng=${encodeURIComponent(longitude)}`
+      );
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to fetch nearby issues');
+      }
+
+      const mappedIssues = Array.isArray(result.issues)
+        ? result.issues.map((issue) => mapIssueToFeedItem(issue, user?.id || null, anonymousIssueIds))
+        : [];
+
+      setIssues(mappedIssues);
+      setIsNearMeActive(true);
+    } catch (error) {
+      console.error('[App] loadNearbyIssues failed', error.message || error);
+      Alert.alert('Near Me unavailable', error.message || 'Unable to find nearby issues.');
+    } finally {
+      setIsLoadingNearbyIssues(false);
+    }
+  }, [anonymousIssueIds, user]);
+
+  const clearNearbyIssues = useCallback(async () => {
+    setIsNearMeActive(false);
+    await loadIssues();
+  }, [loadIssues]);
 
   const loadSearchResults = async (query) => {
     const trimmedQuery = typeof query === 'string' ? query.trim() : '';
@@ -947,19 +991,19 @@ export default function App() {
       return <CivicAssistant user={user} />;
     }
 
-    if (activeTab === 'map') {
-      return (
-        <IssueMap
-          issues={issues}
-          onOpenIssue={async (issueId) => {
-            const issue = await loadIssueById(issueId);
-            if (issue) {
-              await handleOpenPostDetail(issue);
-            }
-          }}
-        />
-      );
-    }
+    // if (activeTab === 'map') {
+    //   return (
+    //     <IssueMap
+    //       issues={issues}
+    //       onOpenIssue={async (issueId) => {
+    //         const issue = await loadIssueById(issueId);
+    //         if (issue) {
+    //           await handleOpenPostDetail(issue);
+    //         }
+    //       }}
+    //     />
+    //   );
+    // }
 
     if (activeTab === 'search') {
       return (
@@ -1008,6 +1052,10 @@ export default function App() {
         onOpenCreatePost={() => setScreen('createPost')}
         onOpenPostDetail={handleOpenPostDetail}        onOpenUpdateIssue={handleOpenIssueFromUpdate}        onOpenCommentForm={handleOpenCommentForm}
         onRefresh={loadIssues}
+        isNearMeActive={isNearMeActive}
+        isLoadingNearbyIssues={isLoadingNearbyIssues}
+        onNearMe={loadNearbyIssues}
+        onClearNearMe={clearNearbyIssues}
         onLoadUpdates={loadUpdates}
         onShareIssue={handleShareIssue}
       />
