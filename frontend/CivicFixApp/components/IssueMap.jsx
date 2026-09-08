@@ -121,7 +121,7 @@ export default function IssueMap({ onOpenIssue }) {
 
           <UserLocation accuracy heading />
 
-          {issues.map(issue => (
+          {issues.filter(issue => !issue.is_sos).map(issue => (
             <Marker
               key={String(issue.id)}
               id={String(issue.id)}
@@ -138,6 +138,20 @@ export default function IssueMap({ onOpenIssue }) {
               </View>
             </Marker>
           ))}
+          {issues
+            .filter(issue => issue.is_sos)
+            .map(alert => (
+              <Marker
+                key={`sos-${String(alert.id)}`}
+                id={`sos-${String(alert.id)}`}
+                lngLat={alert.coordinates}
+                onPress={() => handleMarkerPress(alert)}
+              >
+                <View style={styles.sosMarker}>
+                  <MaterialCommunityIcons name="alarm-light" size={14} color="#FFFFFF" />
+                </View>
+              </Marker>
+            ))}
         </Map>
 
         <View style={styles.controls}>
@@ -173,12 +187,16 @@ export default function IssueMap({ onOpenIssue }) {
           <>
             <Text style={styles.cardTitle}>{selectedIssue.title}</Text>
             <Text style={styles.cardSub}>
-              Status: {selectedIssue.status?.replace('_', ' ').toUpperCase() || 'REPORTED'}
+              {selectedIssue.is_sos
+                ? `${selectedIssue.address || selectedIssue.locality || 'Emergency location'} (${Number(selectedIssue.lat).toFixed(5)}, ${Number(selectedIssue.lng).toFixed(5)})`
+                : `Status: ${selectedIssue.status?.replace('_', ' ').toUpperCase() || 'REPORTED'}`}
             </Text>
 
-            <TouchableOpacity style={styles.openBtn} onPress={() => onOpenIssue?.(selectedIssue.id)} activeOpacity={0.82}>
-              <Text style={styles.openBtnText}>Open Issue</Text>
-            </TouchableOpacity>
+            {!selectedIssue.is_sos ? (
+              <TouchableOpacity style={styles.openBtn} onPress={() => onOpenIssue?.(selectedIssue.id)} activeOpacity={0.82}>
+                <Text style={styles.openBtnText}>Open Issue</Text>
+              </TouchableOpacity>
+            ) : null}
           </>
         ) : (
           <Text style={styles.cardEmpty}>Tap a marker to view details</Text>
@@ -303,4 +321,14 @@ const styles = StyleSheet.create({
   cardEmpty: { color: '#64748B' },
   error: { color: '#DC2626', marginTop: 6 },
   statusText: { color: '#475569', fontSize: 12, marginTop: 4 }
+  sosMarker: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#DC2626',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
 });

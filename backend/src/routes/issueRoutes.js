@@ -10,6 +10,8 @@ import {
   getIssues,
   getIssueMapPoints,
   getNearbyIssues,
+  createSosAlert,
+  getRecentSosAlerts,
   getUpdates,
   removeIssueVote,
   searchIssues,
@@ -24,6 +26,8 @@ router.get("/", requireAuth, getIssues);
 router.get("/search", requireAuth, searchIssues);
 router.get("/nearby", optionalAuth, getNearbyIssues);
 router.get("/map", getIssueMapPoints);
+router.get("/sos", requireAuth, getRecentSosAlerts);
+router.post("/sos", requireAuth, createSosAlert);
 router.post("/attachments/upload", requireAuth, uploadIssueAttachmentAsset);
 router.post("/", requireAuth, createIssue);
 router.get("/updates", requireAuth, getUpdates);

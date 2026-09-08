@@ -20,11 +20,14 @@ const getUpdateOrganizationName = (update) =>
   update?.issue?.organization?.name ||
   'Assigned organization';
 
-const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDeletePost, onOpenCreatePost, isLoading, onRefresh, onLoadUpdates, onOpenPostDetail, onOpenUpdateIssue, onOpenCommentForm, onShareIssue, isNearMeActive, isLoadingNearbyIssues, onNearMe, onClearNearMe }) => {
+const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDeletePost, onOpenCreatePost, isLoading, onRefresh, onLoadUpdates, onOpenPostDetail, onOpenUpdateIssue, onOpenCommentForm, onShareIssue, isNearMeActive, isLoadingNearbyIssues, onNearMe, onClearNearMe, onPrepareSos, onBroadcastSos }) => {
   const [displayName, setDisplayName] = useState('CivicFix User');
   const [currentHandle, setCurrentHandle] = useState('@civicfixuser');
   const [feedTab, setFeedTab] = useState('forYou');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [sosCountdown, setSosCountdown] = useState(null);
+  const [sosLocation, setSosLocation] = useState(null);
+  const [sosError, setSosError] = useState('');
 
   useEffect(() => {
     if (user?.name) {
@@ -42,6 +45,39 @@ const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDe
       onLoadUpdates?.();
     }
   }, [feedTab, onLoadUpdates]);
+
+  useEffect(() => {
+    if (sosCountdown === null) return undefined;
+    if (sosCountdown === 0) {
+      onBroadcastSos?.(sosLocation);
+      setSosCountdown(null);
+      setSosLocation(null);
+      return undefined;
+    }
+
+    const timer = setTimeout(() => setSosCountdown((value) => value - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [onBroadcastSos, sosCountdown, sosLocation]);
+
+  const handleSosPress = async () => {
+    if (sosCountdown !== null) return;
+    setSosError('');
+
+    try {
+      const location = await onPrepareSos?.();
+      if (!location) return;
+      setSosLocation(location);
+      setSosCountdown(10);
+    } catch (error) {
+      setSosError(error.message || 'Unable to capture your current location.');
+    }
+  };
+
+  const cancelSos = () => {
+    setSosCountdown(null);
+    setSosLocation(null);
+    setSosError('');
+  };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -130,7 +166,30 @@ const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDe
             <Text style={styles.clearNearMeText}>Show all posts</Text>
           </TouchableOpacity>
         ) : null}
+        <TouchableOpacity
+          style={styles.sosButton}
+          onPress={handleSosPress}
+          disabled={sosCountdown !== null}
+        >
+          <MaterialCommunityIcons name="alarm-light" size={16} color="#FFFFFF" />
+          <Text style={styles.sosButtonText}>SOS</Text>
+        </TouchableOpacity>
       </View>
+
+      {sosCountdown !== null ? (
+        <View style={styles.sosBanner}>
+          <View style={styles.sosBannerCopy}>
+            <Text style={styles.sosBannerTitle}>Emergency SOS will broadcast in {sosCountdown}s</Text>
+            <Text style={styles.sosBannerText} numberOfLines={2}>
+              {sosLocation?.address || sosLocation?.locality || 'Current location captured'}
+            </Text>
+          </View>
+          <TouchableOpacity style={styles.cancelSosButton} onPress={cancelSos}>
+            <Text style={styles.cancelSosText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      ) : null}
+      {sosError ? <Text style={styles.sosError}>{sosError}</Text> : null}
 
       <ScrollView 
         contentContainerStyle={styles.feedList} 

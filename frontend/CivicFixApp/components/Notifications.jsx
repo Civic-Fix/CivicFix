@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { API_BASE_URL } from '../config';
+import { authenticatedFetch } from '../utils/authSession';
 import {
   addStoredNotifications,
   getDismissedNotificationIds,
@@ -13,6 +15,7 @@ import {
 
 const Notifications = ({ issues, updates = [], user }) => {
   const [items, setItems] = useState([]);
+  const [latestSosAt, setLatestSosAt] = useState(null);
   const userId = user?.id || user?.email || 'guest';
 
   useEffect(() => {
@@ -23,6 +26,51 @@ const Notifications = ({ issues, updates = [], user }) => {
 
     loadItems();
   }, [userId]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const syncSosAlerts = async () => {
+      try {
+        const since = latestSosAt ? `&since=${encodeURIComponent(latestSosAt)}` : '';
+        const response = await authenticatedFetch(`${API_BASE_URL}/issues/sos?limit=20${since}`);
+        const result = await response.json();
+        if (!response.ok) return;
+
+        const alerts = Array.isArray(result.alerts) ? result.alerts : [];
+        if (!alerts.length || !isActive) return;
+
+        const sosItems = alerts.map((alert) => ({
+          id: `sos-${alert.id}`,
+          dismissalKey: `sos-${alert.id}`,
+          title: 'Emergency SOS nearby',
+          body: [alert.address || alert.locality || 'Location unavailable', `Coordinates: ${Number(alert.lat).toFixed(5)}, ${Number(alert.lng).toFixed(5)}`].join(' · '),
+          time: 'Now',
+          category: 'sos',
+          lat: alert.lat,
+          lng: alert.lng,
+        }));
+        const nextItems = await addStoredNotifications(sosItems, userId);
+        setItems(nextItems);
+        setLatestSosAt(alerts[0].created_at);
+        requestNotificationPermissions();
+        sosItems.forEach((item) => scheduleLocalNotification({
+          title: item.title,
+          body: item.body,
+          data: { id: item.id, lat: item.lat, lng: item.lng },
+        }));
+      } catch (error) {
+        console.warn('[Notifications] SOS sync failed', error.message || error);
+      }
+    };
+
+    syncSosAlerts();
+    const timer = setInterval(syncSosAlerts, 15000);
+    return () => {
+      isActive = false;
+      clearInterval(timer);
+    };
+  }, [latestSosAt, userId]);
 
   useEffect(() => {
     const syncItems = async () => {
@@ -106,14 +154,15 @@ const Notifications = ({ issues, updates = [], user }) => {
         ) : (
           items.map((item) => {
             const isIssueUpdate = item.category === 'issue-update';
+            const isSos = item.category === 'sos';
 
             return (
-            <View key={item.id} style={[styles.card, isIssueUpdate && styles.updateCard]}>
-              <View style={[styles.iconWrap, isIssueUpdate && styles.updateIconWrap]}>
+            <View key={item.id} style={[styles.card, isIssueUpdate && styles.updateCard, isSos && styles.sosCard]}>
+              <View style={[styles.iconWrap, isIssueUpdate && styles.updateIconWrap, isSos && styles.sosIconWrap]}>
                 <MaterialCommunityIcons
-                  name={isIssueUpdate ? 'progress-clock' : 'bell-ring-outline'}
+                  name={isSos ? 'alarm-light' : isIssueUpdate ? 'progress-clock' : 'bell-ring-outline'}
                   size={17}
-                  color={isIssueUpdate ? '#2563EB' : '#16A34A'}
+                  color={isSos ? '#DC2626' : isIssueUpdate ? '#2563EB' : '#16A34A'}
                 />
               </View>
               <View style={styles.copy}>
@@ -183,6 +232,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#EFF6FF',
     borderColor: '#BFDBFE',
   },
+  sosCard: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+  },
   iconWrap: {
     width: 38,
     height: 38,
@@ -197,6 +250,10 @@ const styles = StyleSheet.create({
   updateIconWrap: {
     backgroundColor: '#DBEAFE',
     borderColor: '#93C5FD',
+  },
+  sosIconWrap: {
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5',
   },
   copy: {
     flex: 1,

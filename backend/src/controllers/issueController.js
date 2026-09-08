@@ -11,11 +11,37 @@ import {
   listIssueUpdates as listIssueUpdatesRecords,
   listAllUpdates as listAllUpdateRecords,
   getNearbyIssues as getNearbyIssueRecord,
+  createSosAlert as createSosAlertRecord,
+  getRecentSosAlerts as getRecentSosAlertsRecord,
   IssueServiceError,
   removeIssueVote as removeIssueVoteRecord,
   updateIssue as updateIssueRecord,
   uploadIssueAttachmentAsset as uploadIssueAttachmentAssetRecord,
 } from "../services/issueService.js";
+
+export const createSosAlert = async (req, res) => {
+  try {
+    const sos = await createSosAlertRecord(req.body, req.userId);
+    return res.status(201).json({ sos });
+  } catch (err) {
+    console.error("[IssueController] createSosAlert error", err);
+    return res
+      .status(err instanceof IssueServiceError ? err.statusCode : 500)
+      .json({ error: err.message || "Unable to broadcast SOS alert" });
+  }
+};
+
+export const getRecentSosAlerts = async (req, res) => {
+  try {
+    const alerts = await getRecentSosAlertsRecord(req.query.since, req.query.limit);
+    return res.status(200).json({ alerts });
+  } catch (err) {
+    console.error("[IssueController] getRecentSosAlerts error", err);
+    return res
+      .status(err instanceof IssueServiceError ? err.statusCode : 500)
+      .json({ error: err.message || "Unable to fetch SOS alerts" });
+  }
+};
 
 export const createIssue = async (req, res) => {
   try {

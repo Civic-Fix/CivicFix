@@ -279,6 +279,53 @@ export default function App() {
     await loadIssues();
   }, [loadIssues]);
 
+  const prepareSos = useCallback(async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== 'granted') {
+      throw new Error('Location permission is required to send an SOS.');
+    }
+
+    const location = await Location.getCurrentPositionAsync({
+      accuracy: Location.Accuracy.High,
+    });
+    const { latitude, longitude } = location.coords;
+    let address = '';
+    let locality = '';
+
+    try {
+      const places = await Location.reverseGeocodeAsync({ latitude, longitude });
+      const place = places[0];
+      locality = [place?.district, place?.city, place?.region].filter(Boolean).join(', ');
+      address = [place?.name, place?.street, locality].filter(Boolean).join(', ');
+    } catch (error) {
+      console.warn('[App] SOS reverse geocode failed', error.message || error);
+    }
+
+    return { lat: latitude, lng: longitude, locality, address };
+  }, []);
+
+  const broadcastSos = useCallback(async (location) => {
+    if (!location) return;
+
+    try {
+      const response = await authenticatedFetch(`${API_BASE_URL}/issues/sos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(location),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Unable to broadcast SOS');
+      }
+
+      Alert.alert('SOS broadcasted', 'Emergency users have been notified with your location.');
+    } catch (error) {
+      console.error('[App] broadcastSos failed', error.message || error);
+      Alert.alert('SOS unavailable', error.message || 'Unable to broadcast SOS.');
+    }
+  }, []);
+
   const loadSearchResults = async (query) => {
     const trimmedQuery = typeof query === 'string' ? query.trim() : '';
 
@@ -1056,6 +1103,8 @@ export default function App() {
         isLoadingNearbyIssues={isLoadingNearbyIssues}
         onNearMe={loadNearbyIssues}
         onClearNearMe={clearNearbyIssues}
+        onPrepareSos={prepareSos}
+        onBroadcastSos={broadcastSos}
         onLoadUpdates={loadUpdates}
         onShareIssue={handleShareIssue}
       />

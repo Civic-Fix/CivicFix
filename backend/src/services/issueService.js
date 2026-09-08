@@ -1495,6 +1495,73 @@ export const getIssueMapPoints = async (limit) => {
     );
   }
 
+  const { data: sosAlerts, error: sosError } = await supabase
+    .from("sos_alerts")
+    .select("id, created_by, lat, lng, locality, address, created_at")
+    .order("created_at", { ascending: false })
+    .limit(resultLimit);
+
+  if (sosError && !/does not exist|schema cache/i.test(sosError.message || "")) {
+    throw new IssueServiceError(sosError.message || "Unable to fetch SOS map points", 500);
+  }
+
+  return [
+    ...(data || []),
+    ...(sosAlerts || []).map((alert) => ({
+      ...alert,
+      title: "Emergency SOS",
+      status: "sos",
+      is_sos: true,
+    })),
+  ];
+};
+
+export const createSosAlert = async ({ lat, lng, locality, address }, userId) => {
+  const queryLat = parseRequiredNumber(lat, "lat");
+  const queryLng = parseRequiredNumber(lng, "lng");
+
+  const { data, error } = await supabase
+    .from("sos_alerts")
+    .insert({
+      created_by: userId,
+      lat: queryLat,
+      lng: queryLng,
+      locality: typeof locality === "string" ? locality.trim() || null : null,
+      address: typeof address === "string" ? address.trim() || null : null,
+    })
+    .select("id, created_by, lat, lng, locality, address, created_at")
+    .single();
+
+  if (error) {
+    throw new IssueServiceError(error.message || "Unable to broadcast SOS alert", 500);
+  }
+
+  return {
+    ...data,
+    title: "Emergency SOS",
+    status: "sos",
+    is_sos: true,
+  };
+};
+
+export const getRecentSosAlerts = async (since, limit = 20) => {
+  const resultLimit = parseOptionalPositiveInteger(limit, 20, "limit");
+  let query = supabase
+    .from("sos_alerts")
+    .select("id, created_by, lat, lng, locality, address, created_at")
+    .order("created_at", { ascending: false })
+    .limit(resultLimit);
+
+  if (since) {
+    query = query.gt("created_at", since);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new IssueServiceError(error.message || "Unable to fetch SOS alerts", 500);
+  }
+
   return data || [];
 };
 
