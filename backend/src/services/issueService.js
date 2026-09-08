@@ -1562,7 +1562,17 @@ export const getRecentSosAlerts = async (since, limit = 20) => {
     throw new IssueServiceError(error.message || "Unable to fetch SOS alerts", 500);
   }
 
-  return data || [];
+  const alerts = data || [];
+  const creatorIds = alerts.map((alert) => alert.created_by);
+  const [usersMap, membersMap] = await Promise.all([
+    fetchUsersByIds(creatorIds),
+    fetchOrganizationMembersByIds(creatorIds),
+  ]);
+
+  return alerts.map((alert) => ({
+    ...alert,
+    created_by_user: usersMap.get(alert.created_by) || membersMap.get(alert.created_by) || null,
+  }));
 };
 
 export { IssueServiceError };

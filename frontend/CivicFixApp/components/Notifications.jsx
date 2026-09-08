@@ -18,6 +18,18 @@ const Notifications = ({ issues, updates = [], user }) => {
   const [latestSosAt, setLatestSosAt] = useState(null);
   const userId = user?.id || user?.email || 'guest';
 
+  const formatSosTime = (timestamp) => {
+    if (!timestamp) return 'Time unavailable';
+
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return 'Time unavailable';
+
+    return date.toLocaleString([], {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+  };
+
   useEffect(() => {
     const loadItems = async () => {
       const stored = await getStoredNotifications(userId);
@@ -43,9 +55,13 @@ const Notifications = ({ issues, updates = [], user }) => {
         const sosItems = alerts.map((alert) => ({
           id: `sos-${alert.id}`,
           dismissalKey: `sos-${alert.id}`,
-          title: 'Emergency SOS nearby',
-          body: [alert.address || alert.locality || 'Location unavailable', `Coordinates: ${Number(alert.lat).toFixed(5)}, ${Number(alert.lng).toFixed(5)}`].join(' · '),
-          time: 'Now',
+          title: `Emergency SOS from ${alert.created_by_user?.name || alert.created_by_user?.phone || alert.created_by_user?.email || 'CivicFix user'}`,
+          body: [
+            `Time: ${formatSosTime(alert.created_at)}`,
+            alert.address || alert.locality || 'Location unavailable',
+            `Coordinates: ${Number(alert.lat).toFixed(5)}, ${Number(alert.lng).toFixed(5)}`,
+          ].join(' · '),
+          time: formatSosTime(alert.created_at),
           category: 'sos',
           lat: alert.lat,
           lng: alert.lng,
