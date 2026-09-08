@@ -87,7 +87,7 @@ The dashboard expects the backend running at `http://localhost:5001`. Set `VITE_
 |---|---|
 | Framework | React 19 |
 | Build | Vite 8 |
-| Styling | Tailwind CSS v4 (`@tailwindcss/vite`) |
+| Styling | Tailwind CSS v4 (`@tailwindcss/vite`), Bootstrap CSS |
 | Routing | React Router v7 |
 | Drag & Drop | @hello-pangea/dnd |
 | Icons | lucide-react |

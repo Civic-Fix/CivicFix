@@ -1,0 +1,24 @@
+{
+  "label2id": {
+    "drainage": 0,
+    "encroachment": 1,
+    "public_safety": 2,
+    "roads": 3,
+    "sanitation": 4,
+    "street_lighting": 5,
+    "traffic": 6,
+    "utilities": 7,
+    "water_supply": 8
+  },
+  "id2label": {
+    "0": "drainage",
+    "1": "encroachment",
+    "2": "public_safety",
+    "3": "roads",
+    "4": "sanitation",
+    "5": "street_lighting",
+    "6": "traffic",
+    "7": "utilities",
+    "8": "water_supply"
+  }
+}

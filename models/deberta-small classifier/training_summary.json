@@ -1,0 +1,26 @@
+{
+  "model_name": "microsoft/deberta-v3-small",
+  "max_length": 256,
+  "seed": 42,
+  "best_checkpoint": "./deberta_v3_small_results/checkpoint-106",
+  "best_validation_macro_f1": 0.8743873303144737,
+  "label2id": {
+    "drainage": 0,
+    "encroachment": 1,
+    "public_safety": 2,
+    "roads": 3,
+    "sanitation": 4,
+    "street_lighting": 5,
+    "traffic": 6,
+    "utilities": 7,
+    "water_supply": 8
+  },
+  "train_metrics": {
+    "train_runtime": 240.1249,
+    "train_samples_per_second": 69.381,
+    "train_steps_per_second": 4.414,
+    "total_flos": 45712208305908.0,
+    "train_loss": 1.1693246805442954,
+    "epoch": 5.0
+  }
+}
