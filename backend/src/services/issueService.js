@@ -1420,6 +1420,42 @@ export const getNearbyIssues = async ({ lat, lng, radius, limit }, currentUserId
       result_limit: resultLimit,
     });
 
+  if (error && /could not find the function|schema cache|does not exist/i.test(error.message || "")) {
+    console.warn("[IssueService] Nearby RPC is unavailable; using compatibility query", {
+      message: error.message,
+    });
+
+    const fallbackResult = await supabase
+      .from("issues")
+      .select(issueSelect)
+      .not("lat", "is", null)
+      .not("lng", "is", null)
+      .limit(500);
+
+    if (fallbackResult.error) {
+      throw new IssueServiceError(
+        fallbackResult.error.message || "Unable to fetch nearby issues",
+        500
+      );
+    }
+
+    const nearbyIssues = (fallbackResult.data || [])
+      .map((issue) => ({
+        ...issue,
+        distance_meters: haversineDistanceMeters(
+          queryLat,
+          queryLng,
+          issue.lat,
+          issue.lng
+        ),
+      }))
+      .filter((issue) => issue.distance_meters <= radiusMeters)
+      .sort((left, right) => left.distance_meters - right.distance_meters)
+      .slice(0, resultLimit);
+
+    return attachRelatedData(nearbyIssues, currentUserId);
+  }
+
   if (error) {
     console.error("[IssueService] getNearbyIssues failed", {
       queryLat,
