@@ -81,9 +81,9 @@ const Login = ({ onSignupPress, onLoginSuccess, onForgotPasswordPress }) => {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={styles.hero}>
           <View style={styles.logoWrap}>
-            <MaterialCommunityIcons name="city-variant-outline" size={34} color="#FFFFFF" />
+            <MaterialCommunityIcons name="image-filter-hdr" size={34} color="#FFFFFF" />
           </View>
-          <Text style={styles.heroTitle}>CivicFix</Text>
+          <Text style={styles.heroTitle}>भू Saathi</Text>
           <Text style={styles.heroTagline}>Report - Track - Resolve</Text>
         </View>
 

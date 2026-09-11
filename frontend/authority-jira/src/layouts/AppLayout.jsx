@@ -49,10 +49,10 @@ function AppLayout() {
           <div className="border-b border-white/10 px-4 py-5">
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-md bg-blue-500 text-xs font-black text-white shadow-sm shadow-blue-950/30">
-                CF
+                भू
               </div>
               <div className="leading-tight">
-                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">CivicFix</p>
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">भू Rakshak</p>
                 <p className="text-sm font-black tracking-tight text-white">Authority Desk</p>
               </div>
             </div>

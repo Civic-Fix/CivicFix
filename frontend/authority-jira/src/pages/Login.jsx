@@ -73,8 +73,8 @@ function Login() {
             <ShieldCheck className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">CivicFix</p>
-            <p className="text-sm font-black text-white">Authority</p>
+            <p className="text-[30px] font-black uppercase tracking-widest text-emerald-400">भू Rakshak</p>
+            <p className="text-[20px] font-black text-white">Authority</p>
           </div>
         </div>
 
