@@ -1,6 +1,6 @@
 # CivicFix – Smart Civic Complaint Management System
 
-## 🎯 Vision & Mission
+## 🎯 Vision & Missions
 
 ### Vision
 To revolutionize civic governance by creating a transparent, data-driven platform that empowers citizens to voice concerns and enables municipal authorities to respond efficiently and equitably.
