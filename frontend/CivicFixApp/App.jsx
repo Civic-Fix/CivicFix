@@ -1003,7 +1003,7 @@ export default function App() {
       case 'search':
         return { title: 'Discover', subtitle: 'Find issues and local stories' };
       case 'assistant':
-        return { title: 'CivicBot', subtitle: 'Ask for guidance and support' };
+        return { title: 'भू Bot', subtitle: 'Ask for guidance and support' };
       case 'map':
         return { title: 'Map view', subtitle: 'Explore issues nearby' };
       case 'notifications':
@@ -1225,7 +1225,7 @@ export default function App() {
                   />
                 </View>
                 <Text style={[styles.bottomLabel, activeTab === 'assistant' && styles.bottomLabelActive]}>
-                  CivicBot
+                  भू Bot
                 </Text>
               </TouchableOpacity>
 
