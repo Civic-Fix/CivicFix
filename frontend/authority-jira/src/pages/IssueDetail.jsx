@@ -1,3 +1,4 @@
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import {
@@ -14,7 +15,7 @@ import {
   Save,
 } from 'lucide-react'
 import Button from '../components/ui/Button'
-import Card, { CardBody, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
+import Card, { CardBody, CardFooter, CardHeader, CardTitle } from '../components/ui/Card'
 import Loader from '../components/ui/Loader'
 import StatusBadge from '../components/ui/StatusBadge'
 import { getIssueById, issueStatusOptions, updateIssue, uploadIssueAttachmentAsset } from '../services/issuesService'
@@ -195,8 +196,8 @@ function IssueDetail() {
 
   if (loading) {
     return (
-      <div className="space-y-4 p-4 lg:p-6">
-        <div className="rounded-xl border border-slate-200 bg-linear-to-br from-slate-50 to-white px-4 py-12 text-center">
+      <div className="space-y-3 p-3 lg:p-4">
+        <div className="rounded-xl border border-slate-200 bg-linear-to-br from-slate-50 to-white px-4 py-8 text-center">
           <Loader label="Loading issue" />
         </div>
       </div>
@@ -205,7 +206,7 @@ function IssueDetail() {
 
   if (error && !issue) {
     return (
-      <div className="space-y-4 p-4 lg:p-6">
+      <div className="space-y-3 p-3 lg:p-4">
         <div className="grid gap-2">
           <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-linear-to-r from-rose-50 to-rose-100 px-4 py-3 text-sm font-bold text-rose-900 shadow-sm">
             {error}
@@ -219,60 +220,63 @@ function IssueDetail() {
   }
 
   return (
-    <div className="space-y-6 p-4 lg:p-6">
-      <div className="grid gap-4">
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 flex-1 space-y-2">
-              <p className="text-xs font-bold uppercase tracking-widest text-blue-600">Issue Detail</p>
-              <h1 className="text-2xl font-black tracking-tight text-slate-950">
+    <div className="space-y-3 p-3 lg:p-4">
+      <div className="grid gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="truncate text-lg font-black tracking-tight text-slate-950">
                 {issue?.title || `Issue #${issue?.id}`}
               </h1>
-              <div className="flex flex-wrap items-center gap-3">
-                <StatusBadge status={issue?.status || 'Open'} />
-                <span className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600">
-                  <MapPin className="h-4 w-4 text-slate-400" />
-                  {issue?.locality || '--'}
-                </span>
-                <span className="text-sm font-semibold text-slate-600">
-                  <CalendarDays className="mr-1.5 inline h-4 w-4 text-slate-400" />
-                  Created {issue?.created_at ? formatDate(issue.created_at) : '--'}
-                </span>
-              </div>
+              <StatusBadge status={issue?.status || 'Open'} />
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <Button variant="secondary" as={Link} to="/issues">
-                Back
-              </Button>
-              <Button variant="secondary" onClick={refresh}>
-                <RefreshCcw className="h-4 w-4" />
-                Refresh
-              </Button>
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-500">
+              <span className="inline-flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                {issue?.locality || '--'}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+                {issue?.created_at ? formatDate(issue.created_at) : '--'}
+              </span>
+              <span className="text-slate-400">#{formatIssueId(issue?.id)}</span>
+              {issue?.aiTags?.length ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {issue.aiTags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-black text-slate-600 ring-1 ring-slate-200">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button size="sm" variant="secondary" as={Link} to="/issues">
+              Back
+            </Button>
+            <Button size="sm" variant="secondary" onClick={refresh}>
+              <RefreshCcw className="h-4 w-4" />
+              Refresh
+            </Button>
           </div>
         </div>
 
         {error ? (
-          <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-linear-to-r from-rose-50 to-rose-100 px-5 py-4 text-sm font-bold text-rose-900 shadow-sm">
+          <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-linear-to-r from-rose-50 to-rose-100 px-4 py-2.5 text-sm font-bold text-rose-900 shadow-sm">
             {error}
           </div>
         ) : null}
 
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid gap-3 lg:grid-cols-[1.2fr_0.8fr]">
           {/* Left Column */}
           <Card>
-            <CardHeader>
-              <div className="mb-4 flex items-start justify-between gap-6">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">Citizen Report</CardTitle>
-                  <CardDescription className="mt-1 text-sm">Submitted details, location, and supporting evidence.</CardDescription>
-                </div>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-600">Status</label>
+            <CardHeader className="pb-3">
+              {/* <CardTitle className="text-base">Citizen Report</CardTitle> */}
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <div className="flex items-center gap-1.5">
                   <select
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
                     value={newStatus}
                     onChange={(e) => setNewStatus(e.target.value)}
                   >
@@ -282,18 +286,17 @@ function IssueDetail() {
                       </option>
                     ))}
                   </select>
-                  <Button size="sm" disabled={savingStatus} onClick={onSaveStatus} className="flex items-center justify-center gap-2 mt-1 w-full">
-                    <Save className="h-4 w-4" />
+                  <Button size="sm" disabled={savingStatus} onClick={onSaveStatus} className="flex shrink-0 items-center gap-1.5 px-2.5">
+                    <Save className="h-3.5 w-3.5" />
                     {savingStatus ? 'Saving...' : 'Save'}
                   </Button>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-600">Assign To</label>
+                <div className="flex items-center gap-1.5">
                   <select
                     value={assignedTo}
                     onChange={(e) => onAssign(e.target.value)}
                     disabled={savingAssignee}
-                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25 disabled:bg-slate-50 disabled:opacity-70"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-900 outline-none transition focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25 disabled:bg-slate-50 disabled:opacity-70"
                   >
                     <option value="">-- Unassigned --</option>
                     {teamMembers.map((m) => (
@@ -302,181 +305,179 @@ function IssueDetail() {
                       </option>
                     ))}
                   </select>
-                  {savingAssignee && <p className="text-xs text-emerald-600 font-semibold">Saving...</p>}
+                  {savingAssignee && <span className="shrink-0 text-xs font-semibold text-emerald-600">Saving...</span>}
                 </div>
               </div>
             </CardHeader>
-            <CardBody className="grid gap-3">
-              <p className="whitespace-pre-wrap text-sm font-semibold leading-7 text-slate-700">
+            <CardBody className="grid gap-3 pt-0">
+              <p className="whitespace-pre-wrap text-sm font-semibold leading-6 text-slate-700">
                 {issue?.description || '--'}
               </p>
 
-              <div className="grid gap-2 sm:grid-cols-3">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Locality</p>
-                  <p className="mt-2 text-sm font-black text-slate-900">{issue?.locality || '--'}</p>
+              <div className="!flex !flex-wrap !items-center !gap-x-5 !gap-y-1 !m-0">
+                <div className="!flex !items-center !gap-2 !m-0">
+                  <p className="!m-0 !text-[10px] !font-bold !uppercase !tracking-wide !text-slate-500">
+                    Locality
+                  </p>
+                  <p className="!m-0 !text-sm !font-black !text-slate-700">
+                    {issue?.locality || '--'}
+                  </p>
                 </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Coordinates</p>
-                  <p className="mt-2 text-sm font-black text-slate-900">
+
+                <div className="!flex !items-center !gap-2 !m-0">
+                  <p className="!m-0 !text-[10px] !font-bold !uppercase !tracking-wide !text-slate-500">
+                    Coordinates
+                  </p>
+                  <p className="!m-0 !text-sm !font-black !text-slate-700">
                     {issue?.latitude != null && issue?.longitude != null
                       ? `${issue.latitude.toFixed(4)}, ${issue.longitude.toFixed(4)}`
                       : 'No coordinates'}
                   </p>
                 </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Issue ID</p>
-                  <p className="mt-2 text-sm font-black text-slate-900">#{formatIssueId(issue?.id)}</p>
-                </div>
               </div>
 
-              {images.length ? (
-                <div className="grid gap-2">
-                  <p className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-600">
-                    <Image className="h-4 w-4" />
-                    Photos
-                  </p>
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {images.map((src, idx) => (
-                      <a
-                        key={`${src}-${idx}`}
-                        href={src}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group overflow-hidden rounded-lg border border-slate-200 bg-slate-50 transition hover:border-emerald-300 hover:shadow-md"
-                      >
-                        <img
-                          src={src}
-                          alt={`Proof ${idx + 1}`}
-                          className="h-32 w-full object-cover transition duration-300 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      </a>
-                    ))}
+              <div className="grid gap-3 lg:grid-cols-2">
+                {images.length ? (
+                  <div className="min-w-0 w-full max-w-full overflow-hidden">
+                    <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                      <Image className="h-3.5 w-3.5 shrink-0" />
+                      Photos
+                    </p>
+
+                    <div className="flex w-full max-w-full gap-2 overflow-x-auto overflow-y-hidden pb-1">
+                      {images.map((src, idx) => (
+                        <a
+                          key={`${src}-${idx}`}
+                          href={src}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="group block h-54 w-70 min-w-36 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100"
+                        >
+                          <img
+                            src={src}
+                            alt={`Proof ${idx + 1}`}
+                            className="block h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </a>
+                      ))}
+                    </div>
                   </div>
+                ) : null}
+
+                {/* AI Triage - moved beside Photos, laid out horizontally */}
+                <div className="min-w-0 w-full max-w-full">
+                  <p className="mb-2 flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-slate-500">
+                    <Brain className="h-3.5 w-3.5 shrink-0 text-blue-600" />
+                    AI Triage
+                  </p>
+
+                  {issue?.aiPending ? (
+                    <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" />
+                      <div>
+                        <p className="text-sm font-black text-blue-900">AI analysis is still running</p>
+                        <p className="mt-0.5 text-xs font-semibold leading-5 text-blue-700">
+                          New and older reports are analyzed asynchronously. Refresh in a moment.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap items-stretch gap-2">
+                      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                        <p className="!m-0 text-[10px] font-bold uppercase tracking-wide text-blue-700">
+                          Category
+                        </p>
+                        <p className="!m-0 text-sm font-black text-blue-950">
+                          {issue?.categoryLabel || 'Uncategorized'}
+                        </p>
+                        <p className="!m-0 text-[10px] font-bold text-blue-700">
+                          {aiConfidence || 'No confidence score'}
+                        </p>
+                        <p className="!ml-3 !m-0 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+                          Severity
+                        </p>
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-0.5 text-xs font-black capitalize ring-1 ${severityStyles[issue?.aiSeverity] ||
+                            'bg-slate-100 text-slate-700 ring-slate-200'
+                            }`}
+                        >
+                          {issue?.aiSeverity || 'Not set'}
+                        </span>
+                      </div>
+
+                      {issue?.aiSummary ? (
+                        <div className="flex-1 min-w-48 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">AI Summary</p>
+                          <p className="mt-1 text-sm font-semibold leading-5 text-slate-700">{issue.aiSummary}</p>
+                        </div>
+                      ) : null}
+
+                      {issue?.aiDuplicateOf ? (
+                        <div className="flex flex-1 min-w-48 items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                          <Copy className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                          <div>
+                            <p className="text-sm font-black text-amber-900">
+                              Possible duplicate of #{formatIssueId(issue.aiDuplicateOf)}
+                            </p>
+                            <p className="text-xs font-semibold text-amber-800">
+                              {duplicateScore ? `${duplicateScore} match` : 'Potential match'} based on nearby similar reports.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-1 min-w-48 items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" />
+                          <div>
+                            <p className="text-sm font-black text-emerald-900">No duplicate flagged</p>
+                            <p className="text-xs font-semibold text-emerald-800">
+                              AI did not find a high-confidence duplicate in current reports.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              ) : null}
+              </div>
             </CardBody>
           </Card>
 
           {/* Right Column */}
           <div className="grid gap-3">
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Brain className="h-5 w-5 text-blue-600" />
-                  AI Triage
-                </CardTitle>
-                <CardDescription className="mt-1 text-sm">Auto-categorization and duplicate detection from the issue database.</CardDescription>
-              </CardHeader>
-              <CardBody className="grid gap-3">
-                {issue?.aiPending ? (
-                  <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-3">
-                    <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-blue-700" />
-                    <div>
-                      <p className="text-sm font-black text-blue-900">AI analysis is still running</p>
-                      <p className="mt-1 text-xs font-semibold leading-5 text-blue-700">
-                        New and older reports are analyzed asynchronously. Refresh in a moment to load the category and duplicate check.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg border border-blue-100 bg-blue-50 p-3">
-                        <p className="text-xs font-bold uppercase tracking-widest text-blue-700">Category</p>
-                        <p className="mt-2 text-lg font-black text-blue-950">{issue?.categoryLabel || 'Uncategorized'}</p>
-                        <p className="mt-1 text-xs font-bold text-blue-700">{aiConfidence || 'No confidence score'}</p>
-                      </div>
-                      <div className="rounded-lg border border-slate-200 bg-white p-3">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Severity</p>
-                        <span className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-black capitalize ring-1 ${severityStyles[issue?.aiSeverity] || 'bg-slate-100 text-slate-700 ring-slate-200'}`}>
-                          {issue?.aiSeverity || 'Not set'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {issue?.aiSummary ? (
-                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-500">AI Summary</p>
-                        <p className="mt-2 text-sm font-semibold leading-6 text-slate-700">{issue.aiSummary}</p>
-                      </div>
-                    ) : null}
-
-                    {issue?.aiDuplicateOf ? (
-                      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
-                        <Copy className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-                        <div>
-                          <p className="text-sm font-black text-amber-900">
-                            Possible duplicate of #{formatIssueId(issue.aiDuplicateOf)}
-                          </p>
-                          <p className="mt-1 text-xs font-semibold text-amber-800">
-                            {duplicateScore ? `${duplicateScore} match` : 'Potential match'} based on nearby similar reports.
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                        <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
-                        <div>
-                          <p className="text-sm font-black text-emerald-900">No duplicate flagged</p>
-                          <p className="mt-1 text-xs font-semibold text-emerald-800">
-                            AI did not find a high-confidence duplicate in current reports.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    {issue?.aiTags?.length ? (
-                      <div className="flex flex-wrap gap-2">
-                        {issue.aiTags.map((tag) => (
-                          <span key={tag} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600 ring-1 ring-slate-200">
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </>
-                )}
-              </CardBody>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Updates</CardTitle>
-                <CardDescription className="mt-1 text-sm">
-                  Progress logs and officer comments.
-                </CardDescription>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Updates</CardTitle>
               </CardHeader>
 
-              <CardBody className="grid gap-6">
+              <CardBody className="grid gap-3 pt-0">
 
                 {/* COMPOSER BOX */}
-                <form onSubmit={onAddUpdate} className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm grid gap-3">
+                <form onSubmit={onAddUpdate} className="rounded-lg border border-slate-200 bg-white p-2.5 shadow-sm grid gap-2">
 
                   <textarea
-                    className="min-h-20 resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
+                    className="min-h-14 resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-emerald-300 focus:ring-2 focus:ring-emerald-500/25"
                     value={newUpdate}
                     onChange={(e) => setNewUpdate(e.target.value)}
                     placeholder="Write an update..."
                   />
 
                   {/* ACTION ROW */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Button disabled={postingUpdate} type="submit">
-                        {postingUpdate ? "Posting..." : "Post"}
-                      </Button>
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" disabled={postingUpdate} type="submit">
+                      {postingUpdate ? "Posting..." : "Post"}
+                    </Button>
 
-                      <label
-                        htmlFor="update-files-input"
-                        className="inline-flex cursor-pointer items-center justify-center h-10 w-10 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition"
-                      >
-                        <Image className="h-5 w-5" />
-                      </label>
-                    </div>
+                    <label
+                      htmlFor="update-files-input"
+                      className="inline-flex cursor-pointer items-center justify-center h-8 w-8 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition"
+                    >
+                      <Image className="h-4 w-4" />
+                    </label>
 
-                    {/* optional hint */}
                     <p className="text-xs text-slate-400">Attach images if needed</p>
                   </div>
 
@@ -497,7 +498,7 @@ function IssueDetail() {
                           <img
                             src={f.preview}
                             alt={f.file_name}
-                            className="h-14 w-14 rounded-md object-cover border"
+                            className="h-12 w-12 rounded-md object-cover border"
                           />
                           <button
                             type="button"
@@ -513,27 +514,33 @@ function IssueDetail() {
                 </form>
 
                 {/* TIMELINE FEED */}
-                <div className="relative grid gap-4">
+                <div className="relative grid gap-2 max-h-125 overflow-y-auto pr-1">
 
                   {updates.length === 0 ? (
-                    <div className="text-sm text-slate-500 font-semibold text-center py-6">
+                    <div className="text-sm text-slate-500 font-semibold text-center py-4">
                       No updates yet
                     </div>
                   ) : (
                     updates.map((u) => (
-                      <div key={u.id} className="relative pl-4 border-l border-slate-200">
+                      <div key={u.id} className="relative pl-3 border-l border-slate-200">
 
                         {/* DOT */}
                         <span className="absolute -left-[5px] top-2 h-2.5 w-2.5 rounded-full bg-emerald-500" />
 
-                        <article className="rounded-lg bg-white border border-slate-200 p-3 hover:shadow-sm transition">
+                        <article className="rounded-lg bg-white border border-slate-200 p-2.5 hover:shadow-sm transition">
 
-                          <p className="whitespace-pre-wrap text-sm font-medium text-slate-700">
-                            {u.content}
-                          </p>
+                          <div>
+                            <p className="whitespace-pre-wrap text-sm font-medium text-slate-700">
+                              {u.content}
+                            </p>
 
-                          {Array.isArray(u.update_attachments) && u.update_attachments.length > 0 && (
-                            <div className="mt-3 grid grid-cols-2 gap-2">
+                            <p className="mt-1 text-[11px] text-slate-400 font-semibold">
+                              {u.created_at ? formatDate(u.created_at) : "--"}
+                            </p>
+                          </div>
+
+                          {/* {Array.isArray(u.update_attachments) && u.update_attachments.length > 0 && (
+                            <div className="mt-2 grid grid-cols-4 gap-1.5">
                               {u.update_attachments.map((att) => (
                                 <a
                                   key={att.id}
@@ -545,16 +552,32 @@ function IssueDetail() {
                                   <img
                                     src={att.file_url}
                                     alt="attachment"
-                                    className="h-28 w-full object-cover"
+                                    className="h-16 w-full object-cover"
+                                  />
+                                </a>
+                              ))}
+                            </div>
+                          )} */}
+
+                          {Array.isArray(u.update_attachments) && u.update_attachments.length > 0 && (
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                              {u.update_attachments.map((att) => (
+                                <a
+                                  key={att.id}
+                                  href={att.file_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="overflow-hidden rounded-md border bg-slate-50"
+                                >
+                                  <img
+                                    src={att.file_url}
+                                    alt="attachment"
+                                    className="h-32 w-full object-cover"
                                   />
                                 </a>
                               ))}
                             </div>
                           )}
-
-                          <p className="mt-2 text-xs text-slate-400 font-semibold">
-                            {u.created_at ? formatDate(u.created_at) : "--"}
-                          </p>
                         </article>
                       </div>
                     ))
@@ -563,10 +586,10 @@ function IssueDetail() {
 
               </CardBody>
 
-              <CardFooter>
+              <CardFooter className="py-2">
                 <p className="text-xs font-semibold text-slate-500">
                   <AlertTriangle className="mr-1 inline h-3.5 w-3.5" />
-                  Tip: Keep updates factual and include next action + ETA.
+                  Keep updates factual and include next action + ETA.
                 </p>
               </CardFooter>
             </Card>

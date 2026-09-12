@@ -97,16 +97,16 @@ function Team() {
   const totalByRole = (role) => members.filter((m) => m.role === role).length
 
   return (
-    <div className="space-y-8 p-6 lg:p-8">
+    <div className="space-y-5 p-4 lg:p-6">
       {/* Header */}
-      <div className="space-y-3">
+      <div className="border border-slate-200 bg-white px-5 py-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">Team</p>
-            <h1 className="bg-linear-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-4xl font-black tracking-tight text-transparent">
+          <div className="space-y-1">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Workspace / Team</p>
+            <h1 className="text-2xl font-black tracking-tight text-slate-950">
               Team Members
             </h1>
-            <p className="text-base font-semibold text-slate-600">
+            <p className="text-sm font-semibold text-slate-500">
               {user?.profile?.organization?.name || 'Your Organization'}
             </p>
           </div>
@@ -118,7 +118,6 @@ function Team() {
             Refresh
           </button>
         </div>
-        <div className="h-1 w-16 rounded-full bg-linear-to-r from-emerald-500 to-emerald-600" />
       </div>
 
       {/* Error banner */}
@@ -130,39 +129,39 @@ function Team() {
       )}
 
       {/* Stats */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-slate-200 bg-linear-to-br from-white to-slate-50 p-5 shadow-sm">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Total</p>
-              <p className="mt-1 text-4xl font-black text-slate-950">{members.length}</p>
+              <p className="mt-1 text-3xl font-black text-slate-950">{members.length}</p>
             </div>
             <div className="rounded-lg bg-slate-100 p-2.5"><Users className="h-5 w-5 text-slate-700" /></div>
           </div>
         </div>
-        <div className="rounded-xl border border-purple-200 bg-linear-to-br from-purple-50 to-violet-50 p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-purple-700">Admins</p>
-              <p className="mt-1 text-4xl font-black text-purple-700">{totalByRole('admin')}</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">Admins</p>
+              <p className="mt-1 text-3xl font-black text-slate-900">{totalByRole('admin')}</p>
             </div>
             <div className="rounded-lg bg-purple-100 p-2.5"><Shield className="h-5 w-5 text-purple-700" /></div>
           </div>
         </div>
-        <div className="rounded-xl border border-blue-200 bg-linear-to-br from-blue-50 to-cyan-50 p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-blue-700">Officers</p>
-              <p className="mt-1 text-4xl font-black text-blue-700">{totalByRole('officer')}</p>
+              <p className="mt-1 text-3xl font-black text-blue-700">{totalByRole('officer')}</p>
             </div>
             <div className="rounded-lg bg-blue-100 p-2.5"><Users className="h-5 w-5 text-blue-700" /></div>
           </div>
         </div>
-        <div className="rounded-xl border border-amber-200 bg-linear-to-br from-amber-50 to-orange-50 p-5 shadow-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-amber-700">Contractors</p>
-              <p className="mt-1 text-4xl font-black text-amber-700">{totalByRole('contractor')}</p>
+              <p className="mt-1 text-3xl font-black text-amber-700">{totalByRole('contractor')}</p>
             </div>
             <div className="rounded-lg bg-amber-100 p-2.5"><Building2 className="h-5 w-5 text-amber-700" /></div>
           </div>
@@ -173,7 +172,7 @@ function Team() {
       {isAdmin && !showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="inline-flex items-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 transition hover:shadow-xl hover:shadow-emerald-600/40"
+          className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
         >
           <UserPlus className="h-5 w-5" />
           Add Team Member
@@ -259,7 +258,7 @@ function Team() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="rounded-lg bg-linear-to-r from-emerald-600 to-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 transition hover:shadow-xl disabled:opacity-60"
+                className="rounded-md bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
               >
                 {submitting ? 'Adding…' : 'Add Member'}
               </button>
@@ -292,7 +291,7 @@ function Team() {
             {members.map((member) => (
               <div
                 key={member.id}
-                className="group relative rounded-xl border border-slate-200 bg-linear-to-r from-white to-slate-50 p-5 transition hover:border-emerald-300 hover:shadow-md"
+                className="group relative rounded-xl border border-slate-200 bg-white p-4 transition hover:border-blue-200 hover:shadow-md"
               >
                 <div className="flex items-start gap-4">
                   <div className={`grid h-11 w-11 shrink-0 place-items-center rounded-full text-sm font-black text-white ${avatarColor(member.id)}`}>

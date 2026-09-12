@@ -5,7 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 
 function navLinkClass({ isActive }) {
   return [
-    'group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-bold no-underline transition',
+    'group relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-bold no-underline transition',
     isActive
       ? 'bg-blue-500 text-white shadow-sm shadow-blue-950/30'
       : 'text-slate-400 hover:bg-white/10 hover:text-white',
@@ -43,10 +43,10 @@ function AppLayout() {
   const roleHeaderColor = ROLE_HEADER[role] || ROLE_HEADER.officer
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-950 lg:grid lg:grid-cols-[15.5rem_1fr]">
+    <div className="min-h-screen bg-slate-100 text-slate-950 lg:grid lg:grid-cols-[14rem_1fr]">
       <aside className="border-r border-slate-800 bg-slate-950 text-white shadow-xl shadow-slate-950/10 lg:sticky lg:top-0 lg:h-screen">
         <div className="flex h-full min-h-0 flex-col overflow-hidden">
-          <div className="border-b border-white/10 px-4 py-5">
+          <div className="border-b border-white/10 px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="grid h-10 w-10 place-items-center rounded-md bg-blue-500 text-xs font-black text-white shadow-sm shadow-blue-950/30">
                 भू
@@ -58,7 +58,7 @@ function AppLayout() {
             </div>
           </div>
 
-          <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-5">
+          <nav className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
             <p className="px-3 pb-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
               Workspace
             </p>
@@ -94,7 +94,7 @@ function AppLayout() {
             </NavLink>
           </nav>
 
-          <div className="border-t border-white/10 p-4">
+          <div className="border-t border-white/10 p-3">
             <div className="rounded-md border border-white/10 bg-white/3 p-3">
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Signed in</p>
             <p className="mt-2 truncate text-sm font-bold text-slate-100">{displayName}</p>
@@ -115,7 +115,7 @@ function AppLayout() {
       </aside>
 
       <div className="min-w-0">
-        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-4 py-3 shadow-sm shadow-slate-950/5 backdrop-blur lg:px-6">
+        <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 px-4 py-2.5 shadow-sm shadow-slate-950/5 backdrop-blur lg:px-6">
           <div className="flex items-center justify-between gap-4">
             <div className="hidden min-w-0 max-w-xl flex-1 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-500 md:flex">
               <Search className="h-4 w-4" />
@@ -124,7 +124,7 @@ function AppLayout() {
             <div className="ml-auto flex items-center gap-2">
               <button
                 type="button"
-                className="grid h-10 w-10 place-items-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
+                className="grid h-9 w-9 place-items-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 hover:text-slate-950"
                 aria-label="Notifications"
               >
                 <Bell className="h-4 w-4" />
