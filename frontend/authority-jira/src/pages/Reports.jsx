@@ -38,29 +38,28 @@ function Reports() {
   }, [stats])
 
   return (
-    <div className="space-y-8 p-6 lg:p-8">
+    <div className="space-y-5 p-4 lg:p-6">
       {/* Header with Gradient */}
-      <div className="space-y-3">
+      <div className="border border-slate-200 bg-white px-5 py-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-widest text-emerald-600">Reports</p>
-            <h1 className="bg-linear-to-r from-slate-950 via-slate-800 to-emerald-950 bg-clip-text text-4xl font-black tracking-tight text-transparent">
+          <div className="space-y-1">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Workspace / Reports</p>
+            <h1 className="text-2xl font-black tracking-tight text-slate-950">
               Analytics & Insights
             </h1>
-            <p className="text-base font-semibold text-slate-600">Key metrics and performance analytics for civic issues</p>
+            <p className="text-sm font-semibold text-slate-500">Key metrics and performance analytics for civic issues</p>
           </div>
         </div>
-        <div className="h-1 w-16 rounded-full bg-linear-to-r from-emerald-500 to-emerald-600"></div>
       </div>
 
       {error ? (
-        <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-linear-to-r from-rose-50 to-rose-100 px-5 py-4 text-sm font-bold text-rose-900 shadow-sm">
+        <div className="flex items-center gap-3 rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-900 shadow-sm">
           {error}
         </div>
       ) : null}
 
       {loading ? (
-        <div className="rounded-xl border border-slate-200 bg-linear-to-br from-slate-50 to-white px-5 py-16 text-center">
+        <div className="rounded-xl border border-slate-200 bg-white px-5 py-10 text-center shadow-sm">
           <Loader label="Loading reports" />
         </div>
       ) : (
@@ -94,7 +93,7 @@ function Reports() {
                   <p className="text-5xl font-black tracking-tight text-amber-700">{stats?.open ?? 0}</p>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-amber-100">
                     <div
-                      className="h-full bg-linear-to-r from-amber-500 to-orange-600"
+                      className="h-full bg-amber-500"
                       style={{
                         width: `${stats?.total ? Math.round((stats.open / stats.total) * 100) : 0}%`,
                       }}
@@ -116,7 +115,7 @@ function Reports() {
                   <p className="text-5xl font-black tracking-tight text-emerald-700">{stats?.resolved ?? 0}</p>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-emerald-100">
                     <div
-                      className="h-full bg-linear-to-r from-emerald-500 to-teal-600"
+                      className="h-full bg-emerald-500"
                       style={{
                         width: `${stats?.total ? Math.round((stats.resolved / stats.total) * 100) : 0}%`,
                       }}
@@ -138,12 +137,12 @@ function Reports() {
             <CardBody>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {breakdownRows.map((row) => (
-                  <div key={row.status} className="flex items-center justify-between rounded-lg border border-slate-200 bg-linear-to-r from-slate-50 to-white px-5 py-4 transition hover:border-emerald-200 hover:shadow-sm">
+                  <div key={row.status} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-blue-200 hover:bg-white hover:shadow-sm">
                     <div className="flex items-center gap-3">
                       <StatusBadge status={row.status} />
                       <span className="text-sm font-semibold text-slate-600">{row.status}</span>
                     </div>
-                    <span className="rounded-full bg-linear-to-r from-emerald-500 to-emerald-600 px-4 py-1.5 text-sm font-black text-white">
+                    <span className="rounded-full bg-slate-900 px-3 py-1 text-sm font-black text-white">
                       {row.count}
                     </span>
                   </div>
@@ -162,7 +161,7 @@ function Reports() {
             </CardHeader>
             <CardBody>
               <div className="grid gap-5 sm:grid-cols-2">
-                <div className="rounded-lg border border-slate-200 bg-linear-to-r from-slate-50 to-white p-5">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Resolution Rate</p>
                   <div className="mt-3 flex items-end gap-2">
                     <p className="text-4xl font-black text-slate-950">
@@ -173,7 +172,7 @@ function Reports() {
                   <p className="mt-2 text-xs font-semibold text-slate-500">Resolved vs Total Issues</p>
                 </div>
 
-                <div className="rounded-lg border border-slate-200 bg-linear-to-r from-slate-50 to-white p-5">
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase tracking-widest text-slate-600">Pending Rate</p>
                   <div className="mt-3 flex items-end gap-2">
                     <p className="text-4xl font-black text-slate-950">

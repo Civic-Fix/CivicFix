@@ -8,24 +8,46 @@ const starterMessages = [
   {
     id: '1',
     role: 'assistant',
-    text: 'Ask about civic complaints, RTI, local authority duties, public nuisance, or your basic civic rights. I provide general guidance, not formal legal advice.',
+    text: 'Ask about landslide warnings, reporting slope failures, emergency contacts, local authority duties, or community safety measures. I provide general guidance, not formal legal or emergency dispatch advice.',
   },
 ];
 
 const SUGGESTIONS = [
-  'How do I file an RTI?',
-  'Report a pothole',
-  'Garbage not collected',
-  'Water supply issue',
+  'Report a landslide or rockfall',
+  'Road blocked by debris',
+  'Water leakage or soil erosion',
+  'Check slope safety status',
 ];
+
+// const getFallbackReply = (question) => {
+//   const q = question.toLowerCase();
+//   if (q.includes('rti')) return 'You can use RTI to request records, status updates, action taken reports, and official information from public authorities.';
+//   if (q.includes('garbage') || q.includes('waste') || q.includes('sanitation')) return 'For sanitation complaints, keep photos, exact location, and dates. Report to the local municipal body first, then escalate with evidence.';
+//   if (q.includes('road') || q.includes('pothole')) return 'For road or pothole complaints, record the exact location, risk to the public, and repeat incidents. Documentation helps escalation.';
+//   if (q.includes('water') || q.includes('drainage')) return 'For water or drainage issues, document the service disruption, impact on residents, and any health risk. A written complaint with evidence is usually the best first step.';
+//   return 'I could not reach the live civic guidance service right now. Try asking about RTI, sanitation, roads, drainage, or civic complaint escalation.';
+// };
 
 const getFallbackReply = (question) => {
   const q = question.toLowerCase();
-  if (q.includes('rti')) return 'You can use RTI to request records, status updates, action taken reports, and official information from public authorities.';
-  if (q.includes('garbage') || q.includes('waste') || q.includes('sanitation')) return 'For sanitation complaints, keep photos, exact location, and dates. Report to the local municipal body first, then escalate with evidence.';
-  if (q.includes('road') || q.includes('pothole')) return 'For road or pothole complaints, record the exact location, risk to the public, and repeat incidents. Documentation helps escalation.';
-  if (q.includes('water') || q.includes('drainage')) return 'For water or drainage issues, document the service disruption, impact on residents, and any health risk. A written complaint with evidence is usually the best first step.';
-  return 'I could not reach the live civic guidance service right now. Try asking about RTI, sanitation, roads, drainage, or civic complaint escalation.';
+  
+  if (q.includes('landslide') || q.includes('rockfall') || q.includes('collapse') || q.includes('debris')) {
+    return 'For active landslides or rockfalls, move to safety immediately. Report the exact location, road blockage status, and immediate hazard level to local emergency services or disaster management.';
+  }
+  
+  if (q.includes('drainage') || q.includes('water') || q.includes('leak') || q.includes('erosion')) {
+    return 'Water buildup and blocked drainage are major triggers for landslides. Document uncontrolled water flow or soil erosion with photos and report it urgently to local municipal or highway authorities.';
+  }
+  
+  if (q.includes('wall') || q.includes('slope') || q.includes('crack') || q.includes('hazard')) {
+    return 'Cracks in roads, leaning trees, or shifting retaining walls signal slope instability. Take clear photos, record GPS coordinates, and submit a hazard report to local civic authorities.';
+  }
+  
+  if (q.includes('rti') || q.includes('fund') || q.includes('budget') || q.includes('authority')) {
+    return 'You can file an RTI to request records regarding slope stabilization budgets, retaining wall safety audits, and action taken reports from public works departments (PWD).';
+  }
+  
+  return 'I could not reach the live guidance service right now. Try asking about reporting landslides, drainage issues, hazardous slopes, or filing an RTI on safety infrastructure.';
 };
 
 const CivicAssistant = ({ user }) => {
@@ -65,14 +87,14 @@ const CivicAssistant = ({ user }) => {
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Unable to get a response from CivicBot.');
+      if (!response.ok) throw new Error(result.error || 'Unable to get a response from भू Bot.');
 
       setMessages((prev) => [...prev, { id: `${Date.now()}-assistant`, role: 'assistant', text: result.reply }]);
     } catch (error) {
       setMessages((prev) => [...prev, { id: `${Date.now()}-fallback`, role: 'assistant', text: getFallbackReply(trimmed) }]);
       setErrorText(
         error?.message?.includes('fetch')
-          ? 'Live CivicBot is unreachable. Showing offline guidance.'
+          ? 'Live भू Bot is unreachable. Showing offline guidance.'
           : error.message || 'Unable to get a response.'
       );
     } finally {
@@ -89,7 +111,7 @@ const CivicAssistant = ({ user }) => {
           <MaterialCommunityIcons name="robot-outline" size={22} color="#16A34A" />
         </View>
         <View style={styles.headerCopy}>
-          <Text style={styles.title}>CivicBot</Text>
+          <Text style={styles.title}>भू Bot</Text>
           <Text style={styles.subtitle}>Civic guidance for {displayName} · Not legal advice</Text>
         </View>
         <View style={styles.onlineDot} />

@@ -107,7 +107,7 @@ const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDe
     <View style={styles.container}>
       <View style={styles.topBar}>
         <View style={styles.feedHeading}>
-          <Text style={styles.pageTitle}>CivicFix</Text>
+          <Text style={styles.pageTitle}>भू Saathi</Text>
           <Text style={styles.pageSubtitle}>
             Welcome back, {displayName}. Track local reports and tap the plus button to add one.
           </Text>
@@ -148,24 +148,30 @@ const Feeds = ({ user, onLogout, issues, updates, isLoadingUpdates, onVote, onDe
       </View>
 
       <View style={styles.nearMeRow}>
-        <TouchableOpacity
-          style={[styles.nearMeButton, isNearMeActive && styles.nearMeButtonActive]}
-          onPress={onNearMe}
-          disabled={isLoadingNearbyIssues}
-        >
-          {isLoadingNearbyIssues ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Feather name="map-pin" size={15} color="#FFFFFF" />
-          )}
-          <Text style={styles.nearMeButtonText}>{isLoadingNearbyIssues ? 'Finding issues...' : 'Near Me'}</Text>
-        </TouchableOpacity>
-        {isNearMeActive ? (
-          <TouchableOpacity style={styles.clearNearMeButton} onPress={onClearNearMe}>
-            <Feather name="x" size={15} color="#0F766E" />
-            <Text style={styles.clearNearMeText}>Show all posts</Text>
+        <View style={styles.nearMeGroup}>
+          <TouchableOpacity
+            style={[styles.nearMeButton, isNearMeActive && styles.nearMeButtonActive]}
+            onPress={onNearMe}
+            disabled={isLoadingNearbyIssues}
+          >
+            {isLoadingNearbyIssues ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Feather name="map-pin" size={15} color="#FFFFFF" />
+            )}
+            <Text style={styles.nearMeButtonText}>{isLoadingNearbyIssues ? 'Finding issues...' : 'Near Me'}</Text>
           </TouchableOpacity>
-        ) : null}
+          {isNearMeActive ? (
+            <TouchableOpacity
+              style={styles.clearNearMeButton}
+              onPress={onClearNearMe}
+              accessibilityLabel="Show all posts"
+            >
+              <Feather name="x" size={15} color="#0F766E" />
+              <Text style={styles.clearNearMeText}>All posts</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
         <TouchableOpacity
           style={styles.sosButton}
           onPress={handleSosPress}
