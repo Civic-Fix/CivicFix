@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   openBtnText: { color: '#fff', fontWeight: '800', fontSize: 13 },
   cardEmpty: { color: '#64748B' },
   error: { color: '#DC2626', marginTop: 6 },
-  statusText: { color: '#475569', fontSize: 12, marginTop: 4 }
+  statusText: { color: '#475569', fontSize: 12, marginTop: 4 },
   sosMarker: {
     width: 32,
     height: 32,
